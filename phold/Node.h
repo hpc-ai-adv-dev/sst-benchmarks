@@ -41,6 +41,8 @@ class Node : public SST::Component {
       {"port%d", "Ports to others", {}}
     )
     
+    size_t movementFunction();
+    
 
 
 #ifdef ENABLE_SSTDBG

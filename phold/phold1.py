@@ -23,11 +23,7 @@ for i in range(N):
   for j in range(M):
     comp = sst.Component(f"comp_{i}_{j}", "phold.Node")
     comp.addParams({
-      "numRings": 1,
-      "numRows": N,
-      "numCols": M,
-      "row": i,
-      "col": j
+      "numRings": 1
     })
     row.append(comp)
   comps.append(row)
@@ -65,7 +61,7 @@ def connect_upward(i,j,num_rings):
     print("Component at (%d, %d) connects to neighbor at (%d, %d)" % (i, j, neighbor_i, neighbor_j))
     port1 = port_num(i,j,neighbor_i,neighbor_j,num_rings)
     port2 = port_num(neighbor_i,neighbor_j,i,j,num_rings)
-    link = sst.Link()
+    link = sst.Link("link_%d_%d_to_%d_%d" % (i, j, neighbor_i, neighbor_j))
     link.connect((comps[i][j], f"port{port1}", "1ns"), (comps[neighbor_i][neighbor_j], f"port{port2}", "1ns"))
 
 
@@ -83,3 +79,4 @@ for i in range(N):
 
   
 
+print("Done with setup")
