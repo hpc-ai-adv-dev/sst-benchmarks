@@ -4,7 +4,7 @@ LDFLAGS=$(shell sst-config --ELEMENT_LDFLAGS)
 PARAMS=
 #PARAMS="-DENABLE_SSTDBG"
 
-SRCS=cell.cpp onDemandCell.cpp
+SRCS=cell.cpp
 
 all: libgol.so install
 

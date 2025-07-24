@@ -4,20 +4,16 @@ import argparse, random
 parser = argparse.ArgumentParser(
   prog='GameOfLife',
   description="Conway's Game-Of-Life")
-parser.add_argument('--N',               type=int, default=10)
-parser.add_argument('--M',               type=int, default=-1)
-parser.add_argument('--prob',            type=int, default=30)
-parser.add_argument('--stop-at',         default="5s")
-parser.add_argument('--onDemandMode',    default=False, action='store_true')
-parser.add_argument('--postOnlyIfAlive', default=False, action='store_true')
-parser.add_argument('--verbose',         default=False, action='store_true')
+parser.add_argument('--N',       type=int, default=10)
+parser.add_argument('--M',       type=int, default=-1)
+parser.add_argument('--prob',    type=int, default=30)
+parser.add_argument('--stop-at', default="5s")
 args = parser.parse_args()
 
 sst.setProgramOption("stop-at", args.stop_at)
 
 myRank = sst.getMyMPIRank()
 numRanks = sst.getMPIRankCount()
-cellType = "gol.onDemandCell" if args.onDemandMode else "gol.cell"
 
 if args.M == -1:
   args.M = args.N
@@ -77,7 +73,7 @@ def createLink(srcRow, srcCol, offRow, offCol, srcPort, tgtPort):
 for row in range(max(0,myRowStart-1), min(args.M,myRowEnd+2)):
   cells[row] = {}
   for col in range(0, args.N):
-    cell = sst.Component("cell_%i_%i" % (row,col), cellType)
+    cell = sst.Component("cell_%i_%i" % (row,col), "gol.cell")
     cells[row][col] = cell
     if row < myRowStart:
       cell.setRank(myRank-1)
@@ -86,9 +82,7 @@ for row in range(max(0,myRowStart-1), min(args.M,myRowEnd+2)):
     else:
       cell.setRank(myRank)
       rval = random.randint(0,100)
-      cell.addParams({"isAlive":      rval <= args.prob,
-                      "postIfDead":   not args.postOnlyIfAlive,
-                      "shouldReport": args.verbose})
+      cell.addParams({"isAlive": rval <= args.prob})
 
 # Create links for all components owned by this rank
 for row in range(max(0,myRowStart), min(args.M,myRowEnd+1)):

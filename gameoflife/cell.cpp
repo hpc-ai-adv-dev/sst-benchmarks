@@ -3,13 +3,8 @@
 #include "cell.h"
 
 class GolEvent : public SST::Event {
-    bool _isAlive;
-
   public:
-    GolEvent() : SST::Event(), _isAlive(false) { }
-    GolEvent(bool isAlive) : SST::Event(), _isAlive(isAlive) { }
-
-    bool isAlive() const { return _isAlive; }
+    GolEvent() : SST::Event() { }
 
     void serialize_order(SST::Core::Serialization::serializer &ser) override {
       Event::serialize_order(ser);
@@ -17,15 +12,10 @@ class GolEvent : public SST::Event {
     ImplementSerializable(GolEvent);
 };
 
-static bool postIfDead = true;
-static bool shouldReport = false;
-
 Cell::Cell( SST::ComponentId_t id, SST::Params& params )
   : SST::Component(id)
 {
   isAlive = params.find<bool>("isAlive", false);
-  postIfDead = params.find<bool>("postIfDead", true);
-  shouldReport = params.find<bool>("shouldReport", false);
   aliveNeighbors = 0;
 
   registerClock("2s",   new SST::Clock::Handler<Cell>(this, &Cell::clockTick));
@@ -52,9 +42,7 @@ void Cell::setup() {
 }
 
 void Cell::handleEvent(SST::Event *ev) {
-  if(dynamic_cast<GolEvent*>(ev)->isAlive()) {
-    aliveNeighbors += 1;
-  }
+  aliveNeighbors += 1;
   delete ev;
 }
 
@@ -68,30 +56,26 @@ void Cell::update() {
 }
 
 void Cell::communicate() {
-  if(postIfDead || isAlive) {
-    if(isPortConnected("nwPort")) { nwPort->send(new GolEvent(isAlive)); }
-    if(isPortConnected("nPort"))  { nPort->send(new GolEvent(isAlive));  }
-    if(isPortConnected("nePort")) { nePort->send(new GolEvent(isAlive)); }
-    if(isPortConnected("wPort"))  { wPort->send(new GolEvent(isAlive));  }
-    if(isPortConnected("ePort"))  { ePort->send(new GolEvent(isAlive));  }
-    if(isPortConnected("swPort")) { swPort->send(new GolEvent(isAlive)); }
-    if(isPortConnected("sPort"))  { sPort->send(new GolEvent(isAlive));  }
-    if(isPortConnected("sePort")) { sePort->send(new GolEvent(isAlive)); }
+  if(isAlive) {
+    if(isPortConnected("nwPort")) { nwPort->send(new GolEvent()); }
+    if(isPortConnected("nPort"))  { nPort->send(new GolEvent());  }
+    if(isPortConnected("nePort")) { nePort->send(new GolEvent()); }
+    if(isPortConnected("wPort"))  { wPort->send(new GolEvent());  }
+    if(isPortConnected("ePort"))  { ePort->send(new GolEvent());  }
+    if(isPortConnected("swPort")) { swPort->send(new GolEvent()); }
+    if(isPortConnected("sPort"))  { sPort->send(new GolEvent());  }
+    if(isPortConnected("sePort")) { sePort->send(new GolEvent()); }
   }
 }
 
 void Cell::report() {
-  if(!shouldReport) {
-    return;
-  }
-
-  std::cout << (isAlive ? "#" : ".");
+  /*std::cout << (isAlive ? "#" : ".");
   if(getName().back() == '9') {
     std::cout << std::endl;
   }
-  if(getName() == "cell_9_9" || getName() == "board0.cell_9_9") {
+  if(getName() == "cell_9_9") {
     std::cout << std::endl;
-  }
+  }*/
 }
 
 bool Cell::clockTick(SST::Cycle_t currentCycle) {
