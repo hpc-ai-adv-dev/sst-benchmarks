@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+import traceback
 
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
@@ -34,7 +35,7 @@ def extract_sync_data(result_dir):
   """
   sync_files = []
   for file_name in os.listdir(result_dir):
-    if file_name.startswith('rank'):
+    if file_name.startswith('rank') and not '.' in file_name:
       sync_files.append(os.path.join(result_dir, file_name))
   sync_data = []
   for sync_file in sync_files:
@@ -148,9 +149,7 @@ def extract_row(results_dir):
     time_data = extract_time_data(results_dir)
     sync_data = extract_sync_data(results_dir)
   except Exception as e:
-
     print(f"Error extracting data from {results_dir}. Skipping this directory.", e)
-
     return None
   
   return parameters | time_data | sync_data
@@ -172,10 +171,10 @@ if __name__ == "__main__":
     print(f"Skipping invalid directory {invalid_dir}: {reason}")
 
 
-  #with ProcessPoolExecutor(max_workers=8) as executor:
-  #  data = list(executor.map(extract_row, result_dirs))
+  with ProcessPoolExecutor(max_workers=8) as executor:
+    data = list(executor.map(extract_row, result_dirs))
 
-  data = [extract_row(result_dir) for result_dir in result_dirs]
+  #data = [extract_row(result_dir) for result_dir in result_dirs]
   data = [d for d in data if d is not None]
   if len(data) == 0:
     print("No valid data found. Exiting.")

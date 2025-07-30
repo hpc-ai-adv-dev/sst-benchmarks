@@ -20,7 +20,7 @@ outFile=${prefix}.err
 outDir=${prefix}_dir
 
 
-simFlags="$simFlags --N $height --M $width --stop-at $timeToRun"
+simFlags="$simFlags --N $width --M $height --stop-at $timeToRun"
 
 
 sstFlags="--num-threads $threadCount --print-timing-info=true --parallel-load=SINGLE  ${scriptDir}/${script}"

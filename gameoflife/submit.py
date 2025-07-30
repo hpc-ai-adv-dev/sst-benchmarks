@@ -37,10 +37,10 @@ def parse_arguments():
   parser.add_argument('--components_per_node', '--components-per-node',  type=int_list, default=None, help="List of components-per-node values to use for the simulation. This is used to calculate widths.")
   parser.add_argument('--components_per_partition', '--components-per-partition',  type=int_list, default=None, help="List of components-per-partition values to use for the simulation. This is used to calculate widths.")
 
-  parser.add_argument('--weak_scaling-node', '--weak', '--weak-scaling', action='store_true',
+  parser.add_argument('--weak_scaling_node', '--weak', '--weak-scaling', '--weak-scaling-node', action='store_true',
                       help="If set, the height parameters are treated as per-node heights. If not, then the height parameters are treated as the total grid height.")
-  parser.add_argument('--weak-scaling-rank', action='store_true', help='If set, the height parameters are treated as per-rank heights.' )
-  parser.add_argument('--weak-scaling-thread', action='store_true', help='If set, the width parameters are treated as per-thread heights.')
+  parser.add_argument('--weak_scaling_rank', '--weak-scaling-rank', action='store_true', help='If set, the height parameters are treated as per-rank heights.' )
+  parser.add_argument('--weak_scaling_thread', '--weak-scaling-thread', action='store_true', help='If set, the width parameters are treated as per-thread heights.')
 
   
   # simulation parameters
@@ -59,9 +59,15 @@ def calculate_grid_shapes(args):
   '''
   Returns a tuple of the grid shape and its distribution over nodes, ranks, threads
   '''
-  
   shapes = []
-  return itertools.product(args.widths, args.heights, args.node_counts, args.rank_counts, args.thread_counts)
+
+  if args.weak_scaling_node:
+    for grid_width, per_node_height, node_count, rank_count, thread_count in itertools.product(args.widths, args.heights, args.node_counts, args.rank_counts, args.thread_counts):
+      shapes.append([grid_width, per_node_height * node_count, node_count, rank_count, thread_count])
+  else:
+    for grid_width, grid_height, node_count, rank_count, thread_count in itertools.product(args.widths, args.heights, args.node_counts, args.rank_counts, args.thread_counts):
+      shapes.append([grid_width, grid_height, node_count, rank_count, thread_count])
+  return shapes
 
 if __name__ == "__main__":
   args = parse_arguments()
@@ -77,7 +83,7 @@ if __name__ == "__main__":
     for (probability, demand, time_to_run, post_if_alive) in itertools.product( args.probabilities, args.demands, args.times_to_run, args.posts_if_alive):
       time_to_run = str(time_to_run) + 's'
       output_file = f"{args.name}_{script}_{node_count}_{rank_count}_{thread_count}_{width}_{height}_{probability}_{demand}_{time_to_run}_{post_if_alive}"
-      sbatch_portion = f"sbatch  -N {node_count} --cpus-per-task {rank_count} --ntasks-per-node {thread_count} -o {output_file}.out"
+      sbatch_portion = f"sbatch  -J {args.name} -N {node_count} --ntasks-per-node {rank_count} --cpus-per-task {thread_count} -o {output_file}.out"
       bool_flags = ' --postOnlyIfAlive ' if post_if_alive else ' '
       bool_flags += ' --onDemandMode ' if demand else ' '
       sim_flags = bool_flags + f" --prob {probability}"

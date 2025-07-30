@@ -14,6 +14,12 @@ sst.setProgramOption("stop-at", args.stop_at)
 
 myRank = sst.getMyMPIRank()
 numRanks = sst.getMPIRankCount()
+numThreads = sst.getThreadCount()
+
+
+def col_to_thread(col):
+  cols_per_thread = args.N // numThreads
+  return min(col // cols_per_thread, numThreads - 1)
 
 if args.M == -1:
   args.M = args.N
@@ -31,7 +37,6 @@ myRowStart = int(args.M / numRanks) * myRank + min(myRank, args.M % numRanks)
 myRowEnd   = myRowStart + int(args.M / numRanks) - 1
 if myRank < args.M % numRanks:
   myRowEnd += 1
-
 # -----------------------------------------------------------------------------
 cells = {}
 links = set()
@@ -76,11 +81,12 @@ for row in range(max(0,myRowStart-1), min(args.M,myRowEnd+2)):
     cell = sst.Component("cell_%i_%i" % (row,col), "gol.cell")
     cells[row][col] = cell
     if row < myRowStart:
-      cell.setRank(myRank-1)
+      cell.setRank(myRank-1, col_to_thread(col))
     elif row > myRowEnd:
-      cell.setRank(myRank+1)
+      cell.setRank(myRank+1, col_to_thread(col))
     else:
-      cell.setRank(myRank)
+      cell.setRank(myRank, col_to_thread(col))
+      
       rval = random.randint(0,100)
       cell.addParams({"isAlive": rval <= args.prob})
 
