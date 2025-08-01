@@ -21,21 +21,63 @@ parser.add_argument('--nodeType', type=str, default='phold.Node', help='Type of 
 parser.add_argument('--smallPayload', type=int, default=8, help='Size of small event payloads in bytes')
 parser.add_argument('--largePayload', type=int, default=1024, help='Size of large event payloads in bytes')
 parser.add_argument('--largeEventFraction', type=float, default=0.1, help='Fraction of events that are large (default: 0.1)')
+parser.add_argument('--imbalance-factor', type=float, default=0.0, help="Imbalance factor for the simulation's thread-level distribution." \
+                    " This value should be between 0 (representing perfectly load balanced), and 1.0 (representing a single thread doing all the work).")
+
+
+
 args = parser.parse_args()
 
+
+def imbalance_thread_map(M, imbalance_factor, thread_count):
+  """
+  Create the boundaries for what column indices each thread gets
+  """
+  import math
+  if imbalance_factor == 0.0:
+    # Perfectly balanced
+    weights = [1.0 / thread_count] * thread_count
+  elif imbalance_factor == 1.0:
+    # Perfectly unbalanced, all weight to the first thread
+    weights = [1.0] + [0.0] * (thread_count - 1)
+  else:
+    base = 10
+    exp_raw = [base ** (thread_count - t - 1) for t in range(thread_count)]
+    total_exp = sum(exp_raw)
+    exp_weights = [w / total_exp for w in exp_raw]
+
+    uniform_weights = [1.0 / thread_count] * thread_count
+    weights = [
+        (1 - imbalance_factor) * u + imbalance_factor * e
+        for u, e in zip(uniform_weights, exp_weights)
+    ]
+  buckets = [0]
+  for w in weights:
+    buckets.append(buckets[-1] + w * M)
+  buckets[-1] = M  # Fix rounding error
+
+  def thread_for_index(i: int):
+    for t in range(thread_count):
+      if buckets[t] <= i < buckets[t + 1]:
+        return t
+    return thread_count - 1
+
+  return thread_for_index
+
+
 rows_per_rank = args.N // num_ranks
-cols_per_thread = args.M // num_threads
 def row_to_rank(i):
   if i < 0 or i >= args.N:
     raise ValueError(f"Row index {i} is out of bounds for N={args.N}")
   # Calculate the rank based on the row index
   return min(i // rows_per_rank, num_ranks - 1)
 
+thread_map = imbalance_thread_map(args.M, args.imbalance_factor, num_threads)
 def col_to_thread(i):
   if i < 0 or i >= args.M:
     raise ValueError(f"Column index {i} is out of bounds for M={args.M}")
   # Calculate the thread based on the column index
-  return min(i // cols_per_thread, num_threads - 1)
+  return thread_map(i)
   
 
 
