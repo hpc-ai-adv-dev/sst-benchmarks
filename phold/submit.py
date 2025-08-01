@@ -37,6 +37,7 @@ def parse_arguments():
   parser.add_argument('--large_event_fractions', '--large-event-fractions', '--large-event-fraction', type=float_list, default=[0.0], help="List of fractions of large events, e.g., '0.1 0.2 0.5'. Default is [0.1].")
   parser.add_argument('--dry_run', '--dry-run', action='store_true', help="If set, only print the commands that would be run without executing them.")
   parser.add_argument('--name', type=str, default="phold", help="(Optional) Name of the benchmark job prepended to output files.")
+  parser.add_argument('--imbalance_factors', '--imbalance-factors', '--imbalance-factor', type=float_list, default=[0.0], help="List of imbalance fractions to use, e.g., '0.1 0.2 0.5'. Default is [0.0].")
 
   # Weak scaling is used to indicate that the combinations of height and width are the "per-node" shape.
   # With a weak scaling run, if we vary the height, we are varying the per-node component count.
@@ -80,6 +81,8 @@ def convert_to_ranges(args):
       args.large_payloads = [args.large_payloads[0]] * 2
     if len(args.large_event_fractions) == 1:
       args.large_event_fractions = [args.large_event_fractions[0]] * 2
+    if len(args.imbalance_factors) == 1:
+      args.imbalance_factors = [args.imbalance_factors[0]] * 2
     if args.components_per_node is not None and len(args.components_per_node) == 1:
       args.components_per_node = [args.components_per_node[0]] * 2
   return args
@@ -173,7 +176,7 @@ if __name__ == "__main__":
     for i in range(args.stochastic):
       density = round(random.uniform(*args.event_densities), 2)
       non_shape_point = (density, random.randint(*args.ring_sizes), random.randint(*args.times_to_run), random.randint(*args.small_payloads),
-              random.randint(*args.large_payloads), random.uniform(*args.large_event_fractions))
+              random.randint(*args.large_payloads), random.uniform(*args.large_event_fractions), random.uniform(*args.imbalance_factors))
       non_shape_parameters.append(non_shape_point)
 
     parameters = list(zip(shape_parameters, non_shape_parameters))
@@ -182,14 +185,14 @@ if __name__ == "__main__":
 
     shape_parameters = calculate_grid_shapes(args)
     non_shape_parameters = list(itertools.product(args.event_densities, args.ring_sizes, args.times_to_run,
-                                        args.small_payloads, args.large_payloads, args.large_event_fractions))
+                                        args.small_payloads, args.large_payloads, args.large_event_fractions, args.imbalance_factors))
     parameters = list(itertools.product(shape_parameters, non_shape_parameters))
 
   print("parameters: ", parameters)
-  for ((width, height, node_count, rank_count, thread_count), (event_density, ring_size, time_to_run, small_payload, large_payload, large_event_fraction)) in parameters:
-    output_file = f"{args.name}_{node_count}_{rank_count}_{thread_count}_{width}_{height}_{event_density}_{ring_size}_{time_to_run}_{small_payload}_{large_payload}_{large_event_fraction}"
+  for ((width, height, node_count, rank_count, thread_count), (event_density, ring_size, time_to_run, small_payload, large_payload, large_event_fraction, imbalance_factor)) in parameters:
+    output_file = f"{args.name}_{node_count}_{rank_count}_{thread_count}_{width}_{height}_{event_density}_{ring_size}_{time_to_run}_{small_payload}_{large_payload}_{large_event_fraction}_{imbalance_factor}"
     sbatch_portion = f"sbatch -N {node_count} -o {output_file}.out"
-    command = f"{sbatch_portion} {script_dir}/dispatch.sh {node_count} {rank_count} {thread_count} {width} {height} {event_density} {ring_size} {time_to_run} {small_payload} {large_payload} {large_event_fraction} {output_file}"
+    command = f"{sbatch_portion} {script_dir}/dispatch.sh {node_count} {rank_count} {thread_count} {width} {height} {event_density} {ring_size} {time_to_run} {small_payload} {large_payload} {large_event_fraction} {imbalance_factor} {output_file}"
     print(command)
     if not args.dry_run:
       print(f"Running: {command}")

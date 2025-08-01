@@ -190,6 +190,7 @@ def extract_parameters(results_dir):
   small_payload = int(parts[9])
   large_payload = int(parts[10])
   large_event_fraction = float(parts[11])
+  imbalance_factor = float(parts[12]) if len(parts) > 12 else 0.0  # Default to 0.0 if not present
 
   return {
     'Experiment Name': experiment_name,
@@ -203,7 +204,8 @@ def extract_parameters(results_dir):
     'Time to Run (ns)': time_to_run,
     'Small Payload (bytes)': small_payload,
     'Large Payload (bytes)': large_payload,
-    'Large Event Fraction': large_event_fraction
+    'Large Event Fraction': large_event_fraction,
+    'Imbalance Factor': imbalance_factor
   }
 
 failures = []
