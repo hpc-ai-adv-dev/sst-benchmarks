@@ -7,7 +7,7 @@ jobs:
   sanity_check:
     runs-on: ubuntu-latest
     container:
-      image: arezaiihpe/sst-14.1.0:jammy
+      image: arezaiihpe/sst-core:15.0.0
 
     steps:
     - uses: actions/checkout@v4
