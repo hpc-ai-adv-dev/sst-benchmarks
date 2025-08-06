@@ -1,9 +1,6 @@
 #include <sst/core/sst_config.h>
-#include <sst/core/interfaces/stringEvent.h>
 #include "Ponger.h"
 #include "GlobalParams.h"
-
-using SST::Interfaces::StringEvent;
 
 class BallEvent : public SST::Event {
   public:

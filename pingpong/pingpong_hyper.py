@@ -21,6 +21,7 @@ group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('--corners',         default=False, action='store_true')
 group.add_argument('--random',          type=int, default=-1)
 group.add_argument('--randomOverlap',   type=int, default=-1)
+group.add_argument('--chanceHasBall',   type=float, default=-1)
 group.add_argument('--wavefront',       default=False, action='store_true')
 args = parser.parse_args()
 
@@ -73,7 +74,11 @@ def ponger(g,i,j):
   if args.dryRun == -1:
     ponger.setRank(pongerRank)
     if pongerRank == myRank:
-      ponger.addParams({"numBalls": 0})
+      if args.chanceHasBall == -1:
+        ponger.addParams({"numBalls": 0})
+      else:
+        rval = random.randint(0,100)
+        ponger.addParams({"numBalls": 1 if rval <= args.chanceHasBall else 0})
   pongers[me] = ponger;
 
   isGhostPonger = int(g/gridsPerRank) != myRank
@@ -96,7 +101,7 @@ def hyperLink(g1,i1,j1, g2,i2,j2, port1Name, port2Name, isPass2=False):
   ponger2 = ponger(g2,i2,j2)
 
   if args.verbose:
-    print("Connect (%d,%d,%d) %s -- (%d,%d,%d) %s" % (g1,i1,j1,port1Name, g2,i2,j2,port2Name))
+    print("Connect %d (%d,%d,%d) %s -- %d (%d,%d,%d) %s" % (id1,g1,i1,j1,port1Name, id2,g2,i2,j2,port2Name))
 
   linkName = "l%s%d_%d" % ('' if not isPass2 else 'b', minId, maxId)
   if args.dryRun == -1:

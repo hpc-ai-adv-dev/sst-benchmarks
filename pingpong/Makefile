@@ -4,6 +4,7 @@ LDFLAGS=$(shell sst-config --ELEMENT_LDFLAGS)
 PARAMS=
 PARAMS="-DENABLE_SSTCHECKPOINT"
 # PARAMS="-DENABLE_SSTDBG"
+# PARAMS="-DUSE_GETLINK_API"
 
 SRCS=Simulator.cpp Ponger.cpp GlobalParams.cpp HyperPonger.cpp
 
