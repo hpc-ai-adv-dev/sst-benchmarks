@@ -16,11 +16,15 @@ jobs:
       run: |
         cd gameoflife
         make
+        sst gol.py -- --verbose --seed 42 > gol_sim.out
+        diff ../.github/workflows/gol.good ./gol_sim.out
 
     - name: Build pingpong library
       run: |
         cd pingpong
         make
+        sst pingpong.py -- --corners --verbose > pingpong_sim.out
+        diff ../.github/workflows/pingpong.good ./pingpong_sim.out
 
   benchmarks_build_v14:
     runs-on: ubuntu-latest
@@ -34,8 +38,12 @@ jobs:
       run: |
         cd gameoflife
         make
+        sst gol.py -- --verbose --seed 42 > gol_sim.out
+        diff ../.github/workflows/gol.good ./gol_sim.out
 
     - name: Build pingpong library
       run: |
         cd pingpong
         make
+        sst pingpong.py -- --corners --verbose > pingpong_sim.out
+        diff ../.github/workflows/pingpong.good ./pingpong_sim.out
