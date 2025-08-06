@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - 'gameoflife/**'
+      - 'pingpong/**'
+
+jobs:
+  sanity_check:
+    runs-on: ubuntu-latest
+    container:
+      image: arezaiihpe/sst-14.1.0:jammy
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build gameoflife library
+      run: |
+        cd gameoflife
+        make
+
+    - name: Build pingpong library
+      run: |
+        cd pingpong
+        make
