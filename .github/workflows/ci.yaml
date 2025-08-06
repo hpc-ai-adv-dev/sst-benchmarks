@@ -4,10 +4,28 @@ on:
   pull_request:
 
 jobs:
-  sanity_check:
+  benchmarks_build_v15:
     runs-on: ubuntu-latest
     container:
       image: arezaiihpe/sst-core:15.0.0
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build gameoflife library
+      run: |
+        cd gameoflife
+        make
+
+    - name: Build pingpong library
+      run: |
+        cd pingpong
+        make
+
+  benchmarks_build_v14:
+    runs-on: ubuntu-latest
+    container:
+      image: arezaiihpe/sst-core:14.1.0
 
     steps:
     - uses: actions/checkout@v4
