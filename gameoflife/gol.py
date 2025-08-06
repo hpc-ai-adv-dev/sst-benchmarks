@@ -11,6 +11,8 @@ parser.add_argument('--stop-at',         default="5s")
 parser.add_argument('--onDemandMode',    default=False, action='store_true')
 parser.add_argument('--postOnlyIfAlive', default=False, action='store_true')
 parser.add_argument('--verbose',         default=False, action='store_true')
+# Set the seed >= 0 to enable reproducible game results
+parser.add_argument('--seed',            type=int, default=-1)
 args = parser.parse_args()
 
 sst.setProgramOption("stop-at", args.stop_at)
@@ -22,6 +24,9 @@ cellType = "gol.onDemandCell" if args.onDemandMode else "gol.cell"
 if args.M == -1:
   args.M = args.N
 
+if args.seed >= 0:
+  random.seed(args.seed)
+
 # We do a block-row partitioning of the game board.  Because the number of rows
 # might not be divisible my the number of MPI ranks we will have ranks 0
 # through (args.M%numRanks) have (args.M / numRanks + 1) rows # and all
@@ -30,7 +35,7 @@ if args.M == -1:
 # our desired game board size.
 #
 # myRowStart and myRowEnd produce na inclusive range (IOW this rank owns row
-# 'myRowEnd'). 
+# 'myRowEnd').
 myRowStart = int(args.M / numRanks) * myRank + min(myRank, args.M % numRanks)
 myRowEnd   = myRowStart + int(args.M / numRanks) - 1
 if myRank < args.M % numRanks:
