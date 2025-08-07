@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  benchmarks_check_v15:
+    runs-on: ubuntu-latest
+    container:
+      image: arezaiihpe/sst-core:15.0.0
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build gameoflife library
+      run: |
+        cd gameoflife
+        make
+        sst gol.py -- --verbose --seed 42 > gol_sim.out
+        diff ../.github/workflows/gol.good ./gol_sim.out
+
+    - name: Build pingpong library
+      run: |
+        cd pingpong
+        make
+        sst pingpong.py -- --corners --verbose > pingpong_sim.out
+        diff ../.github/workflows/pingpong.good ./pingpong_sim.out
+
+  benchmarks_check_v14-1:
+    runs-on: ubuntu-latest
+    container:
+      image: arezaiihpe/sst-core:14.1.0
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build gameoflife library
+      run: |
+        cd gameoflife
+        make
+        sst gol.py -- --verbose --seed 42 > gol_sim.out
+        diff ../.github/workflows/gol.good ./gol_sim.out
+
+    - name: Build pingpong library
+      run: |
+        cd pingpong
+        make
+        sst pingpong.py -- --corners --verbose > pingpong_sim.out
+        diff ../.github/workflows/pingpong.good ./pingpong_sim.out

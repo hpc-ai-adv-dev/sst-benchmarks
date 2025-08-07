@@ -46,7 +46,12 @@ void OnDemandCell::setup() {
 void OnDemandCell::handleEvent(SST::Event *ev) {
  if(!clockOn) {
     clockOn = true;
-    reregisterClock(*clockTc, clockHandler);
+    // TODO: reregisterClock changes in SST 15.0 to use a different signature
+    //       that doesn't exist in SST 14.0, so we need to check the version
+    //       and use the appropriate function, e.g.:
+    // reregisterClock(*clockTc, clockHandler); // SST 15.0
+    // reregisterClock(clockTc, clockHandler); // SST 14.0
+    reregisterClock(clockTc, clockHandler);
   }
   aliveNeighbors += 1;
   delete ev;
@@ -88,7 +93,12 @@ bool OnDemandCell::clockTick(SST::Cycle_t currentCycle) {
   update();
   if(!isAlive && clockOn) {
     clockOn = false;
-    unregisterClock(*clockTc, clockHandler);
+    // TODO: unregisterClock changes in SST 15.0 to use a different signature
+    //       that doesn't exist in SST 14.0, so we need to check the version
+    //       and use the appropriate function, e.g.:
+    // unregisterClock(*clockTc, clockHandler); // SST 15.0
+    // unregisterClock(clockTc, clockHandler); // SST 14.0
+    unregisterClock(clockTc, clockHandler);
   }
   report();
   communicate();

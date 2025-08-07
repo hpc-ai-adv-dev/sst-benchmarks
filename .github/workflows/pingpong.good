@@ -1,0 +1,223 @@
+Initial balls --
+    0 east
+    0 south
+    9 west
+    9 south
+   90 east
+   90 north
+   99 west
+   99 north
+connect  pong_0_0 south -- pong_1_0 north
+connect  pong_0_0 east -- pong_0_1 west
+connect  pong_0_1 south -- pong_1_1 north
+connect  pong_0_1 east -- pong_0_2 west
+connect  pong_0_2 south -- pong_1_2 north
+connect  pong_0_2 east -- pong_0_3 west
+connect  pong_0_3 south -- pong_1_3 north
+connect  pong_0_3 east -- pong_0_4 west
+connect  pong_0_4 south -- pong_1_4 north
+connect  pong_0_4 east -- pong_0_5 west
+connect  pong_0_5 south -- pong_1_5 north
+connect  pong_0_5 east -- pong_0_6 west
+connect  pong_0_6 south -- pong_1_6 north
+connect  pong_0_6 east -- pong_0_7 west
+connect  pong_0_7 south -- pong_1_7 north
+connect  pong_0_7 east -- pong_0_8 west
+connect  pong_0_8 south -- pong_1_8 north
+connect  pong_0_8 east -- pong_0_9 west
+connect  pong_0_9 south -- pong_1_9 north
+connect  pong_1_0 south -- pong_2_0 north
+connect  pong_1_0 east -- pong_1_1 west
+connect  pong_1_1 south -- pong_2_1 north
+connect  pong_1_1 east -- pong_1_2 west
+connect  pong_1_2 south -- pong_2_2 north
+connect  pong_1_2 east -- pong_1_3 west
+connect  pong_1_3 south -- pong_2_3 north
+connect  pong_1_3 east -- pong_1_4 west
+connect  pong_1_4 south -- pong_2_4 north
+connect  pong_1_4 east -- pong_1_5 west
+connect  pong_1_5 south -- pong_2_5 north
+connect  pong_1_5 east -- pong_1_6 west
+connect  pong_1_6 south -- pong_2_6 north
+connect  pong_1_6 east -- pong_1_7 west
+connect  pong_1_7 south -- pong_2_7 north
+connect  pong_1_7 east -- pong_1_8 west
+connect  pong_1_8 south -- pong_2_8 north
+connect  pong_1_8 east -- pong_1_9 west
+connect  pong_1_9 south -- pong_2_9 north
+connect  pong_2_0 south -- pong_3_0 north
+connect  pong_2_0 east -- pong_2_1 west
+connect  pong_2_1 south -- pong_3_1 north
+connect  pong_2_1 east -- pong_2_2 west
+connect  pong_2_2 south -- pong_3_2 north
+connect  pong_2_2 east -- pong_2_3 west
+connect  pong_2_3 south -- pong_3_3 north
+connect  pong_2_3 east -- pong_2_4 west
+connect  pong_2_4 south -- pong_3_4 north
+connect  pong_2_4 east -- pong_2_5 west
+connect  pong_2_5 south -- pong_3_5 north
+connect  pong_2_5 east -- pong_2_6 west
+connect  pong_2_6 south -- pong_3_6 north
+connect  pong_2_6 east -- pong_2_7 west
+connect  pong_2_7 south -- pong_3_7 north
+connect  pong_2_7 east -- pong_2_8 west
+connect  pong_2_8 south -- pong_3_8 north
+connect  pong_2_8 east -- pong_2_9 west
+connect  pong_2_9 south -- pong_3_9 north
+connect  pong_3_0 south -- pong_4_0 north
+connect  pong_3_0 east -- pong_3_1 west
+connect  pong_3_1 south -- pong_4_1 north
+connect  pong_3_1 east -- pong_3_2 west
+connect  pong_3_2 south -- pong_4_2 north
+connect  pong_3_2 east -- pong_3_3 west
+connect  pong_3_3 south -- pong_4_3 north
+connect  pong_3_3 east -- pong_3_4 west
+connect  pong_3_4 south -- pong_4_4 north
+connect  pong_3_4 east -- pong_3_5 west
+connect  pong_3_5 south -- pong_4_5 north
+connect  pong_3_5 east -- pong_3_6 west
+connect  pong_3_6 south -- pong_4_6 north
+connect  pong_3_6 east -- pong_3_7 west
+connect  pong_3_7 south -- pong_4_7 north
+connect  pong_3_7 east -- pong_3_8 west
+connect  pong_3_8 south -- pong_4_8 north
+connect  pong_3_8 east -- pong_3_9 west
+connect  pong_3_9 south -- pong_4_9 north
+connect  pong_4_0 south -- pong_5_0 north
+connect  pong_4_0 east -- pong_4_1 west
+connect  pong_4_1 south -- pong_5_1 north
+connect  pong_4_1 east -- pong_4_2 west
+connect  pong_4_2 south -- pong_5_2 north
+connect  pong_4_2 east -- pong_4_3 west
+connect  pong_4_3 south -- pong_5_3 north
+connect  pong_4_3 east -- pong_4_4 west
+connect  pong_4_4 south -- pong_5_4 north
+connect  pong_4_4 east -- pong_4_5 west
+connect  pong_4_5 south -- pong_5_5 north
+connect  pong_4_5 east -- pong_4_6 west
+connect  pong_4_6 south -- pong_5_6 north
+connect  pong_4_6 east -- pong_4_7 west
+connect  pong_4_7 south -- pong_5_7 north
+connect  pong_4_7 east -- pong_4_8 west
+connect  pong_4_8 south -- pong_5_8 north
+connect  pong_4_8 east -- pong_4_9 west
+connect  pong_4_9 south -- pong_5_9 north
+connect  pong_5_0 south -- pong_6_0 north
+connect  pong_5_0 east -- pong_5_1 west
+connect  pong_5_1 south -- pong_6_1 north
+connect  pong_5_1 east -- pong_5_2 west
+connect  pong_5_2 south -- pong_6_2 north
+connect  pong_5_2 east -- pong_5_3 west
+connect  pong_5_3 south -- pong_6_3 north
+connect  pong_5_3 east -- pong_5_4 west
+connect  pong_5_4 south -- pong_6_4 north
+connect  pong_5_4 east -- pong_5_5 west
+connect  pong_5_5 south -- pong_6_5 north
+connect  pong_5_5 east -- pong_5_6 west
+connect  pong_5_6 south -- pong_6_6 north
+connect  pong_5_6 east -- pong_5_7 west
+connect  pong_5_7 south -- pong_6_7 north
+connect  pong_5_7 east -- pong_5_8 west
+connect  pong_5_8 south -- pong_6_8 north
+connect  pong_5_8 east -- pong_5_9 west
+connect  pong_5_9 south -- pong_6_9 north
+connect  pong_6_0 south -- pong_7_0 north
+connect  pong_6_0 east -- pong_6_1 west
+connect  pong_6_1 south -- pong_7_1 north
+connect  pong_6_1 east -- pong_6_2 west
+connect  pong_6_2 south -- pong_7_2 north
+connect  pong_6_2 east -- pong_6_3 west
+connect  pong_6_3 south -- pong_7_3 north
+connect  pong_6_3 east -- pong_6_4 west
+connect  pong_6_4 south -- pong_7_4 north
+connect  pong_6_4 east -- pong_6_5 west
+connect  pong_6_5 south -- pong_7_5 north
+connect  pong_6_5 east -- pong_6_6 west
+connect  pong_6_6 south -- pong_7_6 north
+connect  pong_6_6 east -- pong_6_7 west
+connect  pong_6_7 south -- pong_7_7 north
+connect  pong_6_7 east -- pong_6_8 west
+connect  pong_6_8 south -- pong_7_8 north
+connect  pong_6_8 east -- pong_6_9 west
+connect  pong_6_9 south -- pong_7_9 north
+connect  pong_7_0 south -- pong_8_0 north
+connect  pong_7_0 east -- pong_7_1 west
+connect  pong_7_1 south -- pong_8_1 north
+connect  pong_7_1 east -- pong_7_2 west
+connect  pong_7_2 south -- pong_8_2 north
+connect  pong_7_2 east -- pong_7_3 west
+connect  pong_7_3 south -- pong_8_3 north
+connect  pong_7_3 east -- pong_7_4 west
+connect  pong_7_4 south -- pong_8_4 north
+connect  pong_7_4 east -- pong_7_5 west
+connect  pong_7_5 south -- pong_8_5 north
+connect  pong_7_5 east -- pong_7_6 west
+connect  pong_7_6 south -- pong_8_6 north
+connect  pong_7_6 east -- pong_7_7 west
+connect  pong_7_7 south -- pong_8_7 north
+connect  pong_7_7 east -- pong_7_8 west
+connect  pong_7_8 south -- pong_8_8 north
+connect  pong_7_8 east -- pong_7_9 west
+connect  pong_7_9 south -- pong_8_9 north
+connect  pong_8_0 south -- pong_9_0 north
+connect  pong_8_0 east -- pong_8_1 west
+connect  pong_8_1 south -- pong_9_1 north
+connect  pong_8_1 east -- pong_8_2 west
+connect  pong_8_2 south -- pong_9_2 north
+connect  pong_8_2 east -- pong_8_3 west
+connect  pong_8_3 south -- pong_9_3 north
+connect  pong_8_3 east -- pong_8_4 west
+connect  pong_8_4 south -- pong_9_4 north
+connect  pong_8_4 east -- pong_8_5 west
+connect  pong_8_5 south -- pong_9_5 north
+connect  pong_8_5 east -- pong_8_6 west
+connect  pong_8_6 south -- pong_9_6 north
+connect  pong_8_6 east -- pong_8_7 west
+connect  pong_8_7 south -- pong_9_7 north
+connect  pong_8_7 east -- pong_8_8 west
+connect  pong_8_8 south -- pong_9_8 north
+connect  pong_8_8 east -- pong_8_9 west
+connect  pong_8_9 south -- pong_9_9 north
+connect  pong_9_0 east -- pong_9_1 west
+connect  pong_9_1 east -- pong_9_2 west
+connect  pong_9_2 east -- pong_9_3 west
+connect  pong_9_3 east -- pong_9_4 west
+connect  pong_9_4 east -- pong_9_5 west
+connect  pong_9_5 east -- pong_9_6 west
+connect  pong_9_6 east -- pong_9_7 west
+connect  pong_9_7 east -- pong_9_8 west
+connect  pong_9_8 east -- pong_9_9 west
+WARNING: Building component "sim" with no links assigned.
+     50 ps | vvvvvv pong_1_0 ballid=4
+     50 ps | -----> pong_0_1 ballid=5
+     50 ps | ^^^^^^ pong_8_0 ballid=2
+     50 ps | <----- pong_0_8 ballid=7
+     50 ps | ^^^^^^ pong_8_9 ballid=0
+     50 ps | -----> pong_9_1 ballid=3
+     50 ps | <----- pong_9_8 ballid=1
+     50 ps | vvvvvv pong_1_9 ballid=6
+    100 ps | ^^^^^^ pong_7_0 ballid=2
+    100 ps | <----- pong_0_7 ballid=7
+    100 ps | ^^^^^^ pong_7_9 ballid=0
+    100 ps | -----> pong_9_2 ballid=3
+    100 ps | <----- pong_9_7 ballid=1
+    100 ps | vvvvvv pong_2_0 ballid=4
+    100 ps | -----> pong_0_2 ballid=5
+    100 ps | vvvvvv pong_2_9 ballid=6
+    150 ps | ^^^^^^ pong_6_0 ballid=2
+    150 ps | <----- pong_0_6 ballid=7
+    150 ps | ^^^^^^ pong_6_9 ballid=0
+    150 ps | -----> pong_9_3 ballid=3
+    150 ps | <----- pong_9_6 ballid=1
+    150 ps | vvvvvv pong_3_0 ballid=4
+    150 ps | -----> pong_0_3 ballid=5
+    150 ps | vvvvvv pong_3_9 ballid=6
+    200 ps | <----- pong_0_5 ballid=7
+    200 ps | ^^^^^^ pong_5_9 ballid=0
+    200 ps | -----> pong_9_4 ballid=3
+    200 ps | <----- pong_9_5 ballid=1
+    200 ps | vvvvvv pong_4_0 ballid=4
+    200 ps | -----> pong_0_4 ballid=5
+    200 ps | vvvvvv pong_4_9 ballid=6
+    200 ps | ^^^^^^ pong_5_0 ballid=2
+Simulation is complete, simulated time: 200 ps
