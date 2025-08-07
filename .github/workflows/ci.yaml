@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  benchmarks_build_v15:
+  benchmarks_check_v15:
     runs-on: ubuntu-latest
     container:
       image: arezaiihpe/sst-core:15.0.0
@@ -26,7 +26,7 @@ jobs:
         sst pingpong.py -- --corners --verbose > pingpong_sim.out
         diff ../.github/workflows/pingpong.good ./pingpong_sim.out
 
-  benchmarks_build_v14:
+  benchmarks_check_v14-1:
     runs-on: ubuntu-latest
     container:
       image: arezaiihpe/sst-core:14.1.0
