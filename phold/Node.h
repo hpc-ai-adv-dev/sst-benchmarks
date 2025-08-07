@@ -50,7 +50,8 @@ class Node : public SST::Component {
      { "eventDensity", "Number of events to start with per component", "0.1" },
      { "smallPayload", "Size of small event payloads in bytes", "8"},
      { "largePayload", "Size of large event payloads in bytes", "1024"},
-     { "largeEventFraction", "Fraction of events that are large (default: 0.1)", "0.1"}
+     { "largeEventFraction", "Fraction of events that are large (default: 0.1)", "0.1"},
+     { "verbose", "Whether or not to write the recvCount to file.", "0"}
     )
 
     SST_ELI_DOCUMENT_PORTS(
@@ -74,7 +75,7 @@ class Node : public SST::Component {
       //std::cout << "done setting up links on rank " << getRank().rank << "\n" << std::flush;
     }
 
-    int myId, myRow, myCol;
+    int myId, myRow, myCol, verbose;
     std::vector<SST::Link*> links;
     int numRings, numLinks, rowCount, colCount;
     double eventDensity;

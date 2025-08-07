@@ -208,7 +208,23 @@ def extract_parameters(results_dir):
     'Imbalance Factor': imbalance_factor
   }
 
-failures = []
+
+def extract_failure_reason(sbatch_output):
+  """
+  Extract the failure reason from the sbatch output file.
+  """
+  if not os.path.exists(sbatch_output):
+    return "No sbatch output file found."
+
+  with open(sbatch_output, 'r') as f:
+    lines = f.readlines()
+  
+  if "DUE TO TIME LIMIT" in lines[-1]:
+    return "Timeout"
+  else:
+    return "Other Failure"
+  
+
 def extract_row(results_dir):
   try:
     parameters = extract_parameters(results_dir)

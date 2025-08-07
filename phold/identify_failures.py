@@ -1,21 +1,34 @@
 import sys
+import extractors
 
-failure_file = sys.argv[1] if len(sys.argv) > 1 else 'failures.txt'
 
-with open(failure_file, 'r') as f:
-  failures = f.read().splitlines()
+if len(sys.argv) != 3:
+    print("Usage: python identify_failures.py <output file> <experiment_name>")
+    sys.exit(1)
 
-for failure in failures:
-  print(f"Failure: {failure}")
-  (name, node_count, width, height, event_density, ring_size, time_to_run, small_payload, large_payload, large_event_fraction, dir) = failure.split('_')
-  print(f"  Name: {name}")
-  print(f"  Node Count: {node_count}")
-  print(f"  Width: {width}")
-  print(f"  Height: {height}")
-  print(f"  Event Density: {event_density}")
-  print(f"  Ring Size: {ring_size}")
-  print(f"  Time to Run: {time_to_run}")
-  print(f"  Small Payload: {small_payload}")
-  print(f"  Large Payload: {large_payload}")
-  print(f"  Large Event Fraction: {large_event_fraction}")
-  
+output_file = sys.argv[1]
+experiment_name = sys.argv[2]
+
+(successes_dirs, invalid_dirs) = extractors.identify_result_dirs(experiment_name)
+
+
+data = []
+for dir_name, reason in invalid_dirs:
+  sbatch_output = dir_name.replace('_dir', '.out')
+  reason = extractors.extract_failure_reason(sbatch_output)
+
+  parameters = extractors.extract_parameters(dir_name)
+  parameters['Status'] = reason
+  data.append(parameters)
+
+if len(data) == 0:
+    print("No failures found. Exiting.")
+    sys.exit(0)
+with open(output_file, 'w') as f:
+  entry = data[0]
+  f.write(','.join(entry.keys()) + "\n")
+  for entry in data:
+    f.write(','.join(map(str, entry.values())) + "\n")
+
+
+print(f"Failures consolidated into {output_file}.")
