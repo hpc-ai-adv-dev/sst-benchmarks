@@ -20,7 +20,7 @@ parser.add_argument('--exponentMultiplier', type=float, default=1.0, help="Multi
 parser.add_argument('--nodeType', type=str, default='phold.Node', help='Type of node to create (default: phold.Node)')
 parser.add_argument('--smallPayload', type=int, default=8, help='Size of small event payloads in bytes')
 parser.add_argument('--largePayload', type=int, default=1024, help='Size of large event payloads in bytes')
-parser.add_argument('--largeEventFraction', type=float, default=0.1, help='Fraction of events that are large (default: 0.1)')
+parser.add_argument('--largeEventFraction', type=float, default=0.0, help='Fraction of events that are large (default: 0.1)')
 parser.add_argument('--imbalance-factor', type=float, default=0.0, help="Imbalance factor for the simulation's thread-level distribution." \
                     " This value should be between 0 (representing perfectly load balanced), and 1.0 (representing a single thread doing all the work).")
 
@@ -34,27 +34,22 @@ def imbalance_thread_map(M, imbalance_factor, thread_count):
   Create the boundaries for what column indices each thread gets
   """
   import math
-  if imbalance_factor == 0.0:
-    # Perfectly balanced
-    weights = [1.0 / thread_count] * thread_count
-  elif imbalance_factor == 1.0:
-    # Perfectly unbalanced, all weight to the first thread
-    weights = [1.0] + [0.0] * (thread_count - 1)
-  else:
-    base = 10
-    exp_raw = [base ** (thread_count - t - 1) for t in range(thread_count)]
-    total_exp = sum(exp_raw)
-    exp_weights = [w / total_exp for w in exp_raw]
+  # firstThread + (otherThreads * (thread_count - 1)) == 1
+  # firstThread - otherThreads == imbalance_factor
+  # otherThreads = firstThread - imbalance_factor
 
-    uniform_weights = [1.0 / thread_count] * thread_count
-    weights = [
-        (1 - imbalance_factor) * u + imbalance_factor * e
-        for u, e in zip(uniform_weights, exp_weights)
-    ]
+  # 1 ==  firstThread + (thread_count - 1) * otherThreads
+  # 1 == firstThread + (thread_count - 1) * (firstThread - imbalance_factor)
+  # 1 == firstThread + (thread_count - 1) * firstThread - (thread_count - 1) * imbalance_factor
+  # 1 + (thread_count - 1) * imbalance_factor == firstThread * thread_count
+  # firstThread == (1 + (thread_count - 1) * imbalance_factor) / thread_count
+  first_thread_weight = (1 + (thread_count - 1) * imbalance_factor) / thread_count
+  other_thread_weight = first_thread_weight - imbalance_factor
+  weights = [first_thread_weight] + [other_thread_weight] * (thread_count - 1)
+
   buckets = [0]
   for w in weights:
     buckets.append(buckets[-1] + w * M)
-  buckets[-1] = M  # Fix rounding error
 
   def thread_for_index(i: int):
     for t in range(thread_count):
