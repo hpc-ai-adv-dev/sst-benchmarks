@@ -23,8 +23,8 @@ parser.add_argument('--largePayload', type=int, default=1024, help='Size of larg
 parser.add_argument('--largeEventFraction', type=float, default=0.0, help='Fraction of events that are large (default: 0.1)')
 parser.add_argument('--imbalance-factor', type=float, default=0.0, help="Imbalance factor for the simulation's thread-level distribution." \
                     " This value should be between 0 (representing perfectly load balanced), and 1.0 (representing a single thread doing all the work).")
-
-
+parser.add_argument('--componentSize', type=int, default=0, help='Size of the additional data field of the component in bytes')
+parser.add_argument('--verbose', type=int, default=0, help='Whether or not to write the recvCount to file.')
 
 args = parser.parse_args()
 
@@ -100,7 +100,9 @@ def create_component(i,j):
     "eventDensity": args.eventDensity,
     "smallPayload": args.smallPayload,
     "largePayload": args.largePayload,
-    "largeEventFraction": args.largeEventFraction
+    "largeEventFraction": args.largeEventFraction,
+    "verbose": args.verbose,
+    "componentSize": args.componentSize
   })
   comp.setRank(row_to_rank(i), col_to_thread(j))
   return comp

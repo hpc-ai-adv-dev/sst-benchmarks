@@ -20,7 +20,7 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
   largePayload = params.find<int>("largePayload", -1);
   largeEventFraction = params.find<double>("largeEventFraction", -1.0);
   verbose = params.find<int>("verbose", 0);
-
+  
   if (myCol == -1) {std::cerr << "WARNING: Failed to get myCol\n";}
   if (myRow == -1) {std::cerr << "WARNING: Failed to get myRow\n";}
   if (rowCount == -1) {std::cerr << "WARNING: Failed to get rowCount\n";}
@@ -42,6 +42,13 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
 
   links = std::vector<SST::Link*>(numLinks);
   
+  int componentSize = params.find<int>("componentSize", 0);
+  if (componentSize == 0) {
+    additionalData = nullptr;
+  } else {
+    additionalData = (char*) malloc(componentSize * sizeof(char));
+  }
+
   setupLinks<Node>();
 
   registerAsPrimaryComponent();
@@ -54,6 +61,9 @@ Node::~Node() {
 #ifdef ENABLE_SSTDBG
   delete dbg;
 #endif
+  if (additionalData != nullptr) {
+    free(additionalData);
+  }
 }
 
 void Node::setup() {

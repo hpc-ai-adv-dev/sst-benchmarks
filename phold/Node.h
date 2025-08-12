@@ -51,7 +51,8 @@ class Node : public SST::Component {
      { "smallPayload", "Size of small event payloads in bytes", "8"},
      { "largePayload", "Size of large event payloads in bytes", "1024"},
      { "largeEventFraction", "Fraction of events that are large (default: 0.1)", "0.1"},
-     { "verbose", "Whether or not to write the recvCount to file.", "0"}
+     { "verbose", "Whether or not to write the recvCount to file.", "0"},
+     { "componentSize", "Additional size of components in bytes", "0"}
     )
 
     SST_ELI_DOCUMENT_PORTS(
@@ -82,6 +83,7 @@ class Node : public SST::Component {
     std::string timeToRun;
     int smallPayload, largePayload;
     float largeEventFraction;
+    char * additionalData;
 
     int recvCount;
 

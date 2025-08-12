@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+import humanfriendly
 
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
@@ -162,9 +163,13 @@ def extract_time_data(results_dir):
         lines = f.readlines()
         build_time = float(lines[0].strip())
         run_time = float(lines[1].strip())
+        max_resident = humanfriendly.parse_size(lines[2].strip())
+        max_global = humanfriendly.parse_size(lines[3].strip())
         return {
           'Build Time (s)': build_time,
-          'Run Time (s)': run_time
+          'Run Time (s)': run_time,
+          'Max Resident Set Size (bytes)': max_resident,
+          'Max Global Set Size (bytes)': max_global
         }
 
   return None
@@ -191,7 +196,7 @@ def extract_parameters(results_dir):
   large_payload = int(parts[10])
   large_event_fraction = float(parts[11])
   imbalance_factor = float(parts[12]) if len(parts) > 12 else 0.0  # Default to 0.0 if not present
-
+  component_size = int(parts[13]) if len(parts) > 13 else 0.0
   return {
     'Experiment Name': experiment_name,
     'Node Count': node_count,
@@ -205,7 +210,8 @@ def extract_parameters(results_dir):
     'Small Payload (bytes)': small_payload,
     'Large Payload (bytes)': large_payload,
     'Large Event Fraction': large_event_fraction,
-    'Imbalance Factor': imbalance_factor
+    'Imbalance Factor': imbalance_factor,
+    "Component Size": component_size
   }
 
 
