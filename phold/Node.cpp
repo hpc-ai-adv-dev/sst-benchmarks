@@ -19,6 +19,7 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
   smallPayload = params.find<int>("smallPayload", -1);
   largePayload = params.find<int>("largePayload", -1);
   largeEventFraction = params.find<double>("largeEventFraction", -1.0);
+  verbose = params.find<int>("verbose", 0);
 
   if (myCol == -1) {std::cerr << "WARNING: Failed to get myCol\n";}
   if (myRow == -1) {std::cerr << "WARNING: Failed to get myRow\n";}
@@ -84,7 +85,10 @@ void Node::setup() {
 void Node::finish() { 
   //std::cout << "Component at " << myRow << "," << myCol << " processed " << recvCount << " messages\n";
   std::string msg = std::to_string(myRow) + "," + std::to_string(myCol) + ":" + std::to_string(recvCount) + "\n";
-  std::cerr << msg;
+  if (verbose) {
+    std::cerr << msg;
+  }
+  
 }
 
 bool Node::tick( SST::Cycle_t currentCycle ) {
