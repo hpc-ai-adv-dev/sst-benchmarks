@@ -10,6 +10,7 @@ parser.add_argument('--numDims',        type=int, choices=[1,2], default=2)
 parser.add_argument('--edgeDelay',      type=int, default=50)
 parser.add_argument('--artificialWork', type=int, default=0)
 parser.add_argument('--verbose',        default=False, action='store_true')
+parser.add_argument('--seed',            type=int, default=-1)
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('--single',          default=False, action='store_true')
 group.add_argument('--corners',         default=False, action='store_true')
@@ -17,6 +18,9 @@ group.add_argument('--random',          type=int, default=-1)
 group.add_argument('--randomOverlap',   type=int, default=-1)
 group.add_argument('--wavefront',       default=False, action='store_true')
 args = parser.parse_args()
+
+if args.seed != -1:
+  random.seed(args.seed)
 
 # -----------------------------------------------------------------------------
 
