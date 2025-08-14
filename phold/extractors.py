@@ -215,20 +215,23 @@ def extract_parameters(results_dir):
   }
 
 
-def extract_failure_reason(sbatch_output):
+def extract_failure_reason(srun_output):
   """
-  Extract the failure reason from the sbatch output file.
+  Extract the failure reason from the srun output file.
   """
-  if not os.path.exists(sbatch_output):
+  if not os.path.exists(srun_output):
     return "No sbatch output file found."
 
-  with open(sbatch_output, 'r') as f:
+  with open(srun_output, 'r') as f:
     lines = f.readlines()
   
-  if "DUE TO TIME LIMIT" in lines[-1]:
-    return "Timeout"
-  else:
-    return "Other Failure"
+  for line in lines:
+    if "DUE TO TIME LIMIT" in line:
+      return "Timeout"
+    elif "DUE TO TASK FAILURE" in line:
+      return "Out of Memory"
+
+  return "Other Failure"
   
 
 def extract_row(results_dir):

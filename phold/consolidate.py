@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 
 from extractors import extract_row, identify_result_dirs
+import extractors
 
 if __name__ == "__main__":
   if len(sys.argv) > 3 or len(sys.argv) < 2:
@@ -21,8 +22,8 @@ if __name__ == "__main__":
   outfile = sys.argv[1]
 
   (result_dirs,invalid_dirs) = identify_result_dirs(experiment_name)
-  for invalid_dir, reason in invalid_dirs:
-    print(f"Skipping invalid directory {invalid_dir}: {reason}")
+  #for invalid_dir, reason in invalid_dirs:
+  #  print(f"Skipping invalid directory {invalid_dir}: {reason}")
 
   with ProcessPoolExecutor(max_workers=8) as executor:
     data = list(executor.map(extract_row, result_dirs))
@@ -40,3 +41,28 @@ if __name__ == "__main__":
 
 
   print(f"Results consolidated into {outfile}.")
+
+  failure_outfile = outfile.replace('.csv', '-failures.csv')
+  print(f"Now consolidating failures into {failure_outfile}...")
+
+  failure_data = []
+  for dir_name, reason in invalid_dirs:
+    srun_output_file = dir_name.replace('_dir', '.err')
+    srun_output_path = os.path.join(dir_name, srun_output_file)
+    reason = extractors.extract_failure_reason(srun_output_path)
+
+    parameters = extractors.extract_parameters(dir_name)
+    parameters['Status'] = reason
+    failure_data.append(parameters)
+  
+  if len(failure_data) == 0:
+    print("No failures found. Exiting.")
+    sys.exit(0)
+  with open(failure_outfile, 'w') as f:
+    entry = failure_data[0]
+    f.write(','.join(entry.keys()) + "\n")
+    for entry in failure_data:
+      f.write(','.join(map(str, entry.values())) + "\n")
+
+  print(f"Failures consolidated into {failure_outfile}.")
+

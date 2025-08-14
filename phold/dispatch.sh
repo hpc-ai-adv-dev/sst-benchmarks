@@ -2,6 +2,7 @@
 set -x
 scriptDir="$(dirname "$(scontrol show job "$SLURM_JOB_ID" | awk -F= '/Command=/{print $2}')")"
 echo "$scriptDir"
+echo "$0 $@"
 
 nodeCount=$1
 ranksPerNode=$2
@@ -28,7 +29,7 @@ simFlags="--N $height --M $width --eventDensity $eventDensity --timeToRun ${time
 
 sstFlags="--num-threads $threadCount --print-timing-info=true --parallel-load=SINGLE ${scriptDir}/phold_dist.py"
 
-srunPortion="srun -N $nodeCount --cpus-per-task=$threadCount --ntasks-per-node=$ranksPerNode" 
+srunPortion="srun --verbose --oom-kill-step=1 -N $nodeCount --cpus-per-task=$threadCount --ntasks-per-node=$ranksPerNode" 
 
 
 mkdir $outDir

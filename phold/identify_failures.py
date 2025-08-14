@@ -1,6 +1,6 @@
 import sys
 import extractors
-
+import os
 
 if len(sys.argv) != 3:
     print("Usage: python identify_failures.py <output file> <experiment_name>")
@@ -14,8 +14,9 @@ experiment_name = sys.argv[2]
 
 data = []
 for dir_name, reason in invalid_dirs:
-  sbatch_output = dir_name.replace('_dir', '.out')
-  reason = extractors.extract_failure_reason(sbatch_output)
+  srun_output_file = dir_name.replace('_dir', '.err')
+  srun_output_path = os.path.join(dir_name, srun_output_file)
+  reason = extractors.extract_failure_reason(srun_output_path)
 
   parameters = extractors.extract_parameters(dir_name)
   parameters['Status'] = reason
