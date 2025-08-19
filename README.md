@@ -1,6 +1,6 @@
 # sst-benchmarks
 
-This repository contains files implementing benchmarks using SST. Namely, a 1 or 2 dimensional ping-pong simulation and the scripts necessary to do scaling evaluation and profiling of the simulation. 
+This repository contains files implementing benchmarks using SST. Namely, a 1 or 2 dimensional ping-pong simulation and the scripts necessary to do scaling evaluation and profiling of the simulation.
 The simulation code was prepared by Andy Stone and the submission/profiling scripts by Brandon Neth.
 
 Prior to running the benchmark, please compile the source files by running:
@@ -54,16 +54,16 @@ There is also a `--verbose` that if passed prints debugging information.
 
 This repository also contains scripts necessary to run scaling evaluations of the ping-pong simulation: `omnisubmit.py` and `omnidispatch.sh`.
 **The purpose of these scripts is to be able to launch all the runs necessary for a particular experiment with a single command.**
-These scripts are meant to be used on a machine that runs jobs using SLURM. 
-In general, you will only need to use the `omnisubmit.py` script, which submits the jobs for whatever scaling evaluation you wish to run. 
+These scripts are meant to be used on a machine that runs jobs using SLURM.
+In general, you will only need to use the `omnisubmit.py` script, which submits the jobs for whatever scaling evaluation you wish to run.
 
 In general, it is a good idea to read through the available flags that the script accepts, using `python3 omnisubmit.py -h`, but we review them here and give some examples.
-Many of the arguments accept integers or quoted, space-separated lists of integers. 
+Many of the arguments accept integers or quoted, space-separated lists of integers.
 The script enumerates all combinations of all the lists and submits jobs for each of them.
 
 ### Scale Options
 `omnisubmit.py` always takes three unnamed arguments: a list of node counts, a list of MPI ranks per node, and a list of threads per MPI rank.
-These can be single integers or quoted, space-separated lists of integers. 
+These can be single integers or quoted, space-separated lists of integers.
 For example, `"1 2 4" 1 2` would launch 3 jobs, one with a single node, one with two nodes, and one with four.
 ALl three jobs would use one MPI rank per node and 2 C++ threads per MPI rank.
 In the case where there are multiple lists, such as `"3 6" "1 4" 1`, the script enumerates and launches all combinations. Here, that would be:
@@ -73,9 +73,9 @@ In the case where there are multiple lists, such as `"3 6" "1 4" 1`, the script 
 - 6 nodes, 4 ranks per node, 1 thread per rank
 
 ### Grid Options
-Next are the flags for specifying the size of the simulation itself. 
+Next are the flags for specifying the size of the simulation itself.
 
-The (required) `--dimensions` flag specifies how many dimensions your simulation should run. Valid options are 1 and 2, or a string separated list containing 1 and 2. 
+The (required) `--dimensions` flag specifies how many dimensions your simulation should run. Valid options are 1 and 2, or a string separated list containing 1 and 2.
 Like with the string separated scale options, the script enumerates and launches all combinations.
 
 There are two flags that together specify how many components should be in the simulation: `--side-length` and `--component-counts`.
@@ -96,12 +96,12 @@ If, instead, the script is run with the arguments `--dimensions "1 2" --componen
 - 2 dimensional simulation, 16 (4x4) components total
 - 2 dimensional simulation, 81 (9x9) components total
 
-At least one of  `--side-length` or `--component-counts` needs to be present or the script will exit. 
+At least one of  `--side-length` or `--component-counts` needs to be present or the script will exit.
 
 ### Communication Options
 Next are the flags for specifying the messages being passed among the components.
 There are four possible communication patterns, described above, which correspond to the following flags: `--corners`, `--wavefront`, `--random`, and `--randomOverlap`.
-The `--random` and `--randomOverlap` flags require an integer, or quoted, space-separated list of integers, indicating how many balls to place randomly. 
+The `--random` and `--randomOverlap` flags require an integer, or quoted, space-separated list of integers, indicating how many balls to place randomly.
 Like the grid options, multiple communication patterns can be specified, but at least one must be present.
 For example, if you use the flags `--corners --random 100 --randomOverlap "200 300"`, there will be four types of runs (each possibly present multiple times if there are other lists):
 - Runs using `--corners`
@@ -110,15 +110,15 @@ For example, if you use the flags `--corners --random 100 --randomOverlap "200 3
 - Runs using `--randomOverlap 300`
 
 ### Simulation Time Options
-There are two flags related to the simulated time. 
-First is `--timestep-counts` which is another integer list of the number of timesteps to run in the simulation. 
+There are two flags related to the simulated time.
+First is `--timestep-counts` which is another integer list of the number of timesteps to run in the simulation.
 Second is `--edge-delay` which is an integer representing the delays for the messages moving across the links.
 The edge delay is optional and defaults to 50. `--timestep-counts` needs to have at least one value, but like many others can have a list of integers.
 
 ### Remaining Simulation Options
 Two other flags are related to the simulation itself: `--input-method` and `--verbose`.
-`--input-method` indicates which method(s) the script should use to configure the simulation. 
-There are three options: 
+`--input-method` indicates which method(s) the script should use to configure the simulation.
+There are three options:
 - "python": Use the sequential python loading script
 - "pallelPython": Uses the parallel python loading script
 - "json": Use the JSON generator to generate the input JSON script and load it into SST in parallel
@@ -132,14 +132,14 @@ At least one input method must be specified.
 Two flags support different types of experiments with the simulation: `--hpctoolkit` and `--weak-scaling`.
 
 The `--hpctoolkit` flag indicates that the submitted simulations should be run using hpctoolkit to collect profiling information about the run.
-If used, the submitted job will use `hpcrun` to run the job, `hpcstruct` to gather source information from the `sst` binary, and then use `hpcprof` to attribute the profiling data to the code. 
+If used, the submitted job will use `hpcrun` to run the job, `hpcstruct` to gather source information from the `sst` binary, and then use `hpcprof` to attribute the profiling data to the code.
 Arguments passed to the `--hpctoolkit` flag will be forwarded to the `hpcrun` call. For example, using `--hpctoolkit "-e MEMLEAK"` will collect memory usage information from the application rather than execution time information.
 
-The `weak-scaling` flag indicates that the submitted jobs are for a weak scaling run. 
-Weak scaling means that as the number of nodes / threads the program is run on increases, so does the size of the problem. 
-This means that problem information, like component counts and message counts, need to increase in propotion to the node/thread count. 
-To support this, the `--weak-scaling` flag treats all problem configuration information (side lengths, communication pattern information, etc.) as "base configurations" i.e. the configurations to use for a 1 node, 1 rank, 1 thread run. 
-For each of the scale configuration, the base configuration is scaled proportionally. 
+The `weak-scaling` flag indicates that the submitted jobs are for a weak scaling run.
+Weak scaling means that as the number of nodes / threads the program is run on increases, so does the size of the problem.
+This means that problem information, like component counts and message counts, need to increase in propotion to the node/thread count.
+To support this, the `--weak-scaling` flag treats all problem configuration information (side lengths, communication pattern information, etc.) as "base configurations" i.e. the configurations to use for a 1 node, 1 rank, 1 thread run.
+For each of the scale configuration, the base configuration is scaled proportionally.
 
 An example helps clarify. Say we were to run the following full submit command: `python3 omnisubmit.py "1 2 4 8" 1 1 --dimensions 2 --side-lengths "20 40" --random 100 --corners --timestep-count 1000 --input-method python`. What would happen?
 First, we gather our base configurations. This is the product of the grid options and the communication pattern options. There are four for this submission:
@@ -147,9 +147,15 @@ First, we gather our base configurations. This is the product of the grid option
 - side length 20, corners
 - side length 40, random 100
 - side length 40, corners
+
 Next, for each of the scale configurations, we submit a job where the base configuration is scaled by the appropriate scale. For the "side length 20, random 100", we get the following:
 - 1 node, 1 rank, 1 thread, side length 20, random 100
-- 2 nodes, 1 rank, 1 thread, side length 28 (`sqrt(20*20*2)`), random 200 
+- 2 nodes, 1 rank, 1 thread, side length 28 (`sqrt(20*20*2)`), random 200
 - 4 nodes, 1 rank, 1 thread, side length 40 (`sqrt(20*20*4)`), random 400
 - 8 nodes, 1 rank, 1 thread, side length 56 (`sqrt(20*20*8)`), random 800
+
 Note that 2 dimensional cases may require rounding. It helps with data collection and analysis to use square node counts when doing weak-scaling runs.
+
+## Containers
+
+For information on running SST benchmarks in containers, see the [container documentation](sst-containers/README.md)
