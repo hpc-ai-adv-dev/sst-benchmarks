@@ -155,3 +155,7 @@ Next, for each of the scale configurations, we submit a job where the base confi
 - 8 nodes, 1 rank, 1 thread, side length 56 (`sqrt(20*20*8)`), random 800
 
 Note that 2 dimensional cases may require rounding. It helps with data collection and analysis to use square node counts when doing weak-scaling runs.
+
+## Containers
+
+For information on running SST benchmarks in containers, see the [container documentation](sst-containers/README.md)
