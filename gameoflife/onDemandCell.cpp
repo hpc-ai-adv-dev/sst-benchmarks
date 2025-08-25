@@ -22,14 +22,14 @@ OnDemandCell::OnDemandCell( SST::ComponentId_t id, SST::Params& params )
   clockHandler = new SST::Clock::Handler2<OnDemandCell, &OnDemandCell::clockTick>(this);
   clockTc = registerClock("2s",   clockHandler);
 
-  nwPort = configureLink("nwPort", new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
-  nPort  = configureLink("nPort",  new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
-  nePort = configureLink("nePort", new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
-  wPort  = configureLink("wPort",  new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
-  ePort  = configureLink("ePort",  new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
-  swPort = configureLink("swPort", new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
-  sPort  = configureLink("sPort",  new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
-  sePort = configureLink("sePort", new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
+  nwPort = configureLink("nwPort", new SST::Event::Handler<OnDemandCell>(this, &OnDemandCell::handleEvent));
+  nPort  = configureLink("nPort",  new SST::Event::Handler<OnDemandCell>(this, &OnDemandCell::handleEvent));
+  nePort = configureLink("nePort", new SST::Event::Handler<OnDemandCell>(this, &OnDemandCell::handleEvent));
+  wPort  = configureLink("wPort",  new SST::Event::Handler<OnDemandCell>(this, &OnDemandCell::handleEvent));
+  ePort  = configureLink("ePort",  new SST::Event::Handler<OnDemandCell>(this, &OnDemandCell::handleEvent));
+  swPort = configureLink("swPort", new SST::Event::Handler<OnDemandCell>(this, &OnDemandCell::handleEvent));
+  sPort  = configureLink("sPort",  new SST::Event::Handler<OnDemandCell>(this, &OnDemandCell::handleEvent));
+  sePort = configureLink("sePort", new SST::Event::Handler<OnDemandCell>(this, &OnDemandCell::handleEvent));
 
   if(id == 0) {
     registerAsPrimaryComponent();
@@ -46,11 +46,6 @@ void OnDemandCell::setup() {
 void OnDemandCell::handleEvent(SST::Event *ev) {
  if(!clockOn) {
     clockOn = true;
-    // TODO: reregisterClock changes in SST 15.0 to use a different signature
-    //       that doesn't exist in SST 14.0, so we need to check the version
-    //       and use the appropriate function, e.g.:
-    // reregisterClock(*clockTc, clockHandler); // SST 15.0
-    // reregisterClock(clockTc, clockHandler); // SST 14.0
     reregisterClock(clockTc, clockHandler);
   }
   aliveNeighbors += 1;
@@ -93,11 +88,6 @@ bool OnDemandCell::clockTick(SST::Cycle_t currentCycle) {
   update();
   if(!isAlive && clockOn) {
     clockOn = false;
-    // TODO: unregisterClock changes in SST 15.0 to use a different signature
-    //       that doesn't exist in SST 14.0, so we need to check the version
-    //       and use the appropriate function, e.g.:
-    // unregisterClock(*clockTc, clockHandler); // SST 15.0
-    // unregisterClock(clockTc, clockHandler); // SST 14.0
     unregisterClock(clockTc, clockHandler);
   }
   report();
@@ -105,19 +95,3 @@ bool OnDemandCell::clockTick(SST::Cycle_t currentCycle) {
   return false;
 }
 
-#ifdef ENABLE_SSTCHECKPOINT
-void OnDemandCell::serialize_order(SST::Core::Serialization::serializer& ser) {
-    SST::Component::serialize_order(ser);
-    SST_SER(isAlive);
-    SST_SER(clockOn);
-    SST_SER(aliveNeighbors);
-    SST_SER(nwPort);
-    SST_SER(nPort);
-    SST_SER(nePort);
-    SST_SER(wPort);
-    SST_SER(ePort);
-    SST_SER(swPort);
-    SST_SER(sPort);
-    SST_SER(sePort);
-}
-#endif // ENABLE_SSTCHECKPOINT

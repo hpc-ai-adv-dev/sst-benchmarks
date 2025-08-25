@@ -25,11 +25,16 @@ if __name__ == "__main__":
   #for invalid_dir, reason in invalid_dirs:
   #  print(f"Skipping invalid directory {invalid_dir}: {reason}")
 
+  print(f"{len(result_dirs)} Results directories: ", result_dirs)
   with ProcessPoolExecutor(max_workers=8) as executor:
     data = list(executor.map(extract_row, result_dirs))
 
+  failure_indices = [i for i, d in enumerate(data) if d is None]
+  additional_failures = [result_dirs[i] for i in failure_indices]
+  invalid_dirs += [(failure, 'Collection failure') for failure in additional_failures]
   #data = [extract_row(result_dir) for result_dir in result_dirs]
   data = [d for d in data if d is not None]
+  print("after null cull: ", len(data))
   if len(data) == 0:
     print("No valid data found. Exiting.")
     sys.exit(0)
