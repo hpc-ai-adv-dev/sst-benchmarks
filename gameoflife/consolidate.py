@@ -126,7 +126,7 @@ def extract_parameters(results_dir):
   experiment_name = parts[0]
   script_name = parts[1]
   print(parts)
-  experiment_name, script_name, node_count, rank_count, thread_count, width, height, probability, demand, time_to_run, post_if_alive = parts
+  experiment_name, script_name, node_count, rank_count, thread_count, width, height, probability, demand, time_to_run, post_if_alive, imbalance_factor = parts
 
   return {
     'Experiment Name': experiment_name,
@@ -139,7 +139,8 @@ def extract_parameters(results_dir):
     'Probability': probability,
     'Demand': demand,
     'Post If Alive': post_if_alive.strip('s'),
-    'Script Name': script_name
+    'Script Name': script_name,
+    'Imbalance Factor': imbalance_factor
   }
 
 failures = []

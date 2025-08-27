@@ -18,3 +18,6 @@ clean:
 	rm -rf libgol.so
 	sst-register -u libgol
 	rm *.json *.tmp *.time *.out
+
+dataclean:
+	rm -rf *_dir *.out

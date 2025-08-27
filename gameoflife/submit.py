@@ -49,6 +49,7 @@ def parse_arguments():
   parser.add_argument('--times_to_run', '--times-to-run', '--time-to-run',type=int_list, help="List of times to run the benchmark, in seconds, e.g., '1 1000 2500'", required=True)
   parser.add_argument('--posts_if_alive', '--post-if-alive', type=int_list, help="Values for postIfAlive. 0 or 1 on/off. Default is [0].", default=[0])
 
+  parser.add_argument('--imbalance_factors', '--imbalance-factors', '--imbalance-factor', type=float_list, default=[0.0], help="List of imbalance factors for the simulation's thread-level distribution. This value should be between 0 (representing perfectly load balanced), and 1.0 (representing a single thread doing all the work). Default is [0.0].")
   args = parser.parse_args()
   assert(args.widths is not None or args.components_per_node is not None), "Either --width or --components-per-node must be specified."
   return args
@@ -80,13 +81,13 @@ if __name__ == "__main__":
 
   script = args.script
   for (width, height, node_count, rank_count, thread_count) in shapes:
-    for (probability, demand, time_to_run, post_if_alive) in itertools.product( args.probabilities, args.demands, args.times_to_run, args.posts_if_alive):
+    for (probability, demand, time_to_run, post_if_alive, imbalance_factor) in itertools.product( args.probabilities, args.demands, args.times_to_run, args.posts_if_alive, args.imbalance_factors):
       time_to_run = str(time_to_run) + 's'
-      output_file = f"{args.name}_{script}_{node_count}_{rank_count}_{thread_count}_{width}_{height}_{probability}_{demand}_{time_to_run}_{post_if_alive}"
+      output_file = f"{args.name}_{script}_{node_count}_{rank_count}_{thread_count}_{width}_{height}_{probability}_{demand}_{time_to_run}_{post_if_alive}_{imbalance_factor}"
       sbatch_portion = f"sbatch  -J {args.name} -N {node_count} --ntasks-per-node {rank_count} --cpus-per-task {thread_count} -o {output_file}.out"
       bool_flags = ' --postOnlyIfAlive ' if post_if_alive else ' '
       bool_flags += ' --onDemandMode ' if demand else ' '
-      sim_flags = bool_flags + f" --prob {probability}"
+      sim_flags = bool_flags + f" --prob {probability} --imbalance-factor {imbalance_factor}"
       command = f'{sbatch_portion} -- {script_dir}/gol-dispatch.sh {script} {node_count} {rank_count} {thread_count} {width} {height} {time_to_run} "{sim_flags}" {output_file} '
       # Construct the command
 

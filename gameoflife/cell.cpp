@@ -4,7 +4,7 @@
 
 class GolEvent : public SST::Event {
   public:
-    GolEvent() : SST::Event() { }
+    GolEvent() : SST::Event() { std::cout << "Initializing gol event\n " << std::flush;}
 
     void serialize_order(SST::Core::Serialization::serializer &ser) override {
       Event::serialize_order(ser);
@@ -15,7 +15,11 @@ class GolEvent : public SST::Event {
 Cell::Cell( SST::ComponentId_t id, SST::Params& params )
   : SST::Component(id)
 {
+  
   isAlive = params.find<bool>("isAlive", false);
+  int row = params.find<int>("row", -1);
+  int col = params.find<int>("col", -1);
+  std::cout << "Initializing a cell, id = " << id << ". position = " << row << " " << col << "\n" << std::flush;
   aliveNeighbors = 0;
 
   registerClock("2s",   new SST::Clock::Handler<Cell>(this, &Cell::clockTick));
@@ -29,24 +33,29 @@ Cell::Cell( SST::ComponentId_t id, SST::Params& params )
   sPort  = configureLink("sPort",  new SST::Event::Handler<Cell>(this, &Cell::handleEvent));
   sePort = configureLink("sePort", new SST::Event::Handler<Cell>(this, &Cell::handleEvent));
 
+    
+  std::cout << "Done configuring links\n" << std::flush;
   if(id == 0) {
     registerAsPrimaryComponent();
-    primaryComponentDoNotEndSim();
+  primaryComponentDoNotEndSim();
   }
 }
 
 Cell::~Cell() { }
 
 void Cell::setup() {
+  std::cout << "setup\n" << std::flush;
   communicate();
 }
 
 void Cell::handleEvent(SST::Event *ev) {
+  std::cout << "handleEvent\n" << std::flush;
   aliveNeighbors += 1;
   delete ev;
 }
 
 void Cell::update() {
+  std::cout << "update\n" << std::flush;
   if(isAlive && (aliveNeighbors < 2 || aliveNeighbors > 3)) {
     isAlive = false;
   } else if(!isAlive && aliveNeighbors == 3) {
@@ -56,6 +65,7 @@ void Cell::update() {
 }
 
 void Cell::communicate() {
+  std::cout << "communicate\n" << std::flush;
   if(isAlive) {
     if(isPortConnected("nwPort")) { nwPort->send(new GolEvent()); }
     if(isPortConnected("nPort"))  { nPort->send(new GolEvent());  }
@@ -69,13 +79,13 @@ void Cell::communicate() {
 }
 
 void Cell::report() {
-  /*std::cout << (isAlive ? "#" : ".");
+  std::cout << (isAlive ? "#" : ".");
   if(getName().back() == '9') {
     std::cout << std::endl;
   }
   if(getName() == "cell_9_9") {
     std::cout << std::endl;
-  }*/
+  }
 }
 
 bool Cell::clockTick(SST::Cycle_t currentCycle) {

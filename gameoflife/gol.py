@@ -13,16 +13,60 @@ parser.add_argument('--postOnlyIfAlive', default=False, action='store_true')
 parser.add_argument('--verbose',         default=False, action='store_true')
 # Set the seed >= 0 to enable reproducible game results
 parser.add_argument('--seed',            type=int, default=-1)
+parser.add_argument('--imbalance_factor', '--imbalance-factor', type=float, default=0.0, help="Imbalance factor for the simulation's thread-level distribution." \
+                    " This value should be between 0 (representing perfectly load balanced), and 1.0 (representing a single thread doing all the work).")
 args = parser.parse_args()
 
 sst.setProgramOption("stop-at", args.stop_at)
 
+
 myRank = sst.getMyMPIRank()
 numRanks = sst.getMPIRankCount()
+numThreads = sst.getThreadCount()
+
 cellType = "gol.onDemandCell" if args.onDemandMode else "gol.cell"
+
+def imbalance_thread_map(width, imbalance_factor, thread_count):
+  """
+  Create the boundaries for what column indices each thread gets
+  """
+  import math
+  # firstThread + (otherThreads * (thread_count - 1)) == 1
+  # firstThread - otherThreads == imbalance_factor
+  # otherThreads = firstThread - imbalance_factor
+
+  # 1 ==  firstThread + (thread_count - 1) * otherThreads
+  # 1 == firstThread + (thread_count - 1) * (firstThread - imbalance_factor)
+  # 1 == firstThread + (thread_count - 1) * firstThread - (thread_count - 1) * imbalance_factor
+  # 1 + (thread_count - 1) * imbalance_factor == firstThread * thread_count
+  # firstThread == (1 + (thread_count - 1) * imbalance_factor) / thread_count
+  first_thread_weight = (1 + (thread_count - 1) * imbalance_factor) / thread_count
+  other_thread_weight = first_thread_weight - imbalance_factor
+  weights = [first_thread_weight] + [other_thread_weight] * (thread_count - 1)
+
+  buckets = [0]
+  for w in weights:
+    buckets.append(buckets[-1] + w * width)
+
+  print("Buckets: ", buckets)
+  def thread_for_index(i: int):
+    for t in range(thread_count):
+      if buckets[t] <= i < buckets[t + 1]:
+        return t
+    return thread_count - 1
+
+  return thread_for_index
+
 
 if args.M == -1:
   args.M = args.N
+
+thread_map = imbalance_thread_map(args.N, args.imbalance_factor, numThreads)
+def col_to_thread(i):
+  if i < 0 or i >= args.N:
+    raise ValueError(f"Column index {i} is out of bounds for N={args.N}")
+  # Calculate the thread based on the column index
+  return thread_map(i)
 
 if args.seed >= 0:
   random.seed(args.seed)
@@ -89,11 +133,15 @@ for row in range(max(0,myRowStart-1), min(args.M,myRowEnd+2)):
     elif row > myRowEnd:
       cell.setRank(myRank+1)
     else:
-      cell.setRank(myRank)
+      print("setting rank and thread: ", myRank, ' ', col_to_thread(col))
+      cell.setRank(myRank, col_to_thread(col))
       rval = random.randint(0,100)
       cell.addParams({"isAlive":      rval <= args.prob,
                       "postIfDead":   not args.postOnlyIfAlive,
-                      "shouldReport": args.verbose})
+                      "shouldReport": args.verbose,
+                      "row" : row,
+                      'col' : col
+                      })
 
 # Create links for all components owned by this rank
 for row in range(max(0,myRowStart), min(args.M,myRowEnd+1)):
@@ -106,3 +154,5 @@ for row in range(max(0,myRowStart), min(args.M,myRowEnd+1)):
     createLink(row, col,  1, -1, "swPort", "nePort" )
     createLink(row, col,  1,  0, "sPort",  "nPort"  )
     createLink(row, col,  1,  1, "sePort", "nwPort" )
+
+print("Done with initializing from python file, rank ", myRank)
