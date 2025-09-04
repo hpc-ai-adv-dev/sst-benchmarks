@@ -126,9 +126,9 @@ for row in range(max(0,myRowStart-1), min(args.M,myRowEnd+2)):
     cell = sst.Component("cell_%i_%i" % (row,col), cellType)
     cells[row][col] = cell
     if row < myRowStart:
-      cell.setRank(myRank-1)
+      cell.setRank(myRank-1, col_to_thread(col))
     elif row > myRowEnd:
-      cell.setRank(myRank+1)
+      cell.setRank(myRank+1, col_to_thread(col))
     else:
       cell.setRank(myRank, col_to_thread(col))
       rval = random.randint(0,100)
