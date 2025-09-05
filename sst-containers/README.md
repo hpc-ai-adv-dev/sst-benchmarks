@@ -38,6 +38,9 @@ This example demonstrates:
 3. Running a simulation inside the container
 4. An optional next step of migrating the container to an HPE EX system.
 
+More details about the process including setting up prerequisite software and
+troubleshooting tips can be found in the later sections of this document.
+
 ### Prerequisites
 
 Ensure you have the following:
@@ -212,10 +215,11 @@ apptainer build sst-core-15.0.0.sif oci-archive://sst-core-15.0.0.tar
 ```
 
 4. Now you can run the SST container on the HPC system using Apptainer:
-
 ```bash
 apptainer run --bind $(pwd):/workspace --pwd /workspace sst-core-15.0.0.sif
 ```
+
+Note: be sure to `exit` the running container before attempting to launch a distributed run in the next step.
 
 5. To run a simulation on the HPC system, you can use `e4s-cl` to manage the execution
 and binding of host libraries to the container:
@@ -663,6 +667,14 @@ from the `sst-benchmarks` repository, https://github.com/brandon-neth/sst-benchm
 If using the pingpong benchmark, set your working directory to the `pingpong/` directory.
 Otherwise, set your working directory to where you build your SST component library.
 
+**Important**: Ensure you are in the actual directory path, not an aliased or symbolic link path. On Linux systems, you can verify this with:
+
+```bash
+cd $(pwd -P)
+```
+
+This command resolves any symbolic links and ensures you're in the canonical path.
+
 From your working directory, you can run the following command to launch the SST
 container:
 
@@ -703,6 +715,29 @@ apptainer run --bind $(pwd):/workspace --pwd /workspace sst-15.0.0.sif
 # Inside the container, run the same commands:
 make
 sst pingpong.py -- --corners --verbose
+```
+
+**Note**: By default, apptainer binds your HOME directory into the container. If this is not desirable, disable this behavior with the `--no-home` flag:
+
+```bash
+apptainer run --no-home --bind $(pwd):/workspace --pwd /workspace sst-15.0.0.sif
+```
+
+**Common Issue**: If you encounter an error when trying to `make` your project while running an SST container with apptainer, such as:
+
+```
+Unable to open configuration at either: /opt/SST/15.0.0/etc/sst/sstsimulator.conf or /home/users/<USER>/.sst/sstsimulator.conf, one of these files must be editable.
+```
+
+This can be resolved by creating an empty SST configuration file and binding it into the container:
+
+```bash
+# Create the SST configuration directory and file
+mkdir -p ~/.sst
+touch ~/.sst/sstsimulator.conf
+
+# Run apptainer with the additional bind mount
+apptainer run --bind $(pwd):/workspace --bind ~/.sst:/home/users/$USER/.sst --pwd /workspace sst-15.0.0.sif
 ```
 
 #### Distributed Parallelism with e4s-cl and SST Containers
@@ -770,8 +805,24 @@ When the job is finished, the output will be in the file `output.o<jobID>`
   ```bash
   podman build --build-arg NCPUS=2 -t sst-core:latest .
   ```
+
 **If the simulation fails:**
 - Verify the benchmarks built successfully: `ls *.so`
 - Check SST installation: `sst --version`
 - Ensure you're in the correct directory inside the container: `pwd`
 - Make sure the container image is on a file system available to all the compute nodes
+
+**If you encounter "chdir: no such file or directory" errors:**
+- Verify you have established a bind mount from the host to the container at a level that includes your simulation files
+- Ensure you're not launching the container from an aliased or symbolic link path
+- On Linux, use `cd $(pwd -P)` to resolve to the canonical path before running the container
+- Check that your bind mount path is correct: `--bind $(pwd):/workspace`
+
+**If you encounter SST configuration file errors on HPC systems:**
+- The error typically looks like: "Unable to open configuration at either: /opt/SST/15.0.0/etc/sst/sstsimulator.conf or /home/users/<USER>/.sst/sstsimulator.conf"
+- Create an empty SST configuration file: `mkdir -p ~/.sst && touch ~/.sst/sstsimulator.conf`
+- Add a bind mount for the configuration directory when running apptainer: `--bind ~/.sst:/home/users/$USER/.sst`
+
+**If HOME directory binding causes issues with apptainer:**
+- Use the `--no-home` flag to disable automatic HOME directory binding: `apptainer run --no-home --bind $(pwd):/workspace ...`
+- This prevents potential conflicts with host environment configurations
