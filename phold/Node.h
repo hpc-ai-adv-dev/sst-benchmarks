@@ -10,9 +10,6 @@
 #include <sst/dbg/SSTDebug.h>
 #endif
 
-
-
-
 class Node : public SST::Component {
   public:
     Node( SST::ComponentId_t id, SST::Params& params );
@@ -30,12 +27,12 @@ class Node : public SST::Component {
     virtual size_t movementFunction();
     virtual SST::SimTime_t timestepIncrementFunction();
 
-#ifdef ENABLE_SSTCHECKPOINT
+  #ifdef ENABLE_SSTCHECKPOINT
     // Serialization support for checkpointing/restart
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
     // Default constructor for checkpointing - initialize critical members
     Node() : rng(nullptr), numLinks_for_rng(0) {}
-#endif
+  #endif
 
     // Register the component
     SST_ELI_REGISTER_COMPONENT(
@@ -98,19 +95,18 @@ class Node : public SST::Component {
     SST::RNG::MersenneRNG* rng;
     int numLinks_for_rng; // Store numLinks for RNG range calculations
 
-#ifdef ENABLE_SSTDBG
+  #ifdef ENABLE_SSTDBG
     void printStatus(SST::Output& out) override;
     SSTDebug *dbg;
-#endif
+  #endif
 
-#ifdef ENABLE_SSTCHECKPOINT
+  #ifdef ENABLE_SSTCHECKPOINT
     ImplementSerializable(Node)
-#endif
+  #endif
 };
 
 
 class ExponentialNode : public Node {
-
   public:
   #ifdef ENABLE_SSTCHECKPOINT
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
@@ -118,7 +114,8 @@ class ExponentialNode : public Node {
   #endif
     ExponentialNode(SST::ComponentId_t id, SST::Params& params);
     SST::SimTime_t timestepIncrementFunction() override;
-  SST_ELI_REGISTER_COMPONENT(
+
+    SST_ELI_REGISTER_COMPONENT(
       ExponentialNode,   // class
       "phold",   // element library
       "ExponentialNode", // component
@@ -134,13 +131,13 @@ class ExponentialNode : public Node {
 
     double multiplier;
 
-#ifdef ENABLE_SSTCHECKPOINT
+  #ifdef ENABLE_SSTCHECKPOINT
     ImplementSerializable(ExponentialNode)
-#endif
+  #endif
 };
 
 
-class UniformNode: public Node {
+class UniformNode : public Node {
   public:
   #ifdef ENABLE_SSTCHECKPOINT
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
@@ -166,9 +163,9 @@ class UniformNode: public Node {
 
     double min, max;
 
-#ifdef ENABLE_SSTCHECKPOINT
+  #ifdef ENABLE_SSTCHECKPOINT
     ImplementSerializable(UniformNode)
-#endif
+  #endif
 
 };
 #endif

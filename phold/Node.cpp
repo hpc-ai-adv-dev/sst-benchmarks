@@ -3,9 +3,6 @@
 #include <cmath>
 #include "Node.h"
 
-
-
-
 Node::Node( SST::ComponentId_t id, SST::Params& params )
   : SST::Component(id)
 {
@@ -193,7 +190,6 @@ void Node::serialize_order(SST::Core::Serialization::serializer& ser) {
     // SST RNG has built-in serialization support
     SST_SER(rng);
 }
-
 
 void ExponentialNode::serialize_order(SST::Core::Serialization::serializer& ser) {
     // Serialize component state for checkpointing
