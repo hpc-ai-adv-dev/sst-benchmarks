@@ -122,6 +122,9 @@ void Node::handleEvent(SST::Event *ev){
   }
 
   SST::SimTime_t psDelay = timestepIncrementFunction();
+
+  // Note: Using pointer API for compatibility with both SST 14.1.0 and 15.0.0
+  // This generates a deprecation warning in SST 15.0.0
   links[nextRecipientLinkId]->send(psDelay, ps, createEvent());
 }
 
@@ -175,6 +178,7 @@ void Node::serialize_order(SST::Core::Serialization::serializer& ser) {
     SST_SER(myCol);
     SST_SER(verbose);
     SST_SER(numRings);
+    SST_SER(links);
     SST_SER(numLinks);
     SST_SER(numLinks_for_rng);
     SST_SER(rowCount);

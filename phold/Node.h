@@ -33,8 +33,8 @@ class Node : public SST::Component {
 #ifdef ENABLE_SSTCHECKPOINT
     // Serialization support for checkpointing/restart
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
-    // Default constructor for checkpointing
-    Node() = default;
+    // Default constructor for checkpointing - initialize critical members
+    Node() : rng(nullptr), numLinks_for_rng(0) {}
 #endif
 
     // Register the component

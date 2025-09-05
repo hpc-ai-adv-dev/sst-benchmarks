@@ -1,7 +1,7 @@
-CXX=$(shell PATH=/lus/bnchlu1/rezaii/sst/14.1.0/bin:$PATH sst-config --CXX)
-CXXFLAGS=$(shell PATH=/lus/bnchlu1/rezaii/sst/14.1.0/bin:$PATH sst-config --ELEMENT_CXXFLAGS) -g
-LDFLAGS=$(shell PATH=/lus/bnchlu1/rezaii/sst/14.1.0/bin:$PATH sst-config --ELEMENT_LDFLAGS)
-PARAMS=
+CXX=$(shell sst-config --CXX)
+CXXFLAGS=$(shell sst-config --ELEMENT_CXXFLAGS) -g
+LDFLAGS=$(shell sst-config --ELEMENT_LDFLAGS)
+PARAMS=-DENABLE_SSTCHECKPOINT
 #PARAMS="-DENABLE_SSTDBG"
 
 SRCS=Node.cpp
@@ -12,7 +12,7 @@ libphold.so: $(SRCS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(PARAMS) -o $@ $^
 
 install:
-	PATH=/lus/bnchlu1/rezaii/sst/14.1.0/bin:$PATH sst-register phold phold_LIBDIR=$(CURDIR)
+	sst-register phold phold_LIBDIR=$(CURDIR)
 
 dataclean:
 	 rm -rf *_dir *.out
