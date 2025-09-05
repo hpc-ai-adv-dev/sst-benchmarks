@@ -1,6 +1,6 @@
-CXX=$(shell sst-config --CXX)
-CXXFLAGS=$(shell sst-config --ELEMENT_CXXFLAGS) -g
-LDFLAGS=$(shell sst-config --ELEMENT_LDFLAGS)
+CXX=$(shell PATH=/lus/bnchlu1/rezaii/sst/14.1.0/bin:$PATH sst-config --CXX)
+CXXFLAGS=$(shell PATH=/lus/bnchlu1/rezaii/sst/14.1.0/bin:$PATH sst-config --ELEMENT_CXXFLAGS) -g
+LDFLAGS=$(shell PATH=/lus/bnchlu1/rezaii/sst/14.1.0/bin:$PATH sst-config --ELEMENT_LDFLAGS)
 PARAMS=
 #PARAMS="-DENABLE_SSTDBG"
 
@@ -12,7 +12,7 @@ libphold.so: $(SRCS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(PARAMS) -o $@ $^
 
 install:
-	sst-register phold phold_LIBDIR=$(CURDIR)
+	PATH=/lus/bnchlu1/rezaii/sst/14.1.0/bin:$PATH sst-register phold phold_LIBDIR=$(CURDIR)
 
 dataclean:
 	 rm -rf *_dir *.out
@@ -21,5 +21,5 @@ dataclean:
 clean:
 	rm -rf tests/graphs libphold.so
 	sst-register -u phold
-	rm -r *.json *.tmp *.time *.out 
+	rm -r *.json *.tmp *.time *.out
 
