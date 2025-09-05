@@ -193,4 +193,18 @@ void Node::serialize_order(SST::Core::Serialization::serializer& ser) {
     // SST RNG has built-in serialization support
     SST_SER(rng);
 }
+
+
+void ExponentialNode::serialize_order(SST::Core::Serialization::serializer& ser) {
+    // Serialize component state for checkpointing
+    Node::serialize_order(ser);
+    SST_SER(multiplier);
+}
+
+void UniformNode::serialize_order(SST::Core::Serialization::serializer& ser) {
+    // Serialize component state for checkpointing
+    Node::serialize_order(ser);
+    SST_SER(min);
+    SST_SER(max);
+}
 #endif

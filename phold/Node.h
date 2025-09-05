@@ -112,6 +112,10 @@ class Node : public SST::Component {
 class ExponentialNode : public Node {
 
   public:
+  #ifdef ENABLE_SSTCHECKPOINT
+    void serialize_order(SST::Core::Serialization::serializer& ser) override;
+    ExponentialNode() : Node() {}
+  #endif
     ExponentialNode(SST::ComponentId_t id, SST::Params& params);
     SST::SimTime_t timestepIncrementFunction() override;
   SST_ELI_REGISTER_COMPONENT(
@@ -129,11 +133,19 @@ class ExponentialNode : public Node {
     )
 
     double multiplier;
+
+#ifdef ENABLE_SSTCHECKPOINT
+    ImplementSerializable(ExponentialNode)
+#endif
 };
 
 
 class UniformNode: public Node {
   public:
+  #ifdef ENABLE_SSTCHECKPOINT
+    void serialize_order(SST::Core::Serialization::serializer& ser) override;
+    UniformNode() : Node() {}
+  #endif
     UniformNode(SST::ComponentId_t id, SST::Params& params);
     SST::SimTime_t timestepIncrementFunction() override;
 
@@ -154,6 +166,9 @@ class UniformNode: public Node {
 
     double min, max;
 
+#ifdef ENABLE_SSTCHECKPOINT
+    ImplementSerializable(UniformNode)
+#endif
 
 };
 #endif
