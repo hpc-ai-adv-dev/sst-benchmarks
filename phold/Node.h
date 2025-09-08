@@ -31,7 +31,7 @@ class Node : public SST::Component {
     // Serialization support for checkpointing/restart
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
     // Default constructor for checkpointing - initialize critical members
-    Node() : rng(nullptr), numLinks_for_rng(0) {}
+    Node() : rng(nullptr), numLinks(0) {}
   #endif
 
     // Register the component
@@ -93,7 +93,6 @@ class Node : public SST::Component {
 
     // SST RNG system for proper checkpoint serialization
     SST::RNG::MersenneRNG* rng;
-    int numLinks_for_rng; // Store numLinks for RNG range calculations
 
   #ifdef ENABLE_SSTDBG
     void printStatus(SST::Output& out) override;

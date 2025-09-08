@@ -33,7 +33,6 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
 
   recvCount = 0;
   numLinks = (2*numRings+1) * (2*numRings+1);
-  numLinks_for_rng = numLinks; // Store for RNG calculations
 
   // Use SST's Mersenne RNG for proper checkpoint serialization
   rng = new SST::RNG::MersenneRNG(myId);
@@ -121,14 +120,15 @@ void Node::handleEvent(SST::Event *ev){
   SST::SimTime_t psDelay = timestepIncrementFunction();
 
   // Note: Using pointer API for compatibility with both SST 14.1.0 and 15.0.0
-  // This generates a deprecation warning in SST 15.0.0
+  // This generates a deprecation warning in SST 15.0.0 because the link->send API
+  // is being changed to no longer accept the shared TimeConverter object.
   links[nextRecipientLinkId]->send(psDelay, ps, createEvent());
 }
 
 size_t Node::movementFunction() {
   // Use SST RNG to generate uniform integer in range [0, numLinks-1]
   uint32_t random_val = rng->generateNextUInt32();
-  return random_val % numLinks_for_rng;
+  return random_val % numLinks;
 }
 
 // Base class has no additional delay.
@@ -177,7 +177,6 @@ void Node::serialize_order(SST::Core::Serialization::serializer& ser) {
     SST_SER(numRings);
     SST_SER(links);
     SST_SER(numLinks);
-    SST_SER(numLinks_for_rng);
     SST_SER(rowCount);
     SST_SER(colCount);
     SST_SER(eventDensity);
