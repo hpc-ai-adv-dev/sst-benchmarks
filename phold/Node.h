@@ -4,13 +4,11 @@
 #include <sst/core/component.h>
 #include <sst/core/link.h>
 #include <sst/core/sst_types.h>
-#include <random>
+#include <sst/core/serialization/serialize.h>
+#include <sst/core/rng/mersenne.h>
 #ifdef ENABLE_SSTDBG
 #include <sst/dbg/SSTDebug.h>
 #endif
-
-
-
 
 class Node : public SST::Component {
   public:
@@ -28,6 +26,13 @@ class Node : public SST::Component {
 
     virtual size_t movementFunction();
     virtual SST::SimTime_t timestepIncrementFunction();
+
+  #ifdef ENABLE_SSTCHECKPOINT
+    // Serialization support for checkpointing/restart
+    void serialize_order(SST::Core::Serialization::serializer& ser) override;
+    // Default constructor for checkpointing - initialize critical members
+    Node() : rng(nullptr), numLinks(0) {}
+  #endif
 
     // Register the component
     SST_ELI_REGISTER_COMPONENT(
@@ -63,7 +68,8 @@ class Node : public SST::Component {
       //std::cout << "setting up links on rank " << getRank().rank << "...\n" << std::flush;
       for (int i = 0; i < links.size(); i++) {
         std::string portName = "port" + std::to_string(i);
-        links[i] = configureLink(portName, new SST::Event::Handler<T>(dynamic_cast<T*>(this), &T::handleEvent));
+        auto *evHandler = new SST::Event::Handler2<Node, &Node::handleEvent>(this);
+        links[i] = configureLink(portName, evHandler);
         if (links[i] == nullptr) {
           //std::cerr << "Failed to configure link " << portName << " on rank " << getRank().rank << " id " << myId << "\n" << std::flush;
         }
@@ -85,23 +91,30 @@ class Node : public SST::Component {
 
     int recvCount;
 
-    std::mt19937 rng;
-    std::uniform_int_distribution<int> uid;
-    std::uniform_real_distribution<double> urd;
-    
-#ifdef ENABLE_SSTDBG
+    // SST RNG system for proper checkpoint serialization
+    SST::RNG::MersenneRNG* rng;
+
+  #ifdef ENABLE_SSTDBG
     void printStatus(SST::Output& out) override;
     SSTDebug *dbg;
-#endif
+  #endif
+
+  #ifdef ENABLE_SSTCHECKPOINT
+    ImplementSerializable(Node)
+  #endif
 };
 
 
 class ExponentialNode : public Node {
-
   public:
+  #ifdef ENABLE_SSTCHECKPOINT
+    void serialize_order(SST::Core::Serialization::serializer& ser) override;
+    ExponentialNode() : Node() {}
+  #endif
     ExponentialNode(SST::ComponentId_t id, SST::Params& params);
     SST::SimTime_t timestepIncrementFunction() override;
-  SST_ELI_REGISTER_COMPONENT(
+
+    SST_ELI_REGISTER_COMPONENT(
       ExponentialNode,   // class
       "phold",   // element library
       "ExponentialNode", // component
@@ -116,14 +129,22 @@ class ExponentialNode : public Node {
     )
 
     double multiplier;
+
+  #ifdef ENABLE_SSTCHECKPOINT
+    ImplementSerializable(ExponentialNode)
+  #endif
 };
 
 
-class UniformNode: public Node {
+class UniformNode : public Node {
   public:
+  #ifdef ENABLE_SSTCHECKPOINT
+    void serialize_order(SST::Core::Serialization::serializer& ser) override;
+    UniformNode() : Node() {}
+  #endif
     UniformNode(SST::ComponentId_t id, SST::Params& params);
     SST::SimTime_t timestepIncrementFunction() override;
-    
+
     SST_ELI_REGISTER_COMPONENT(
       UniformNode,   // class
       "phold",   // element library
@@ -141,6 +162,9 @@ class UniformNode: public Node {
 
     double min, max;
 
+  #ifdef ENABLE_SSTCHECKPOINT
+    ImplementSerializable(UniformNode)
+  #endif
 
 };
 #endif

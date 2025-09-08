@@ -1,7 +1,7 @@
 CXX=$(shell sst-config --CXX)
 CXXFLAGS=$(shell sst-config --ELEMENT_CXXFLAGS) -g
 LDFLAGS=$(shell sst-config --ELEMENT_LDFLAGS)
-PARAMS=
+PARAMS=-DENABLE_SSTCHECKPOINT
 #PARAMS="-DENABLE_SSTDBG"
 
 SRCS=Node.cpp
@@ -21,5 +21,5 @@ dataclean:
 clean:
 	rm -rf tests/graphs libphold.so
 	sst-register -u phold
-	rm -r *.json *.tmp *.time *.out 
+	rm -r *.json *.tmp *.time *.out
 
