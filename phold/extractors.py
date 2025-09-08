@@ -228,6 +228,12 @@ def extract_failure_reason(srun_output):
   for line in lines:
     if "DUE TO TIME LIMIT" in line:
       return "Timeout"
+    elif "inet_connect:socket error" in line:
+      return "Network Socket Failure"
+    elif "LE resources not recovered during flow control. FI_CXI_RX_MATCH_MODE=[hybrid|software] is required" in line:
+      return "Network Fabric Failure"
+    elif 'MPICH ERROR' in line:
+      return "MPI Failure"
     elif "DUE TO TASK FAILURE" in line:
       return "Out of Memory"
 
