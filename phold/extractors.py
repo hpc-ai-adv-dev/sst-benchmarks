@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+import humanfriendly
 
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
@@ -15,7 +16,7 @@ def identify_result_dirs(experiment_name=None):
   for item in os.listdir('.'):
     if os.path.isdir(item) and item.endswith('_dir'):
       if experiment_name is not None and not item.startswith(experiment_name):
-        continue  
+        continue
       has_time_file = any(file.endswith('.time') for file in os.listdir(item))
       has_rank_files = any(file.startswith('rank') for file in os.listdir(item))
 
@@ -162,9 +163,13 @@ def extract_time_data(results_dir):
         lines = f.readlines()
         build_time = float(lines[0].strip())
         run_time = float(lines[1].strip())
+        max_resident = humanfriendly.parse_size(lines[2].strip())
+        max_global = humanfriendly.parse_size(lines[3].strip())
         return {
           'Build Time (s)': build_time,
-          'Run Time (s)': run_time
+          'Run Time (s)': run_time,
+          'Max Resident Set Size (bytes)': max_resident,
+          'Max Global Set Size (bytes)': max_global
         }
 
   return None
@@ -191,6 +196,7 @@ def extract_parameters(results_dir):
   large_payload = int(parts[10])
   large_event_fraction = float(parts[11])
   imbalance_factor = float(parts[12]) if len(parts) > 12 else 0.0  # Default to 0.0 if not present
+  component_size = int(parts[13]) if len(parts) > 13 else 0.0
 
   return {
     'Experiment Name': experiment_name,
@@ -205,35 +211,51 @@ def extract_parameters(results_dir):
     'Small Payload (bytes)': small_payload,
     'Large Payload (bytes)': large_payload,
     'Large Event Fraction': large_event_fraction,
-    'Imbalance Factor': imbalance_factor
+    'Imbalance Factor': imbalance_factor,
+    "Component Size": component_size
   }
 
 
-def extract_failure_reason(sbatch_output):
+def extract_failure_reason(srun_output):
   """
-  Extract the failure reason from the sbatch output file.
+  Extract the failure reason from the srun output file.
   """
-  if not os.path.exists(sbatch_output):
-    return "No sbatch output file found."
+  if not os.path.exists(srun_output):
+    return "No srun output file found."
 
-  with open(sbatch_output, 'r') as f:
+  with open(srun_output, 'r') as f:
     lines = f.readlines()
   
-  if "DUE TO TIME LIMIT" in lines[-1]:
-    return "Timeout"
-  else:
-    return "Other Failure"
+  for line in lines:
+    if "DUE TO TIME LIMIT" in line:
+      return "Timeout"
+    elif "inet_connect:socket error" in line:
+      return "Network Socket Failure"
+    elif "LE resources not recovered during flow control. FI_CXI_RX_MATCH_MODE=[hybrid|software] is required" in line:
+      return "Network Fabric Failure"
+    elif 'MPICH ERROR' in line:
+      return "MPI Failure"
+    elif "DUE TO TASK FAILURE" in line:
+      return "Out of Memory"
+
+  return "Other Failure"
   
 
 def extract_row(results_dir):
   try:
     parameters = extract_parameters(results_dir)
+  except Exception as e:
+    #print(f"Error extracting paramater data from {results_dir}. Skipping this directory. Reason: ", e)
+    return None
+  try:
     time_data = extract_time_data(results_dir)
+  except Exception as e:
+    #print(f"Error extracting time data from {results_dir}. Skipping this directory. Reason: ", e)
+    return None
+  try:
     sync_data = extract_sync_data(results_dir)
   except Exception as e:
-
-    #print(f"Error extracting data from {results_dir}. Skipping this directory.")
-
+    #print(f"Error extracting sync data from {results_dir}. Skipping this directory. Reason: ", e)
     return None
-  
+
   return parameters | time_data | sync_data

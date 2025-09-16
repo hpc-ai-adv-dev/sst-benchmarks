@@ -31,6 +31,13 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
   timeToRun = params.find<std::string>("timeToRun");
   eventDensity = params.find<double>("eventDensity");
 
+  int componentSize = params.find<int>("componentSize", 0);
+  if (componentSize == 0) {
+    additionalData = nullptr;
+  } else {
+    additionalData = (char*) malloc(componentSize * sizeof(char));
+  }
+
   recvCount = 0;
   numLinks = (2*numRings+1) * (2*numRings+1);
 
@@ -49,6 +56,9 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
 
 Node::~Node() {
   delete rng;
+  if (additionalData != nullptr) {
+    free(additionalData);
+  }
 #ifdef ENABLE_SSTDBG
   delete dbg;
 #endif
