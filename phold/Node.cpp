@@ -30,6 +30,7 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
   myId = myRow * colCount + myCol;
   timeToRun = params.find<std::string>("timeToRun");
   eventDensity = params.find<double>("eventDensity");
+  
 
   int componentSize = params.find<int>("componentSize", 0);
   if (componentSize == 0) {
@@ -39,19 +40,48 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
   }
 
   recvCount = 0;
-  numLinks = (2*numRings+1) * (2*numRings+1);
+  
 
   // Use SST's Mersenne RNG for proper checkpoint serialization
   rng = new SST::RNG::MersenneRNG(myId);
 
+  int numLinks = (2*numRings+1) * (2*numRings+1);
   links = std::vector<SST::Link*>(numLinks);
 
   setupLinks<Node>();
+
+  if (eventDensity < 0.0) {
+    eventDensity = links.size();
+  }
 
   registerAsPrimaryComponent();
   primaryComponentDoNotEndSim();
   registerClock(timeToRun, new SST::Clock::Handler2<Node, &Node::tick>(this));
   //std::cout << "Done initalizing component " << id << " on rank " <<getRank().rank << "\n" << std::flush;
+
+
+  // movement functions
+  movementFunctionCounter = 0;
+  auto movementRandom = [this]() {
+    uint32_t random_val = rng->generateNextUInt32();
+    return random_val % this->links.size();
+  };
+  auto movementRoundRobin = [this]() {
+    int next = this->movementFunctionCounter;
+    this->movementFunctionCounter = (this->movementFunctionCounter + 1) % this->links.size();
+    return next;
+  };
+
+  std::string movementFunctionStr = params.find<std::string>("movementFunction", "random");
+  if (movementFunctionStr == "random") {
+    movementFunction = movementRandom;
+  } else if (movementFunctionStr == "roundRobin") {
+    movementFunction = movementRoundRobin;
+  } else {
+    std::cerr << "Unrecognized movement function: " << movementFunctionStr << ", defaulting to random\n";
+    movementFunction = movementRandom;
+  }
+  
 }
 
 Node::~Node() {
@@ -65,6 +95,7 @@ Node::~Node() {
 }
 
 void Node::setup() {
+  std::cout << "Setup on component " << myRow << "," << myCol << " with " << links.size() << " links\n";
   double counter = eventDensity;
 
   while (counter >= 1.0) {
@@ -76,6 +107,8 @@ void Node::setup() {
     links.at(recipient)->send(ev);
     counter -= 1.0;
   }
+  
+  if (counter <= 0.0) return;
 
   // At this point, we have counter between 0 and 1.
   // Thus, every 1/counter components should get an extra event
@@ -91,8 +124,7 @@ void Node::setup() {
 }
 
 void Node::finish() {
-  //std::cout << "Component at " << myRow << "," << myCol << " processed " << recvCount << " messages\n";
-  std::string msg = std::to_string(myRow) + "," + std::to_string(myCol) + ":" + std::to_string(recvCount) + "\n";
+  std::string msg = std::to_string(myRow) + "," + std::to_string(myCol) + " : " + std::to_string(links.size()) + "," + std::to_string(recvCount) + "\n";
   if (verbose) {
     std::cerr << msg;
   }
@@ -122,23 +154,18 @@ void Node::handleEvent(SST::Event *ev){
 #endif
   recvCount += 1;
 
+  std::cout << "Handling event at component " << myRow << "," << myCol << " with timestamp " << ev->getDeliveryTime() << "\n";
   size_t nextRecipientLinkId = movementFunction();
   while (links.at(nextRecipientLinkId) == nullptr) {
     nextRecipientLinkId = movementFunction();
   }
-
+  std::cout << "Sending to link " << nextRecipientLinkId << "\n";
   SST::SimTime_t psDelay = timestepIncrementFunction();
 
   // Note: Using pointer API for compatibility with both SST 14.1.0 and 15.0.0
   // This generates a deprecation warning in SST 15.0.0 because the link->send API
   // is being changed to no longer accept the shared TimeConverter object.
   links[nextRecipientLinkId]->send(psDelay, ps, createEvent());
-}
-
-size_t Node::movementFunction() {
-  // Use SST RNG to generate uniform integer in range [0, numLinks-1]
-  uint32_t random_val = rng->generateNextUInt32();
-  return random_val % numLinks;
 }
 
 // Base class has no additional delay.
@@ -186,7 +213,6 @@ void Node::serialize_order(SST::Core::Serialization::serializer& ser) {
     SST_SER(verbose);
     SST_SER(numRings);
     SST_SER(links);
-    SST_SER(numLinks);
     SST_SER(rowCount);
     SST_SER(colCount);
     SST_SER(eventDensity);

@@ -24,14 +24,13 @@ class Node : public SST::Component {
 
     SST::Interfaces::StringEvent * createEvent();
 
-    virtual size_t movementFunction();
     virtual SST::SimTime_t timestepIncrementFunction();
 
   #ifdef ENABLE_SSTCHECKPOINT
     // Serialization support for checkpointing/restart
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
     // Default constructor for checkpointing - initialize critical members
-    Node() : rng(nullptr), numLinks(0) {}
+    Node() : rng(nullptr) {}
   #endif
 
     // Register the component
@@ -57,7 +56,8 @@ class Node : public SST::Component {
      { "largePayload", "Size of large event payloads in bytes", "1024"},
      { "largeEventFraction", "Fraction of events that are large (default: 0.1)", "0.1"},
      { "verbose", "Whether or not to write the recvCount to file.", "0"},
-     { "componentSize", "Additional size of components in bytes", "0"}
+     { "componentSize", "Additional size of components in bytes", "0"},
+     { "movementFunction", "Movement function to use: random, or roundRobin", "random"}
     )
 
     SST_ELI_DOCUMENT_PORTS(
@@ -80,11 +80,12 @@ class Node : public SST::Component {
       }
       //std::cout << "link size: " << links.size();
       //std::cout << "done setting up links on rank " << getRank().rank << "\n" << std::flush;
+      links.erase(std::remove(links.begin(), links.end(), nullptr), links.end());
     }
 
     int myId, myRow, myCol, verbose;
     std::vector<SST::Link*> links;
-    int numRings, numLinks, rowCount, colCount;
+    int numRings, rowCount, colCount;
     double eventDensity;
     std::string timeToRun;
     int smallPayload, largePayload;
@@ -95,6 +96,11 @@ class Node : public SST::Component {
 
     // SST RNG system for proper checkpoint serialization
     SST::RNG::MersenneRNG* rng;
+
+    // Movement function variables
+    std::function<size_t()> movementFunction;
+    int movementFunctionCounter;
+
 
   #ifdef ENABLE_SSTDBG
     void printStatus(SST::Output& out) override;
