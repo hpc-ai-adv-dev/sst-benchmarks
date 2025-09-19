@@ -1,4 +1,4 @@
-import argparse
+import argparse, itertools
 from ahp_graph.Device import Device, PortInfo
 from ahp_graph.DeviceGraph import DeviceGraph
 from ahp_graph.SSTGraph import SSTGraph
@@ -85,23 +85,59 @@ else:
     my_rank = 0
     num_ranks = 1
 
+def port_num(src_i, src_j, dst_i, dst_j, num_rings):
+    side_length = num_rings * 2 + 1
+    di = src_i - dst_i
+    dj = src_j - dst_j
+    ip = num_rings - di
+    jp = num_rings - dj
+    return ip * side_length + jp
 
 class Node(Device):
     """PHOLD node device"""
     library = args.nodeType
 
+    """ 
+    Below is an examble of a 5x5 grid. There are 3 types of nodes in this grid. 
+    The Z nodes have the least amount of connections; the Y nodes have the 
+    second least amount of connections; the X nodes have the maximum number of 
+    connections. This is true for when the number of rings is greater than or
+    equal to 1.
+    
+    Z Y Y Y Z
+    Y X X X Y
+    Y X X X Y
+    Y X X X Y
+    Y X X X Y
+    Z Y Y Y Z
+    """
+
     def __init__(self, name, i, j):
         super().__init__(name)
         self.portinfo = PortInfo()
-        count = 0
+        
+        # Double for loop to iterate over the ring space where by default it 
+        # will iterate over the full ring space for all the nodes regardless if
+        # they are X, Y, or Z nodes. The variables di and dj are the ring
+        # offsets.
         for di in range(-args.numRings, args.numRings + 1):
             for dj in range(-args.numRings, args.numRings + 1):
-                if 0 <= i + di < args.N and 0 <= j + dj < args.M:
-                    if (1 <= max(abs(di), abs(dj)) <= args.numRings or
-                            (di == 0 and dj == 0)):
-                        pname = f"port{count}"
+                # Ensures that the ring offsets are never more than the size
+                # of the ring or at least greater than or equal to one. Also
+                # ensures that nodes are connected to themselves.
+                if (1 <= max(abs(di), abs(dj)) <= args.numRings or
+                        (di == 0 and dj == 0)):
+                    # Calculate the indices of the neighbors of the node 
+                    # centered at (i,j).
+                    dst_i = i + di 
+                    dst_j = j + dj
+                    
+                    # Only add port if neighbor is within the global grid
+                    if 0 <= dst_i < args.N and 0 <= dst_j < args.M:
+                        pnum = port_num(i, j, dst_i, dst_j, args.numRings)
+                        pname = f"port{pnum}"
                         self.portinfo.add(pname, "String")
-                        count += 1
+        
         self.attr = {
             "i": i,
             "j": j,
@@ -120,78 +156,152 @@ class Node(Device):
 
 
 class SubGrid(Device):
-    """Assembly of Nodes as a SubGrid for a partition"""
-    portinfo = PortInfo()
+    """Assembly of vertices as a SubGrid for a partition"""
+    
+    def __init__(self, name, row_start, row_end, max_size):
+        super().__init__(name)
+        self.portinfo = PortInfo()
+        self.row_start = row_start
+        self.row_end = row_end
+        self.max_size = max_size
+        self.nodes = {}
 
-    # TODO: SubGrids will eventually need to have ports to connect to SubGrids
-    # that live on other ranks. For now, we are assuming this will be executed
-    # on only one rank.
-
-    def port_index(self, i, j, di, dj):
-        count = 0
-        for ddi in range(-args.numRings, args.numRings + 1):
-            for ddj in range(-args.numRings, args.numRings + 1):
-                if 0 <= i + ddi < args.N and 0 <= j + ddj < args.M:
-                    if (1 <= max(abs(ddi), abs(ddj)) <= args.numRings or
-                            (ddi == 0 and ddj == 0)):
-                        if ddi == di and ddj == dj:
-                            return count
-                        count += 1
-        return None
+        # Create indexed border ports as instance attributes
+        for j in range(args.M*self.max_size):
+            print(j)
+            if row_start > 0:
+                self.portinfo.add(f'northBorder{j}', 'String')
+            
+            if row_end < args.N - 1:
+                self.portinfo.add(f'southBorder{j}', 'String')
     
     def expand(self, graph: DeviceGraph) -> None:
-        nodes = {}
-        for i in range(args.N):
-            nodes[i] = {}
+        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        # print(self.name)
+        
+        self.nodes = {}
+        for i in range(self.row_start, self.row_end):
+            self.nodes[i] = {}
             for j in range(args.M):
                 n = Node(f"node_{i}_{j}", i, j)
-                nodes[i][j] = n
+                self.nodes[i][j] = n
+                # print(n)
 
-        for i in range(args.N):
-            for j in range(args.M):
-                for di in range(-args.numRings, args.numRings + 1):
-                    for dj in range(-args.numRings, args.numRings + 1):
-                        if (1 <= max(abs(di), abs(dj)) <= args.numRings or
-                                (di == 0 and dj == 0)):
-                            if (di < 0 or (di == 0 and dj < 0)) and not (
-                                    di == 0 and dj == 0):
-                                continue
-                            ni = i + di
-                            nj = j + dj
-                            if (0 <= ni < args.N and 0 <= nj < args.M and
-                                    0 <= i < args.N and 0 <= j < args.M):
-                                src_idx = self.port_index(i, j, di, dj)
-                                old_i, old_j = i, j
-                                i, j = ni, nj
-                                tgt_idx = self.port_index(i, j, -di, -dj)
-                                i, j = old_i, old_j
-                                if src_idx is not None and tgt_idx is not None:
-                                    src_port = f"port{src_idx}"
-                                    tgt_port = f"port{tgt_idx}"
-                                    print(
-                                        f"Linking {nodes[i][j].name}" 
-                                        f" ({src_port}) -> "
-                                        f"{nodes[ni][nj].name} ({tgt_port})"
-                                    )
-                                    graph.link(
-                                        getattr(nodes[i][j], src_port),
-                                        getattr(nodes[ni][nj], tgt_port),
-                                        args.linkDelay
-                                    )
+        M, numRings = args.M, args.numRings
+        ring_range = range(-numRings, numRings + 1)
+        index_range = itertools.product(
+            range(self.row_start, self.row_end), range(M)
+        )
+        offset_range = list(itertools.product(ring_range, ring_range))
 
+        # Track which ports have been linked for each node
+        linked_ports = {
+            (i, j): set() for i in range(self.row_start, self.row_end)
+            for j in range(M)
+        }
 
-def assemble_grid(numSubGrids) -> DeviceGraph:
+        for i, j in index_range:
+            for di, dj in offset_range:
+                if (
+                    1 <= max(abs(di), abs(dj)) <= numRings or
+                    (di == 0 and dj == 0)
+                ):
+                    ni = i + di
+                    nj = j + dj
+                    src_idx = port_num(i, j, ni, nj, numRings)
+                    src_port = f"port{src_idx}"
+                    if src_port not in self.nodes[i][j].portinfo:
+                        continue  # Skip if port doesn't exist
+                    if src_port in linked_ports[(i, j)]:
+                        continue  # Already linked this port
+
+                    # Internal neighbor within this subgrid
+                    if (
+                        self.row_start <= ni < self.row_end and
+                        0 <= nj < M
+                    ):
+                        tgt_idx = port_num(ni, nj, i, j, numRings)
+                        tgt_port = f"port{tgt_idx}"
+                        if tgt_port in self.nodes[ni][nj].portinfo:
+                            print(
+                                f"Linking {self.nodes[i][j].name}" 
+                                f" ({src_port}) -> "
+                                f"{self.nodes[ni][nj].name} ({tgt_port})"
+                            )
+                            graph.link(
+                                getattr(self.nodes[i][j], src_port),
+                                getattr(self.nodes[ni][nj], tgt_port),
+                                args.linkDelay
+                            )
+                            linked_ports[(i, j)].add(src_port)
+                            linked_ports[(ni, nj)].add(tgt_port)
+                    # Neighbor is outside this subgrid but inside the global grid
+                    elif 0 <= ni < args.N and 0 <= nj < M:
+                        if ni < self.row_start:
+                            border_port = getattr(self, f"northBorder{ni}")
+                            print(
+                                f"Linking {self.nodes[i][j].name} ({src_port}) -> "
+                                f"{border_port}"
+                            )
+                            graph.link(
+                                getattr(self.nodes[i][j], src_port),
+                                border_port,
+                                args.linkDelay
+                            )
+                            linked_ports[(i, j)].add(src_port)
+                        elif ni >= self.row_end:
+                            border_port = getattr(self, f"southBorder{nj}")
+                            print(
+                                f"Linking {self.nodes[i][j].name} ({src_port}) -> "
+                                f"{border_port}"
+                            )
+                            graph.link(
+                                getattr(self.nodes[i][j], src_port),
+                                border_port,
+                                args.linkDelay
+                            )
+                            linked_ports[(i, j)].add(src_port)
+                    # If neighbor is outside the global grid, do nothing
+        # print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        # print()
+
+# Calculates the rank based on the row index
+def row_to_rank(i, rows_per_rank, num_ranks):
+    if i < 0 or i >= args.N:
+        raise ValueError(f"Row index {i} is out of bounds for N={args.N}")
+    return min(i // rows_per_rank, num_ranks - 1)
+
+def assemble_grid(num_ranks) -> DeviceGraph:
+    # Get max size of nodes covered by rings
+    count = 0
+    for i in range(-args.numRings, args.numRings + 1):
+        count += 1
+    max_size = count**2
+
     grid = DeviceGraph()
     subgrids = dict()
-    for i in range(numSubGrids):
-        subgrids[i] = SubGrid(f"SubGrid{i}")
+    rows_per_rank = args.N // num_ranks
+    for i in range(num_ranks):
+        row_start = i * rows_per_rank
+        row_end = row_start + rows_per_rank if i != num_ranks - 1 else args.N
+        subgrids[i] = SubGrid(f"SubGrid{i}", row_start, row_end, max_size)
         subgrids[i].set_partition(i)
         grid.add(subgrids[i])
-    
-    # TODO: Currently this only creates one SubGrid per rank and does not allow
-    # for connections between SubGrids on two different ranks. This has to be
-    # modified to allow for links between SubGrids on different ranks.
-    
+
+    # Connect border ports between adjacent SubGrids for all columns
+    for i in range(num_ranks - 1):
+        upper = subgrids[i]
+        lower = subgrids[i + 1]
+        for j in range(args.M):
+            # Connect all border ports for all columns
+            uport = f"southBorder{j}"
+            lport = f"northBorder{j}"
+            grid.link(
+                getattr(upper, uport),
+                getattr(lower, lport),
+                args.linkDelay
+            )
+
     return grid
 
 ahp_graph = assemble_grid(num_ranks)
