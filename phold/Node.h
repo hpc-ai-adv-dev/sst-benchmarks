@@ -10,6 +10,12 @@
 #include <sst/dbg/SSTDebug.h>
 #endif
 
+enum MovementFunctionType {
+  RANDOM = 0,
+  CYCLIC = 1
+};
+
+
 class Node : public SST::Component {
   public:
     Node( SST::ComponentId_t id, SST::Params& params );
@@ -30,7 +36,7 @@ class Node : public SST::Component {
     // Serialization support for checkpointing/restart
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
     // Default constructor for checkpointing - initialize critical members
-    Node() : rng(nullptr) {}
+    Node() : rng(nullptr), additionalData(nullptr) {}
   #endif
 
     // Register the component
@@ -66,20 +72,11 @@ class Node : public SST::Component {
 
     template<typename T>
     void setupLinks() {
-      //std::cout << "setting up links on rank " << getRank().rank << "...\n" << std::flush;
       for (int i = 0; i < links.size(); i++) {
         std::string portName = "port" + std::to_string(i);
         auto *evHandler = new SST::Event::Handler2<Node, &Node::handleEvent>(this);
         links[i] = configureLink(portName, evHandler);
-        if (links[i] == nullptr) {
-          //std::cerr << "Failed to configure link " << portName << " on rank " << getRank().rank << " id " << myId << "\n" << std::flush;
-        }
-        else {
-          //std::cout << "Configured link " << portName << " on rank " << getRank().rank << " id " << myId << "\n" << std::flush;
-        }
       }
-      //std::cout << "link size: " << links.size();
-      //std::cout << "done setting up links on rank " << getRank().rank << "\n" << std::flush;
       links.erase(std::remove(links.begin(), links.end(), nullptr), links.end());
     }
 
@@ -98,9 +95,14 @@ class Node : public SST::Component {
     SST::RNG::MersenneRNG* rng;
 
     // Movement function variables
-    std::function<size_t()> movementFunction;
-    int movementFunctionCounter;
 
+    size_t movementFunctionRandom();
+    size_t movementFunctionCyclic();
+
+    // Needs to be an int so that serialization works, but we use the enum in code.
+    int movementFunctionType;
+    int movementFunctionCounter;
+    std::function<size_t()> movementFunction;
 
   #ifdef ENABLE_SSTDBG
     void printStatus(SST::Output& out) override;
@@ -164,8 +166,8 @@ class UniformNode : public Node {
 
     // Parameter name, description, default value
     SST_ELI_DOCUMENT_PARAMS(
-      { "min", "Minimum value for uniform distribution, in ns, in addition to link delay", "0"},
-      { "max", "Maximum value for uniform distribution, in ns, in addition to link delay", "10"}
+      { "min", "Minimum value for uniform distribution, in ns, in addition to link delay", "0.0"},
+      { "max", "Maximum value for uniform distribution, in ns, in addition to link delay", "1.0"}
     )
 
     double min, max;

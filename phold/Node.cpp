@@ -4,9 +4,8 @@
 #include "Node.h"
 
 Node::Node( SST::ComponentId_t id, SST::Params& params )
-  : SST::Component(id)
+  : SST::Component(id), additionalData(nullptr)
 {
-  //std::cout << "initializing node on rank " << getRank().rank << " and id " << id << "\n" << std::flush;
   numRings = params.find<int>("numRings");
 
   myCol = params.find<int>("j", -1);
@@ -57,29 +56,22 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
   registerAsPrimaryComponent();
   primaryComponentDoNotEndSim();
   registerClock(timeToRun, new SST::Clock::Handler2<Node, &Node::tick>(this));
-  //std::cout << "Done initalizing component " << id << " on rank " <<getRank().rank << "\n" << std::flush;
 
 
   // movement functions
   movementFunctionCounter = 0;
-  auto movementRandom = [this]() {
-    uint32_t random_val = rng->generateNextUInt32();
-    return random_val % this->links.size();
-  };
-  auto movementRoundRobin = [this]() {
-    int next = this->movementFunctionCounter;
-    this->movementFunctionCounter = (this->movementFunctionCounter + 1) % this->links.size();
-    return next;
-  };
 
   std::string movementFunctionStr = params.find<std::string>("movementFunction", "random");
   if (movementFunctionStr == "random") {
-    movementFunction = movementRandom;
-  } else if (movementFunctionStr == "roundRobin") {
-    movementFunction = movementRoundRobin;
+    movementFunctionType = RANDOM;
+    movementFunction = std::bind(&Node::movementFunctionRandom, this);
+  } else if (movementFunctionStr == "cyclic") {
+    movementFunctionType = CYCLIC;
+    movementFunction = std::bind(&Node::movementFunctionCyclic, this);
   } else {
     std::cerr << "Unrecognized movement function: " << movementFunctionStr << ", defaulting to random\n";
-    movementFunction = movementRandom;
+    movementFunctionType = RANDOM;
+    movementFunction = std::bind(&Node::movementFunctionRandom, this);
   }
   
 }
@@ -87,6 +79,7 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
 Node::~Node() {
   delete rng;
   if (additionalData != nullptr) {
+    std::cerr << "Freeing additional data\n";
     free(additionalData);
   }
 #ifdef ENABLE_SSTDBG
@@ -95,7 +88,6 @@ Node::~Node() {
 }
 
 void Node::setup() {
-  std::cout << "Setup on component " << myRow << "," << myCol << " with " << links.size() << " links\n";
   double counter = eventDensity;
 
   while (counter >= 1.0) {
@@ -122,6 +114,7 @@ void Node::setup() {
     links.at(recipient)->send(ev);
   }
 }
+
 
 void Node::finish() {
   std::string msg = std::to_string(myRow) + "," + std::to_string(myCol) + " : " + std::to_string(links.size()) + "," + std::to_string(recvCount) + "\n";
@@ -154,12 +147,10 @@ void Node::handleEvent(SST::Event *ev){
 #endif
   recvCount += 1;
 
-  std::cout << "Handling event at component " << myRow << "," << myCol << " with timestamp " << ev->getDeliveryTime() << "\n";
   size_t nextRecipientLinkId = movementFunction();
   while (links.at(nextRecipientLinkId) == nullptr) {
     nextRecipientLinkId = movementFunction();
   }
-  std::cout << "Sending to link " << nextRecipientLinkId << "\n";
   SST::SimTime_t psDelay = timestepIncrementFunction();
 
   // Note: Using pointer API for compatibility with both SST 14.1.0 and 15.0.0
@@ -171,6 +162,17 @@ void Node::handleEvent(SST::Event *ev){
 // Base class has no additional delay.
 SST::SimTime_t Node::timestepIncrementFunction() {
   return 0;
+}
+
+size_t Node::movementFunctionRandom() {
+  uint32_t random_val = rng->generateNextUInt32();
+  return random_val % links.size();
+}
+
+size_t Node::movementFunctionCyclic() {
+  int next = movementFunctionCounter;
+  movementFunctionCounter = (movementFunctionCounter + 1) % links.size();
+  return next;
 }
 
 
@@ -221,9 +223,24 @@ void Node::serialize_order(SST::Core::Serialization::serializer& ser) {
     SST_SER(largePayload);
     SST_SER(largeEventFraction);
     SST_SER(recvCount);
+    SST_SER(movementFunctionType);
+    SST_SER(movementFunctionCounter);
 
     // SST RNG has built-in serialization support
     SST_SER(rng);
+
+
+    // If unpacking, make sure to restore the movementFunction pointer.
+    if (ser.mode() == SST::Core::Serialization::serializer::UNPACK) {
+      if (movementFunctionType == RANDOM) {
+        movementFunction = std::bind(&Node::movementFunctionRandom, this);
+      } else if (movementFunctionType == CYCLIC) {
+        movementFunction = std::bind(&Node::movementFunctionCyclic, this);
+      } else {
+        std::cerr << "Unrecognized movement function type during deserialization, defaulting to random\n";
+        movementFunction = std::bind(&Node::movementFunctionRandom, this);
+      }
+    }
 }
 
 void ExponentialNode::serialize_order(SST::Core::Serialization::serializer& ser) {

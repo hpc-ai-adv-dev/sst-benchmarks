@@ -197,7 +197,7 @@ def extract_parameters(results_dir):
   large_event_fraction = float(parts[11])
   imbalance_factor = float(parts[12]) if len(parts) > 12 else 0.0  # Default to 0.0 if not present
   component_size = int(parts[13]) if len(parts) > 13 else 0.0
-
+  movement_function = parts[14] if len(parts) > 14 else "random"
   return {
     'Experiment Name': experiment_name,
     'Node Count': node_count,
@@ -212,7 +212,8 @@ def extract_parameters(results_dir):
     'Large Payload (bytes)': large_payload,
     'Large Event Fraction': large_event_fraction,
     'Imbalance Factor': imbalance_factor,
-    "Component Size": component_size
+    "Component Size": component_size,
+    "Movement Function": movement_function
   }
 
 
