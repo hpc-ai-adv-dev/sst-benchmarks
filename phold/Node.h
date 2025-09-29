@@ -10,6 +10,12 @@
 #include <sst/dbg/SSTDebug.h>
 #endif
 
+enum MovementFunctionType {
+  RANDOM = 0,
+  CYCLIC = 1
+};
+
+
 class Node : public SST::Component {
   public:
     Node( SST::ComponentId_t id, SST::Params& params );
@@ -24,14 +30,13 @@ class Node : public SST::Component {
 
     SST::Interfaces::StringEvent * createEvent();
 
-    virtual size_t movementFunction();
     virtual SST::SimTime_t timestepIncrementFunction();
 
   #ifdef ENABLE_SSTCHECKPOINT
     // Serialization support for checkpointing/restart
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
     // Default constructor for checkpointing - initialize critical members
-    Node() : rng(nullptr), numLinks(0) {}
+    Node() : rng(nullptr), additionalData(nullptr) {}
   #endif
 
     // Register the component
@@ -57,7 +62,8 @@ class Node : public SST::Component {
      { "largePayload", "Size of large event payloads in bytes", "1024"},
      { "largeEventFraction", "Fraction of events that are large (default: 0.1)", "0.1"},
      { "verbose", "Whether or not to write the recvCount to file.", "0"},
-     { "componentSize", "Additional size of components in bytes", "0"}
+     { "componentSize", "Additional size of components in bytes", "0"},
+     { "movementFunction", "Movement function to use: random, or roundRobin", "random"}
     )
 
     SST_ELI_DOCUMENT_PORTS(
@@ -66,25 +72,17 @@ class Node : public SST::Component {
 
     template<typename T>
     void setupLinks() {
-      //std::cout << "setting up links on rank " << getRank().rank << "...\n" << std::flush;
       for (int i = 0; i < links.size(); i++) {
         std::string portName = "port" + std::to_string(i);
         auto *evHandler = new SST::Event::Handler2<Node, &Node::handleEvent>(this);
         links[i] = configureLink(portName, evHandler);
-        if (links[i] == nullptr) {
-          //std::cerr << "Failed to configure link " << portName << " on rank " << getRank().rank << " id " << myId << "\n" << std::flush;
-        }
-        else {
-          //std::cout << "Configured link " << portName << " on rank " << getRank().rank << " id " << myId << "\n" << std::flush;
-        }
       }
-      //std::cout << "link size: " << links.size();
-      //std::cout << "done setting up links on rank " << getRank().rank << "\n" << std::flush;
+      links.erase(std::remove(links.begin(), links.end(), nullptr), links.end());
     }
 
     int myId, myRow, myCol, verbose;
     std::vector<SST::Link*> links;
-    int numRings, numLinks, rowCount, colCount;
+    int numRings, rowCount, colCount;
     double eventDensity;
     std::string timeToRun;
     int smallPayload, largePayload;
@@ -95,6 +93,16 @@ class Node : public SST::Component {
 
     // SST RNG system for proper checkpoint serialization
     SST::RNG::MersenneRNG* rng;
+
+    // Movement function variables
+
+    size_t movementFunctionRandom();
+    size_t movementFunctionCyclic();
+
+    // Needs to be an int so that serialization works, but we use the enum in code.
+    int movementFunctionType;
+    int movementFunctionCounter;
+    std::function<size_t()> movementFunction;
 
   #ifdef ENABLE_SSTDBG
     void printStatus(SST::Output& out) override;
@@ -158,8 +166,8 @@ class UniformNode : public Node {
 
     // Parameter name, description, default value
     SST_ELI_DOCUMENT_PARAMS(
-      { "min", "Minimum value for uniform distribution, in ns, in addition to link delay", "0"},
-      { "max", "Maximum value for uniform distribution, in ns, in addition to link delay", "10"}
+      { "min", "Minimum value for uniform distribution, in ns, in addition to link delay", "0.0"},
+      { "max", "Maximum value for uniform distribution, in ns, in addition to link delay", "1.0"}
     )
 
     double min, max;

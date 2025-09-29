@@ -15,8 +15,10 @@ parser.add_argument('--M', type=int, default=10, help='Width of grid (number of 
 parser.add_argument('--timeToRun', type=str, default='1000ns', help='Time to run the simulation')
 parser.add_argument("--linkDelay", type=str, default="1ns", help="Delay for each link")
 parser.add_argument('--numRings', type=int, default=1, help='Number of rings of neighbors to connect to each component')
-parser.add_argument('--eventDensity', type=float, default=0.1, help="How many events to transmit per component.")
+parser.add_argument('--eventDensity', type=float, default=0.1, help="How many events to transmit per component. Negative values indicate that each component should start with as many events as links.")
 parser.add_argument('--exponentMultiplier', type=float, default=1.0, help="Multiplier for exponential distribution of event generation")
+parser.add_argument('--uniformMin', type=float, default=0.0, help="Minimum value for uniform distribution, in ns, in addition to link delay")
+parser.add_argument('--uniformMax', type=float, default=1.0, help="Maximum value for uniform distribution, in ns, in addition to link delay")
 parser.add_argument('--nodeType', type=str, default='phold.Node', help='Type of node to create (default: phold.Node)')
 parser.add_argument('--smallPayload', type=int, default=8, help='Size of small event payloads in bytes')
 parser.add_argument('--largePayload', type=int, default=1024, help='Size of large event payloads in bytes')
@@ -24,6 +26,7 @@ parser.add_argument('--largeEventFraction', type=float, default=0.0, help='Fract
 parser.add_argument('--imbalance-factor', type=float, default=0.0, help="Imbalance factor for the simulation's thread-level distribution." \
                     " This value should be between 0 (representing perfectly load balanced), and 1.0 (representing a single thread doing all the work).")
 parser.add_argument('--componentSize', type=int, default=0, help='Size of the additional data field of the component in bytes')
+parser.add_argument('--movementFunction', type=str, default='random', help='Movement function to use: random or cyclic')
 parser.add_argument('--verbose', type=int, default=0, help='Whether or not to write the recvCount to file.')
 
 
@@ -103,7 +106,8 @@ def create_component(i,j):
     "largePayload": args.largePayload,
     "largeEventFraction": args.largeEventFraction,
     "verbose": args.verbose,
-    "componentSize": args.componentSize
+    "componentSize": args.componentSize,
+    "movementFunction": args.movementFunction
   })
   comp.setRank(row_to_rank(i), col_to_thread(j))
   return comp
