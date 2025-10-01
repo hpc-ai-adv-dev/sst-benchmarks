@@ -6,6 +6,39 @@ This document outlines a pragmatic tooling approach that builds upon our current
 foundation while providing essential automation for repeatable experiments,
 data collection, and analysis.
 
+## Key Usage Scenarios
+
+- Users should be able to run a weak scaling study for phold and a strong
+  scaling study for pingpong from the same tool.
+- Parameters specific to each component (SST, Slurm, benchmark) should be
+  captured with the results to support reproducibility.
+- Users should be able to run the same experiments on different execution
+  environments (host, container, e4s-cl).
+- Users should be able to run parameter sweeps for all benchmarks, along
+  with sweeping certain Slurm and SST parameters.
+- Users should be able to run single experiments with specific parameters.
+- Users should be able to run stochastic sampling of parameter spaces where
+  applicable.
+- Users should be able to easily compare and analyze results from different
+  studies.
+- The tool should have a user configuration file to define SST installations
+  and container images with paths and version numbers of SST.
+- The tool should optionally include studying the cost of adding in one or
+  more checkpoints and, if so, also the option to request studying the cost
+  of restoring from a checkpoint.
+- The tool should accommodate running parameter sweeps for all the
+  benchmarks.
+- The tool should also allow users to run single experiments with specific
+  parameters.
+- The tool should support stochastic sampling of parameter spaces where
+  applicable.
+- The tool should provide a clear and consistent output format for all
+  experiment results, making it easy to compare and analyze different
+  studies.
+- Should support extracting data from experiment logs and generating summary
+  statistics and visualizations.
+
+
 ## Design Philosophy
 
 ### Maintainability First
@@ -40,6 +73,12 @@ data collection, and analysis.
 
 - Integrate with Slurm for job scheduling and resource management.
 
+### e4s-cl and Container Support
+
+- Support running experiments in both native and containerized environments
+  (e.g., e4s-cl, apptainer, docker/podman) to compare performance and ensure
+  consistency.
+
 ### Monitoring and Logging
 
 - Implement logging and monitoring to capture performance metrics and system
@@ -70,40 +109,9 @@ data collection, and analysis.
 
 ### Directory Structure
 
-- Organize the project with a clear directory structure separating source
-  code, configurations, result data, analysis output, and documentation.
+- Organize the tooling with a clear directory structure separating source
+  code, configurations, experiment result data, analysis output, and documentation.
 
-## Key Usage Scenarios
-
-- Users should be able to run a weak scaling study for phold and a strong
-  scaling study for pingpong from the same tool.
-- Parameters specific to each component (SST, Slurm, benchmark) should be
-  captured with the results to support reproducibility.
-- Users should be able to run the same experiments on different execution
-  environments (host, container, e4s-cl).
-- Users should be able to run parameter sweeps for all benchmarks, along
-  with sweeping certain Slurm and SST parameters.
-- Users should be able to run single experiments with specific parameters.
-- Users should be able to run stochastic sampling of parameter spaces where
-  applicable.
-- Users should be able to easily compare and analyze results from different
-  studies.
-- The tool should have a user configuration file to define SST installations
-  and container images with paths and version numbers of SST.
-- The tool should optionally include studying the cost of adding in one or
-  more checkpoints and, if so, also the option to request studying the cost
-  of restoring from a checkpoint.
-- The tool should accommodate running parameter sweeps for all the
-  benchmarks.
-- The tool should also allow users to run single experiments with specific
-  parameters.
-- The tool should support stochastic sampling of parameter spaces where
-  applicable.
-- The tool should provide a clear and consistent output format for all
-  experiment results, making it easy to compare and analyze different
-  studies.
-- Should support extracting data from experiment logs and generating summary
-  statistics and visualizations.
 
 ## Considerations
 
