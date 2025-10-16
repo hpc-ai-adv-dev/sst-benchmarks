@@ -142,7 +142,9 @@ RUN apt update && apt -y install \
 
 # Copy MPICH runtime libraries
 COPY --from=base /usr/local/lib/libmpi* /usr/local/lib/
+COPY --from=base /usr/local/include/mpi* /usr/local/include/
 COPY --from=base /usr/local/bin/mpi* /usr/local/bin/
+COPY --from=base /usr/local/bin/hydra* /usr/local/bin/
 RUN /sbin/ldconfig
 
 # --- Final stages ---
