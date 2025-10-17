@@ -30,7 +30,7 @@ jobs:
       run: |
         cd phold
         make
-        sst phold_dist.py -- --verbose 1 &> phold_sim.out
+        sst phold_dist.py -- --verbose 1 > phold_sim.out
         diff ../.github/workflows/phold.good ./phold_sim.out
 
   benchmarks_check_v14-1:
@@ -59,5 +59,5 @@ jobs:
       run: |
         cd phold
         make
-        sst phold_dist.py -- --verbose 1 &> phold_sim.out
+        sst phold_dist.py -- --verbose 1 > phold_sim.out
         diff ../.github/workflows/phold.good ./phold_sim.out
