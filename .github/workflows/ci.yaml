@@ -26,6 +26,13 @@ jobs:
         sst pingpong.py -- --corners --verbose > pingpong_sim.out
         diff ../.github/workflows/pingpong.good ./pingpong_sim.out
 
+    - name: Build PHOLD library
+      run: |
+        cd phold
+        make
+        sst phold_dist.py -- --verbose 1 > phold_sim.out 2>&1
+        diff ../.github/workflows/phold.good ./phold_sim.out
+
   benchmarks_check_v14-1:
     runs-on: ubuntu-latest
     container:
@@ -47,3 +54,10 @@ jobs:
         make
         sst pingpong.py -- --corners --verbose > pingpong_sim.out
         diff ../.github/workflows/pingpong.good ./pingpong_sim.out
+
+    - name: Build PHOLD library
+      run: |
+        cd phold
+        make
+        sst phold_dist.py -- --verbose 1 > phold_sim.out 2>&1
+        diff ../.github/workflows/phold.good ./phold_sim.out
