@@ -16,6 +16,9 @@ The benchmarks (in their respective directories) include:
 
 The `sst-containers` directory includes a containerfile for using SST-core on
 either a desktop or Cray EX supercomputer. It also includes
-[documentation](sst-containers/README.md) on on how to build and deploy this container.
+[documentation](sst-containers/README.md) on on how to build and deploy this
+container.
 
-The memory `modelModel` directory includes a Jupyter notebook with a script to estimate SST core's memory usage.
+The `modelModel` directory includes a Jupyter notebook with a script that can
+be used to estimate SST core's memory usage and experiment with ideas on how to
+reduce its memory footprint.
