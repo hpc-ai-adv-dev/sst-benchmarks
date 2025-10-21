@@ -10,8 +10,8 @@ Currently, it includes the following:
 - A memory model
 
 The benchmarks (in their respective directories) include:
-- [pingpong]() - simulates messages bouncing back-and-forth in a 1 or 2 dimensional space.
-- [gameoflife] - an SST-based version of Conway's Game of Life.
+- [pingpong](pingpong/README.md) - simulates messages bouncing back-and-forth in a 1 or 2 dimensional space.
+- gameoflife - an SST-based version of Conway's Game of Life.
 - [phold](phold/README.md) - a benchmark used across several studies to evaluate the scalability and performance of parallel discrete event simulation (PDES) systems.
 
 The `sst-containers` directory includes a containerfile for using SST-core on
