@@ -1,7 +1,7 @@
 # sst-benchmarks
 
 This repository contains benchmarks and related scripts and tools for studying
-SST-Cores performance and scalability.
+SST-Core's performance and scalability. Learn more about SST [here](https://sst-simulator.org/).
 
 Currently, it includes:
 
