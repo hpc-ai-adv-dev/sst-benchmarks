@@ -1,7 +1,7 @@
 # This Containerfile supports flexible SST and MPICH version building
 #
 # BUILD ARGUMENTS:
-#   SSTver: SST version to build (default: 14.1.0, valid: 14.0.0, 14.1.0, 15.0.0)
+#   SSTver: SST version to build (default: 15.0.0, valid: 14.0.0, 14.1.0, 15.0.0)
 #   mpich:  MPICH version  (default: 4.0.2)
 #   NCPUS:  Parallel make jobs (default: 2)
 #
@@ -37,7 +37,7 @@
 FROM ubuntu:22.04 AS base
 
 # Build arguments to control download behavior
-ARG SSTver=14.1.0
+ARG SSTver=15.0.0
 ARG mpich=4.0.2
 ARG mpich_prefix=mpich-$mpich
 ARG NCPUS=2
@@ -78,7 +78,7 @@ RUN /sbin/ldconfig
 FROM base AS core-build
 
 # Re-declare ARG for this stage
-ARG SSTver=14.1.0
+ARG SSTver=15.0.0
 ARG NCPUS
 
 RUN mkdir -p /opt/SST/${SSTver}/src
@@ -105,7 +105,7 @@ RUN if [ -z "$NCPUS" ]; then \
 FROM core-build AS elements-build
 
 # Re-declare ARG for this stage
-ARG SSTver=14.1.0
+ARG SSTver=15.0.0
 ARG NCPUS
 
 # Download or copy SST-elements source
@@ -151,7 +151,7 @@ RUN /sbin/ldconfig
 FROM runtime AS sst-full
 
 # Re-declare ARG for this stage
-ARG SSTver=14.1.0
+ARG SSTver=15.0.0
 
 # Copy all of the installed SST directories
 COPY --from=elements-build /opt/SST/${SSTver} /opt/SST/${SSTver}
@@ -164,7 +164,7 @@ ENTRYPOINT ["/bin/bash"]
 FROM runtime AS sst-core
 
 # Re-declare ARG for this stage
-ARG SSTver=14.1.0
+ARG SSTver=15.0.0
 
 # Copy only the installed SST core binaries and libraries
 COPY --from=core-build /opt/SST/${SSTver} /opt/SST/${SSTver}

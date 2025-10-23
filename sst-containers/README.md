@@ -436,15 +436,15 @@ access and `wget` installed.
 Use the `download_tarballs.sh` script to download the necessary source tarballs
 for SST-core, SST-elements, and MPICH.
 
-The default sst version is 14.1.0, and the default mpi version is 4.0.2.
+The default sst version is 15.0.0, and the default mpi version is 4.0.2.
 Additionally, you can specify the version of each that you want. Here are some
 examples:
 
 ```bash
-# Download sources for SST version 14.1.0 and MPICH version 4.0.2
-./download_tarballs.sh
 # Download sources for SST version 15.0.0 and MPICH version 4.0.2
-./download_tarballs.sh 15.0.0
+./download_tarballs.sh
+# Download sources for an older SST version 14.1.0 and MPICH version 4.0.2
+./download_tarballs.sh 14.1.0
 # Download sources for SST version 15.0.0 and MPICH version 4.1.1
 ./download_tarballs.sh 15.0.0 4.1.1
 ```
@@ -471,8 +471,8 @@ tree .
 .
 ├── Containerfile
 ├── mpich-4.0.2.tar.gz
-├── sstcore-14.1.0.tar.gz
-├── sstelements-14.1.0.tar.gz
+├── sstcore-15.0.0.tar.gz
+├── sstelements-15.0.0.tar.gz
 ```
 
 Note that the version numbers in the tar.gz files may vary based on the
@@ -483,11 +483,11 @@ versions you downloaded.
 Here is an example command to build the SST container using `podman`:
 
 ```bash
-podman build -t sst:14.1.0 .
+podman build -t sst:15.0.0 .
 ```
 
 This command will build the SST container, without the elements library, using
-the `Containerfile` in the current directory and tag it as `sst:14.1.0`.
+the `Containerfile` in the current directory and tag it as `sst:15.0.0`.
 
 As the following examples show, the supplied `Containerfile` accepts arguments
 for SST version and MPICH version, allowing you to specify which versions to
@@ -499,25 +499,25 @@ You can specify the SST and MPICH versions when building the container:
 
 ```bash
 podman build \
-  --build-arg SSTver=14.1.0 \
+  --build-arg SSTver=15.0.0 \
   --build-arg mpich=4.0.2 \
-  -t sst:14.1.0 .
+  -t sst:15.0.0 .
 ```
-This command builds the SST container with SST version 14.1.0 and MPICH version
-4.0.2, tagging it as `sst:14.1.0`.
+This command builds the SST container with SST version 15.0.0 and MPICH version
+4.0.2, tagging it as `sst:15.0.0`.
 
 You can also build the container with the SST-elements library by using the
 `--target` option:
 
 ```bash
 podman build \
-  --build-arg SSTver=14.1.0 \
+  --build-arg SSTver=15.0.0 \
   --build-arg mpich=4.0.2 \
   --target sst-full \
-  -t sst-full:14.1.0 .
+  -t sst-full:15.0.0 .
 ```
 This command builds the SST container with the elements library, tagging it as
-`sst-full:14.1.0`.
+`sst-full:15.0.0`.
 
 
 ### Creating Portable, OCI-Compatible Archives with podman save
