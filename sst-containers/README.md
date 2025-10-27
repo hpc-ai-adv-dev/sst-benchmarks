@@ -194,7 +194,8 @@ the HPC system.
 
 Note that the architecture of the desktop and HPC system should be compatible
 (e.g., both x86_64), otherwise you may need to adjust the build process to
-target the HPC system's architecture.
+target the HPC system's architecture. See the [Cross-Building for Different Architectures](#cross-building-for-different-architectures) section below for detailed instructions on
+building containers for different target architectures.
 
 Here is a working example of how to migrate the container from the example
 above:
@@ -793,6 +794,96 @@ Your job should immediately get a job ID and you should be able to use the
 `squeue` command to view the job scheduler queue and see the status of your job.
 
 When the job is finished, the output will be in the file `output.o<jobID>`
+
+
+## Cross-Building for Different Architectures
+
+When developing on one architecture (e.g., ARM-based Mac) but targeting deployment
+on another architecture (e.g., x86_64 Linux HPC systems), you need to cross-build
+your containers. This section covers how to build Linux/AMD64 containers from ARM-based Macs.
+
+### Prerequisites for Cross-Building
+
+1. **Check if QEMU is already available**:
+   ```bash
+   # Check if QEMU is installed
+   which qemu-system-x86_64
+   # or
+   qemu-system-x86_64 --version
+
+   # Check if emulation is already set up in podman
+   podman run --rm --platform linux/amd64 alpine:latest uname -m
+   # If this returns "x86_64" on an ARM Mac, emulation is working
+   ```
+
+2. **Install QEMU emulation if needed**:
+   ```bash
+   # Install QEMU emulation (if not already available)
+   brew install qemu
+
+   # On Mac, podman usually handles emulation automatically
+   # Test if cross-platform building works:
+   podman build --platform linux/amd64 -t test-cross - <<< 'FROM alpine:latest'
+
+   # If the above fails, you may need to restart podman machine:
+   podman machine stop
+   podman machine start
+   ```
+
+### Cross-Building Commands
+
+#### Basic Cross-Build for Linux/AMD64
+
+Build an SST container targeting x86_64 Linux from an ARM Mac:
+
+```bash
+# Cross-build SST container for Linux/AMD64
+podman build \
+  --platform linux/amd64 \
+  --build-arg SSTver=15.0.0 \
+  --build-arg mpich=4.0.2 \
+  -t sst-core:15.0.0-amd64 \
+  -f Containerfile \
+  .
+```
+
+### Verifying Cross-Built Images
+
+#### Test Cross-Built Image
+
+```bash
+# First, verify the image was actually built for the correct architecture
+podman inspect sst-core:15.0.0-amd64 | grep -i architecture
+# Expected output: "Architecture": "amd64"
+
+# If architecture is correct, test the cross-built image (will use emulation on ARM Mac)
+podman run --rm --platform linux/amd64 sst-core:15.0.0-amd64 uname -m
+# Expected output: x86_64
+
+# If you get "Exec format error", try these alternatives:
+# Option 1: Force platform and use a simple command
+podman run --rm --platform linux/amd64 sst-core:15.0.0-amd64 /bin/sh -c "uname -m"
+
+# Option 2: Test with a known working cross-platform image first
+podman run --rm --platform linux/amd64 alpine:latest uname -m
+# This should work if emulation is properly set up
+
+# Option 3: Test interactively
+podman run -it --rm --platform linux/amd64 sst-core:15.0.0-amd64
+# Then inside the container, run:
+uname -m
+# Expected output: x86_64
+exit
+```
+
+### Performance Considerations
+
+#### Build Time Expectations
+
+Cross-builds take more time due to emulation overhead and may require more memory
+than native builds.
+
+For more details on cross-building, see the official Podman documentation on multi-architecture builds.
 
 
 ## Troubleshooting
