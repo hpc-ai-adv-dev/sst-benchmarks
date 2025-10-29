@@ -19,11 +19,48 @@ more details about each step.
 ## Overview
 
 * Complete working example: Building and running SST 15.0.0 container on a desktop
+  * Prerequisites
+  * Step 0: Prepare the Environment
+  * Step 1: Build the SST Container
+  * Step 2: Set Up SST Benchmarks
+  * Step 3: Run the SST Container
+  * Step 4: Build the SST Benchmarks (Inside Container)
+  * Step 5: Run a Benchmark Simulation (Inside Container)
+  * Expected Output
+  * Step 6: Exit the Container
+  * Optional: Migrate the Container to HPC Systems
 * Installing/verifying required dependencies for this process
+  * Quick Check if these are already on system
+  * Linux Installation and Setup
+  * HPE EX Installation and setup
+  * Mac Installation and Setup
+  * Verifying podman Installation
+  * Verifying apptainer Installation
+  * Verifying e4s-cl Installation
 * Downloading the SST-core and other needed software sources
 * Building the SST container
+  * What should be in the directory before build
+  * Example commands to build the SST container
+  * Example command to build with specific versions
+  * Creating Portable, OCI-Compatible Archives with podman save
+  * Verifying Archives
+  * Loading Archives that were previously saved
+  * Converting OCI Archives to Apptainer SIF Files
+    * Building SIF Files from OCI Archives
+    * Verifying SIF Files
 * Providing SST component C++ files and topology input files in Python
 * Running a simulation on a desktop and HPE EX using SST container
+  * Running SST Container on Desktop/Laptop
+  * Running SST Container on HPE EX
+    * Distributed Parallelism with e4s-cl and SST Containers
+* Cross-Building for Different Architectures
+  * Prerequisites for Cross-Building
+  * Cross-Building Commands
+    * Basic Cross-Build for Linux/AMD64
+  * Verifying Cross-Built Images
+    * Test Cross-Built Image
+  * Performance Considerations
+    * Build Time Expectations
 * Troubleshooting
 
 ## Complete Working Example: Building and Running SST 15.0.0 Container on a Desktop/Laptop
