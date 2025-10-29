@@ -26,7 +26,7 @@ more details about each step.
   * Step 3: Run the SST Container
   * Step 4: Build the SST Benchmarks (Inside Container)
   * Step 5: Run a Benchmark Simulation (Inside Container)
-  * Expected Output
+    * Expected Output
   * Step 6: Exit the Container
   * Optional: Migrate the Container to HPC Systems
 * Installing/verifying required dependencies for this process
@@ -178,7 +178,7 @@ This command:
 - Uses the `--corners` option for corner case testing
 - Uses the `--verbose` option for detailed output
 
-### Expected Output
+#### Expected Output
 
 You should see output similar to:
 
