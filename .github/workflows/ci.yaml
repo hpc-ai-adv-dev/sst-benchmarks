@@ -161,7 +161,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: gameoflife-checkpoint-v15
-        path: gameoflife/checkpoint_*/
+        path: gameoflife/checkpoint/
         retention-days: 1
 
   gameoflife_restore_v15:
@@ -183,7 +183,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: gameoflife-checkpoint-v15
-        path: gameoflife/
+        path: gameoflife/checkpoint/
 
     - name: Restore from checkpoint
       run: |
@@ -226,7 +226,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: pingpong-checkpoint-v15
-        path: pingpong/checkpoint_*/
+        path: pingpong/checkpoint/
         retention-days: 1
 
   pingpong_restore_v15:
@@ -248,7 +248,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: pingpong-checkpoint-v15
-        path: pingpong/
+        path: pingpong/checkpoint/
 
     - name: Restore from checkpoint
       run: |
@@ -291,7 +291,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: phold-checkpoint-v15
-        path: phold/checkpoint_*/
+        path: phold/checkpoint/
         retention-days: 1
 
   phold_restore_v15:
@@ -313,7 +313,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: phold-checkpoint-v15
-        path: phold/
+        path: phold/checkpoint/
 
     - name: Restore from checkpoint
       run: |
