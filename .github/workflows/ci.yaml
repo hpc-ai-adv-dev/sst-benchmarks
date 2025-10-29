@@ -84,6 +84,7 @@ jobs:
     - name: Run gameoflife test
       run: |
         cd gameoflife
+        sst-register gol gol_LIBDIR=$(pwd)
         sst gol.py -- --verbose --seed 42 > gol_sim.out
         diff ../.github/workflows/gol.good ./gol_sim.out
 
@@ -105,6 +106,7 @@ jobs:
     - name: Run pingpong test
       run: |
         cd pingpong
+        sst-register pingpong pingpong_LIBDIR=$(pwd)
         sst pingpong.py -- --corners --verbose > pingpong_sim.out
         diff ../.github/workflows/pingpong.good ./pingpong_sim.out
 
@@ -126,6 +128,7 @@ jobs:
     - name: Run PHOLD test
       run: |
         cd phold
+        sst-register phold phold_LIBDIR=$(pwd)
         sst phold_dist.py -- --verbose 1 > phold_sim.out 2>&1
         diff ../.github/workflows/phold.good ./phold_sim.out
 
@@ -148,6 +151,7 @@ jobs:
     - name: Run with checkpoint enabled
       run: |
         cd gameoflife
+        sst-register gol gol_LIBDIR=$(pwd)
         sst --checkpoint-sim-period=1.5s gol.py -- --verbose --seed 42 2>&1 | grep -v "Real CPU time" > gol_checkpoint.out
         diff ../.github/workflows/gol_checkpoint.good ./gol_checkpoint.out
         # Verify checkpoint files were created
@@ -184,6 +188,7 @@ jobs:
     - name: Restore from checkpoint
       run: |
         cd gameoflife
+        sst-register gol gol_LIBDIR=$(pwd)
         # Find the earliest checkpoint directory
         CHECKPOINT_FILE=$(find checkpoint_* -name "*.sstcpt" | sort | head -1)
         echo "Restoring from: $CHECKPOINT_FILE"
@@ -211,6 +216,7 @@ jobs:
     - name: Run with checkpoint enabled
       run: |
         cd pingpong
+        sst-register pingpong pingpong_LIBDIR=$(pwd)
         sst --checkpoint-sim-period=50ps pingpong.py -- --corners --verbose 2>&1 | grep -v "Real CPU time" > pingpong_checkpoint.out
         diff ../.github/workflows/pingpong_checkpoint.good ./pingpong_checkpoint.out
         # Verify checkpoint files were created
@@ -247,6 +253,7 @@ jobs:
     - name: Restore from checkpoint
       run: |
         cd pingpong
+        sst-register pingpong pingpong_LIBDIR=$(pwd)
         # Find the earliest checkpoint directory
         CHECKPOINT_FILE=$(find checkpoint_* -name "*.sstcpt" | sort | head -1)
         echo "Restoring from: $CHECKPOINT_FILE"
@@ -274,6 +281,7 @@ jobs:
     - name: Run with checkpoint enabled
       run: |
         cd phold
+        sst-register phold phold_LIBDIR=$(pwd)
         sst --checkpoint-sim-period=250ns phold_dist.py -- --verbose 1 2>&1 | grep -v "Real CPU time" > phold_checkpoint.out
         diff ../.github/workflows/phold_checkpoint.good ./phold_checkpoint.out
         # Verify checkpoint files were created
@@ -310,6 +318,7 @@ jobs:
     - name: Restore from checkpoint
       run: |
         cd phold
+        sst-register phold phold_LIBDIR=$(pwd)
         # Find the earliest checkpoint directory
         CHECKPOINT_FILE=$(find checkpoint_* -name "*.sstcpt" | sort | head -1)
         echo "Restoring from: $CHECKPOINT_FILE"
