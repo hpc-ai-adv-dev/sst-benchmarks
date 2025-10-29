@@ -190,7 +190,7 @@ jobs:
         cd gameoflife
         sst-register gol gol_LIBDIR=$(pwd)
         # Find the earliest checkpoint directory
-        CHECKPOINT_FILE=$(find checkpoint_* -name "*.sstcpt" | sort | head -1)
+        CHECKPOINT_FILE=$(find checkpoint -name "*.sstcpt" | sort | head -1)
         echo "Restoring from: $CHECKPOINT_FILE"
         sst --load-checkpoint "$CHECKPOINT_FILE" > gol_restore.out 2>&1
         diff ../.github/workflows/gol_restore.good ./gol_restore.out
@@ -255,7 +255,7 @@ jobs:
         cd pingpong
         sst-register pingpong pingpong_LIBDIR=$(pwd)
         # Find the earliest checkpoint directory
-        CHECKPOINT_FILE=$(find checkpoint_* -name "*.sstcpt" | sort | head -1)
+        CHECKPOINT_FILE=$(find checkpoint -name "*.sstcpt" | sort | head -1)
         echo "Restoring from: $CHECKPOINT_FILE"
         sst --load-checkpoint "$CHECKPOINT_FILE" > pingpong_restore.out 2>&1
         diff ../.github/workflows/pingpong_restore.good ./pingpong_restore.out
@@ -320,7 +320,7 @@ jobs:
         cd phold
         sst-register phold phold_LIBDIR=$(pwd)
         # Find the earliest checkpoint directory
-        CHECKPOINT_FILE=$(find checkpoint_* -name "*.sstcpt" | sort | head -1)
+        CHECKPOINT_FILE=$(find checkpoint -name "*.sstcpt" | sort | head -1)
         echo "Restoring from: $CHECKPOINT_FILE"
         sst --load-checkpoint "$CHECKPOINT_FILE" > phold_restore.out 2>&1
         diff ../.github/workflows/phold_restore.good ./phold_restore.out
