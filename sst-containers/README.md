@@ -231,8 +231,9 @@ the HPC system.
 
 Note that the architecture of the desktop and HPC system should be compatible
 (e.g., both x86_64), otherwise you may need to adjust the build process to
-target the HPC system's architecture. See the [Cross-Building for Different Architectures](#cross-building-for-different-architectures) section below for detailed instructions on
-building containers for different target architectures.
+target the HPC system's architecture. See the [Cross-Building for Different Architectures](#cross-building-for-different-architectures)
+section below for detailed instructions on building containers for different
+target architectures.
 
 Here is a working example of how to migrate the container from the example
 above:
