@@ -1,7 +1,7 @@
 import sys
 import os
 import argparse
-import itertools
+# Removed itertools usage; replaced product() calls with explicit nested loops
 
 # Allow importing local ahp_graph if not installed
 sys.path.append(os.environ.get('AHP_PATH', '.'))
@@ -238,63 +238,59 @@ class SubGrid(Device):
                 self.nodes[i][j] = n
 
         M = args.M
-        ring_range = range(-NUM_RINGS, NUM_RINGS + 1)
-        index_range = itertools.product(
-            range(self.row_start, self.row_end), range(M)
-        )
-        offset_range = list(itertools.product(ring_range, ring_range))
     
-    # Note: We do NOT directly wire child->border ports here; doing so for
-    # each child would attempt to attach many children to the same assembly
-    # multi-port index and lead to "already linked" errors in DOT and
-    # expansion. Instead, we add exactly ONE representative link per border
-    # index in a dedicated sweep after the inner loops (see below). That
-    # preserves DOT visuals (green boxes) and provides a clean rewiring
-    # anchor for runtime flatten/follow.
-        for i, j in index_range:
-            for di, dj in offset_range:
-                # Enforce ring boundary. 
-                if max(abs(di), abs(dj)) > NUM_RINGS:
-                    continue
+        # Note: We do NOT directly wire child->border ports here; doing so for
+        # each child would attempt to attach many children to the same assembly
+        # multi-port index and lead to "already linked" errors in DOT and
+        # expansion. Instead, we add exactly ONE representative link per border
+        # index in a dedicated sweep after the inner loops (see below). That
+        # preserves DOT visuals (green boxes) and provides a clean rewiring
+        # anchor for runtime flatten/follow.
+        for i in range(self.row_start, self.row_end):
+            for j in range(M):
+                for di in range(-NUM_RINGS, NUM_RINGS + 1):
+                    for dj in range(-NUM_RINGS, NUM_RINGS + 1):
+                        # Enforce ring boundary.
+                        if max(abs(di), abs(dj)) > NUM_RINGS:
+                            continue
 
-                ni = i + di
-                nj = j + dj
+                        ni = i + di
+                        nj = j + dj
 
-                # Only consider in-bounds neighbors in global grid
-                if not (0 <= ni < args.N and 0 <= nj < M):
-                    continue
+                        # Only consider in-bounds neighbors in global grid
+                        if not (0 <= ni < args.N and 0 <= nj < M):
+                            continue
 
-                src_idx = port_num(i, j, ni, nj)
-                tgt_idx = port_num(ni, nj, i, j)
-                src_port = f"port{src_idx}"
-                tgt_port = f"port{tgt_idx}"
+                        src_idx = port_num(i, j, ni, nj)
+                        tgt_idx = port_num(ni, nj, i, j)
+                        src_port = f"port{src_idx}"
+                        tgt_port = f"port{tgt_idx}"
 
-                # Internal neighbor within this subgrid
-                if self.row_start <= ni < self.row_end:
-                    # Duplicate-avoid rule only for internal wiring
-                    if not (di < 0 or (di == 0 and dj < 0)):
-                        continue
-                    
-                    if args.verbose >= 2:
-                        msg = (
-                            f"Internal link: {self.name}:node_{i}_{j}."
-                            f"{src_port} <-> {self.name}:node_{ni}_{nj}."
-                            f"{tgt_port} (delay {args.linkDelay})"
-                        )
-                        log_link(msg, level=2)
-                    
-                    src_node = self.nodes[i][j]
-                    tgt_node = self.nodes[ni][nj]
-                    graph.link(
-                        getattr(src_node, src_port),
-                        getattr(tgt_node, tgt_port),
-                        args.linkDelay,
-                    )
-                # Neighbor is outside this subgrid but inside the global grid:
-                # defer child->border wiring to the single-link border sweeps
-                # below to avoid multi-port collisions.
-                elif 0 <= ni < args.N:
-                    continue
+                        # Internal neighbor within this subgrid
+                        if self.row_start <= ni < self.row_end:
+                            # Duplicate-avoid rule only for internal wiring
+                            if not (di < 0 or (di == 0 and dj < 0)):
+                                continue
+
+                            if args.verbose >= 2:
+                                msg = (
+                                    f"Internal link: {self.name}:node_{i}_{j}."
+                                    f"{src_port} <-> {self.name}:node_{ni}_{nj}."
+                                    f"{tgt_port} (delay {args.linkDelay})"
+                                )
+                                log_link(msg, level=2)
+
+                            src_node = self.nodes[i][j]
+                            tgt_node = self.nodes[ni][nj]
+                            graph.link(
+                                getattr(src_node, src_port),
+                                getattr(tgt_node, tgt_port),
+                                args.linkDelay,
+                            )
+                        # Neighbor outside this subgrid but inside global grid:
+                        # defer to border sweeps below to avoid collisions.
+                        elif 0 <= ni < args.N:
+                            continue
 
         # Single-link border sweeps (run for both DOT and runtime): ensure all
         # externally linked border ports are anchored to exactly one boundary
