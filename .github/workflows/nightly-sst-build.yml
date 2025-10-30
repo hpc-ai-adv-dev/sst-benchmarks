@@ -1,0 +1,157 @@
+name: Nightly SST Container Build
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:      # Manual trigger for testing
+    inputs:
+      force_build:
+        description: 'Force build even if no updates detected'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/sst-core
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    outputs:
+      build_needed: ${{ steps.check.outputs.build_needed }}
+      current_sha: ${{ steps.check.outputs.current_sha }}
+      short_sha: ${{ steps.check.outputs.short_sha }}
+    steps:
+      - name: Check for SST-core devel branch updates
+        id: check
+        run: |
+          # Fetch current devel commit SHA
+          CURRENT_SHA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/sstsimulator/sst-core/branches/devel" | \
+            jq -r '.commit.sha')
+
+          if [ "$CURRENT_SHA" = "null" ] || [ -z "$CURRENT_SHA" ]; then
+            echo "Error: Failed to fetch current SHA from GitHub API"
+            exit 1
+          fi
+
+          # For now, assume no previous build (will be enhanced once repo variables are set up)
+          LAST_SHA=""
+
+          # Calculate short SHA for tagging
+          SHORT_SHA=${CURRENT_SHA:0:7}
+
+          echo "Current devel SHA: $CURRENT_SHA"
+          echo "Last built SHA: $LAST_SHA"
+          echo "Short SHA: $SHORT_SHA"
+
+          # Compare and set output
+          if [ "$CURRENT_SHA" != "$LAST_SHA" ] || [ "${{ inputs.force_build }}" = "true" ]; then
+            echo "Build needed: Changes detected or force build requested"
+            echo "build_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "Build not needed: No changes detected"
+            echo "build_needed=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "current_sha=$CURRENT_SHA" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+  build-container:
+    needs: check-updates
+    if: needs.check-updates.outputs.build_needed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=devel-${{ needs.check-updates.outputs.short_sha }}
+            type=raw,value=devel-latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/sstsimulator/sst-core
+            org.opencontainers.image.revision=${{ needs.check-updates.outputs.current_sha }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+
+      - name: Build and push container image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./sst-containers
+          file: ./sst-containers/Containerfile.tag
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            SSTrepo=https://github.com/sstsimulator/sst-core.git
+            tag=devel
+            NCPUS=4
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update last built SHA
+        run: |
+          # Update the repository variable with the new SHA
+          curl -L \
+            -X PATCH \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/actions/variables/LAST_BUILT_SHA \
+            -d '{"name":"LAST_BUILT_SHA","value":"${{ needs.check-updates.outputs.current_sha }}"}'
+
+  validate-container:
+    needs: [check-updates, build-container]
+    if: needs.check-updates.outputs.build_needed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull and validate container
+        run: |
+          # Pull the newly built image
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel-${{ needs.check-updates.outputs.short_sha }}
+
+          # Run basic validation
+          echo "Testing SST installation..."
+          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel-${{ needs.check-updates.outputs.short_sha }} \
+            /bin/bash -c "which sst && sst --version"
+
+          # Verify image size is reasonable (less than 2GB)
+          IMAGE_SIZE=$(docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel-${{ needs.check-updates.outputs.short_sha }} --format='{{.Size}}')
+          MAX_SIZE=2147483648  # 2GB in bytes
+          if [ $IMAGE_SIZE -gt $MAX_SIZE ]; then
+            echo "Warning: Image size ($IMAGE_SIZE bytes) exceeds maximum expected size ($MAX_SIZE bytes)"
+          else
+            echo "Image size validation passed: $IMAGE_SIZE bytes"
+          fi
+
+      - name: Container validation summary
+        run: |
+          echo "Container validation completed successfully"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel-${{ needs.check-updates.outputs.short_sha }}"
+          echo "Also tagged as: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel-latest"
+          echo "Built from SST-core commit: ${{ needs.check-updates.outputs.current_sha }}"
