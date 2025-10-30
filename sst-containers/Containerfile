@@ -79,7 +79,7 @@ FROM base AS core-build
 
 # Re-declare ARG for this stage
 ARG SSTver=15.0.0
-ARG NCPUS
+ARG NCPUS=2
 
 RUN mkdir -p /opt/SST/${SSTver}/src
 
@@ -106,7 +106,7 @@ FROM core-build AS elements-build
 
 # Re-declare ARG for this stage
 ARG SSTver=15.0.0
-ARG NCPUS
+ARG NCPUS=2
 
 # Download or copy SST-elements source
 WORKDIR /opt/SST/${SSTver}/src
