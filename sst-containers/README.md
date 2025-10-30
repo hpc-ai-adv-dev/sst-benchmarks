@@ -19,11 +19,48 @@ more details about each step.
 ## Overview
 
 * Complete working example: Building and running SST 15.0.0 container on a desktop
+  * Prerequisites
+  * Step 0: Prepare the Environment
+  * Step 1: Build the SST Container
+  * Step 2: Set Up SST Benchmarks
+  * Step 3: Run the SST Container
+  * Step 4: Build the SST Benchmarks (Inside Container)
+  * Step 5: Run a Benchmark Simulation (Inside Container)
+    * Expected Output
+  * Step 6: Exit the Container
+  * Optional: Migrate the Container to HPC Systems
 * Installing/verifying required dependencies for this process
+  * Quick Check if these are already on system
+  * Linux Installation and Setup
+  * HPE EX Installation and setup
+  * Mac Installation and Setup
+  * Verifying podman Installation
+  * Verifying apptainer Installation
+  * Verifying e4s-cl Installation
 * Downloading the SST-core and other needed software sources
 * Building the SST container
+  * What should be in the directory before build
+  * Example commands to build the SST container
+  * Example command to build with specific versions
+  * Creating Portable, OCI-Compatible Archives with podman save
+  * Verifying Archives
+  * Loading Archives that were previously saved
+  * Converting OCI Archives to Apptainer SIF Files
+    * Building SIF Files from OCI Archives
+    * Verifying SIF Files
 * Providing SST component C++ files and topology input files in Python
 * Running a simulation on a desktop and HPE EX using SST container
+  * Running SST Container on Desktop/Laptop
+  * Running SST Container on HPE EX
+    * Distributed Parallelism with e4s-cl and SST Containers
+* Cross-Building for Different Architectures
+  * Prerequisites for Cross-Building
+  * Cross-Building Commands
+    * Basic Cross-Build for Linux/AMD64
+  * Verifying Cross-Built Images
+    * Test Cross-Built Image
+  * Performance Considerations
+    * Build Time Expectations
 * Troubleshooting
 
 ## Complete Working Example: Building and Running SST 15.0.0 Container on a Desktop/Laptop
@@ -141,7 +178,7 @@ This command:
 - Uses the `--corners` option for corner case testing
 - Uses the `--verbose` option for detailed output
 
-### Expected Output
+#### Expected Output
 
 You should see output similar to:
 
@@ -194,7 +231,9 @@ the HPC system.
 
 Note that the architecture of the desktop and HPC system should be compatible
 (e.g., both x86_64), otherwise you may need to adjust the build process to
-target the HPC system's architecture.
+target the HPC system's architecture. See the [Cross-Building for Different Architectures](#cross-building-for-different-architectures)
+section below for detailed instructions on building containers for different
+target architectures.
 
 Here is a working example of how to migrate the container from the example
 above:
@@ -436,15 +475,15 @@ access and `wget` installed.
 Use the `download_tarballs.sh` script to download the necessary source tarballs
 for SST-core, SST-elements, and MPICH.
 
-The default sst version is 14.1.0, and the default mpi version is 4.0.2.
+The default sst version is 15.0.0, and the default mpi version is 4.0.2.
 Additionally, you can specify the version of each that you want. Here are some
 examples:
 
 ```bash
-# Download sources for SST version 14.1.0 and MPICH version 4.0.2
-./download_tarballs.sh
 # Download sources for SST version 15.0.0 and MPICH version 4.0.2
-./download_tarballs.sh 15.0.0
+./download_tarballs.sh
+# Download sources for an older SST version 14.1.0 and MPICH version 4.0.2
+./download_tarballs.sh 14.1.0
 # Download sources for SST version 15.0.0 and MPICH version 4.1.1
 ./download_tarballs.sh 15.0.0 4.1.1
 ```
@@ -471,8 +510,8 @@ tree .
 .
 ├── Containerfile
 ├── mpich-4.0.2.tar.gz
-├── sstcore-14.1.0.tar.gz
-├── sstelements-14.1.0.tar.gz
+├── sstcore-15.0.0.tar.gz
+├── sstelements-15.0.0.tar.gz
 ```
 
 Note that the version numbers in the tar.gz files may vary based on the
@@ -483,11 +522,11 @@ versions you downloaded.
 Here is an example command to build the SST container using `podman`:
 
 ```bash
-podman build -t sst:14.1.0 .
+podman build -t sst:15.0.0 .
 ```
 
 This command will build the SST container, without the elements library, using
-the `Containerfile` in the current directory and tag it as `sst:14.1.0`.
+the `Containerfile` in the current directory and tag it as `sst:15.0.0`.
 
 As the following examples show, the supplied `Containerfile` accepts arguments
 for SST version and MPICH version, allowing you to specify which versions to
@@ -499,25 +538,25 @@ You can specify the SST and MPICH versions when building the container:
 
 ```bash
 podman build \
-  --build-arg SSTver=14.1.0 \
+  --build-arg SSTver=15.0.0 \
   --build-arg mpich=4.0.2 \
-  -t sst:14.1.0 .
+  -t sst:15.0.0 .
 ```
-This command builds the SST container with SST version 14.1.0 and MPICH version
-4.0.2, tagging it as `sst:14.1.0`.
+This command builds the SST container with SST version 15.0.0 and MPICH version
+4.0.2, tagging it as `sst:15.0.0`.
 
 You can also build the container with the SST-elements library by using the
 `--target` option:
 
 ```bash
 podman build \
-  --build-arg SSTver=14.1.0 \
+  --build-arg SSTver=15.0.0 \
   --build-arg mpich=4.0.2 \
   --target sst-full \
-  -t sst-full:14.1.0 .
+  -t sst-full:15.0.0 .
 ```
 This command builds the SST container with the elements library, tagging it as
-`sst-full:14.1.0`.
+`sst-full:15.0.0`.
 
 
 ### Creating Portable, OCI-Compatible Archives with podman save
@@ -793,6 +832,96 @@ Your job should immediately get a job ID and you should be able to use the
 `squeue` command to view the job scheduler queue and see the status of your job.
 
 When the job is finished, the output will be in the file `output.o<jobID>`
+
+
+## Cross-Building for Different Architectures
+
+When developing on one architecture (e.g., ARM-based Mac) but targeting deployment
+on another architecture (e.g., x86_64 Linux HPC systems), you need to cross-build
+your containers. This section covers how to build Linux/AMD64 containers from ARM-based Macs.
+
+### Prerequisites for Cross-Building
+
+1. **Check if QEMU is already available**:
+   ```bash
+   # Check if QEMU is installed
+   which qemu-system-x86_64
+   # or
+   qemu-system-x86_64 --version
+
+   # Check if emulation is already set up in podman
+   podman run --rm --platform linux/amd64 alpine:latest uname -m
+   # If this returns "x86_64" on an ARM Mac, emulation is working
+   ```
+
+2. **Install QEMU emulation if needed**:
+   ```bash
+   # Install QEMU emulation (if not already available)
+   brew install qemu
+
+   # On Mac, podman usually handles emulation automatically
+   # Test if cross-platform building works:
+   podman build --platform linux/amd64 -t test-cross - <<< 'FROM alpine:latest'
+
+   # If the above fails, you may need to restart podman machine:
+   podman machine stop
+   podman machine start
+   ```
+
+### Cross-Building Commands
+
+#### Basic Cross-Build for Linux/AMD64
+
+Build an SST container targeting x86_64 Linux from an ARM Mac:
+
+```bash
+# Cross-build SST container for Linux/AMD64
+podman build \
+  --platform linux/amd64 \
+  --build-arg SSTver=15.0.0 \
+  --build-arg mpich=4.0.2 \
+  -t sst-core:15.0.0-amd64 \
+  -f Containerfile \
+  .
+```
+
+### Verifying Cross-Built Images
+
+#### Test Cross-Built Image
+
+```bash
+# First, verify the image was actually built for the correct architecture
+podman inspect sst-core:15.0.0-amd64 | grep -i architecture
+# Expected output: "Architecture": "amd64"
+
+# If architecture is correct, test the cross-built image (will use emulation on ARM Mac)
+podman run --rm --platform linux/amd64 sst-core:15.0.0-amd64 uname -m
+# Expected output: x86_64
+
+# If you get "Exec format error", try these alternatives:
+# Option 1: Force platform and use a simple command
+podman run --rm --platform linux/amd64 sst-core:15.0.0-amd64 /bin/sh -c "uname -m"
+
+# Option 2: Test with a known working cross-platform image first
+podman run --rm --platform linux/amd64 alpine:latest uname -m
+# This should work if emulation is properly set up
+
+# Option 3: Test interactively
+podman run -it --rm --platform linux/amd64 sst-core:15.0.0-amd64
+# Then inside the container, run:
+uname -m
+# Expected output: x86_64
+exit
+```
+
+### Performance Considerations
+
+#### Build Time Expectations
+
+Cross-builds take more time due to emulation overhead and may require more memory
+than native builds.
+
+For more details on cross-building, see the official Podman documentation on multi-architecture builds.
 
 
 ## Troubleshooting
