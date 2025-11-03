@@ -299,10 +299,6 @@ def main() -> None:
                 link_counter,
             )
 
-    # Optional verbose summary
-    if args.verbose:
-        print(f"Total link endpoints registered: {link_counter['count']}")
-
 
 if __name__ == "__main__":
     main()
