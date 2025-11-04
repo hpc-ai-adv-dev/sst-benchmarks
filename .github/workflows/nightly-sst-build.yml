@@ -2,7 +2,7 @@ name: Nightly SST Container Build
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+    - cron: '0 10 * * *'  # Daily at 10AM UTC (2 AM Pacific Standard Time (PST), 3 AM Pacific Daylight Time (PDT))
   workflow_dispatch:      # Manual trigger for testing
     inputs:
       force_build:
@@ -14,6 +14,12 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/sst-core
+  DOCKERFILE: sst-containers/Containerfile.tag
+  SST_REPO: https://github.com/sstsimulator/sst-core.git
+  SST_BRANCH: master
+  BUILD_NCPUS: 2
+  MAX_IMAGE_SIZE: 2147483648  # 2GB in bytes
+  TAG_PREFIX: master
 
 jobs:
   check-updates:
@@ -23,40 +29,60 @@ jobs:
       current_sha: ${{ steps.check.outputs.current_sha }}
       short_sha: ${{ steps.check.outputs.short_sha }}
     steps:
-      - name: Check for SST-core devel branch updates
+      - name: Check for SST-core branch updates
         id: check
-        run: |
-          # Fetch current devel commit SHA
-          CURRENT_SHA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/sstsimulator/sst-core/branches/devel" | \
-            jq -r '.commit.sha')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get current commit from SST-core branch
+            const { data: branch } = await github.rest.repos.getBranch({
+              owner: 'sstsimulator',
+              repo: 'sst-core',
+              branch: '${{ env.SST_BRANCH }}'
+            });
 
-          if [ "$CURRENT_SHA" = "null" ] || [ -z "$CURRENT_SHA" ]; then
-            echo "Error: Failed to fetch current SHA from GitHub API"
-            exit 1
-          fi
+            const currentSha = branch.commit.sha;
+            const shortSha = currentSha.substring(0, 7);
+            const forceBuild = '${{ inputs.force_build }}' === 'true';
 
-          # For now, assume no previous build (will be enhanced once repo variables are set up)
-          LAST_SHA=""
+            // Get last built SHA from repository variables
+            let lastSha = '';
+            try {
+              const { data: variable } = await github.rest.actions.getRepoVariable({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                variable_name: 'LAST_BUILT_SST_SHA'
+              });
+              lastSha = variable.value;
+            } catch (error) {
+              if (error.status === 404) {
+                core.info('LAST_BUILT_SST_SHA variable not found - this appears to be the first build');
+              } else {
+                throw error;
+              }
+            }
 
-          # Calculate short SHA for tagging
-          SHORT_SHA=${CURRENT_SHA:0:7}
+            const buildNeeded = currentSha !== lastSha || forceBuild;
 
-          echo "Current devel SHA: $CURRENT_SHA"
-          echo "Last built SHA: $LAST_SHA"
-          echo "Short SHA: $SHORT_SHA"
+            // Set outputs
+            core.setOutput('build_needed', buildNeeded);
+            core.setOutput('current_sha', currentSha);
+            core.setOutput('short_sha', shortSha);
 
-          # Compare and set output
-          if [ "$CURRENT_SHA" != "$LAST_SHA" ] || [ "${{ inputs.force_build }}" = "true" ]; then
-            echo "Build needed: Changes detected or force build requested"
-            echo "build_needed=true" >> $GITHUB_OUTPUT
-          else
-            echo "Build not needed: No changes detected"
-            echo "build_needed=false" >> $GITHUB_OUTPUT
-          fi
+            // Log information
+            core.info(`Current ${{ env.SST_BRANCH }} SHA: ${currentSha}`);
+            core.info(`Last built SHA: ${lastSha || 'none (first build)'}`);
+            core.info(`Short SHA: ${shortSha}`);
+            core.info(`Force build: ${forceBuild}`);
+            core.info(`Build needed: ${buildNeeded}`);
 
-          echo "current_sha=$CURRENT_SHA" >> $GITHUB_OUTPUT
-          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+            if (buildNeeded) {
+              core.notice(forceBuild ?
+                'Build triggered by force_build parameter' :
+                'Build needed: Changes detected in SST-core ${{ env.SST_BRANCH }} branch');
+            } else {
+              core.notice('Build not needed: No changes detected');
+            }
 
   build-container:
     needs: check-updates
@@ -68,6 +94,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Download MPICH source
+        working-directory: ./sst-containers
+        run: |
+          MPICH_VERSION=4.0.2
+          if [ ! -f "mpich-${MPICH_VERSION}.tar.gz" ]; then
+            echo "Downloading MPICH ${MPICH_VERSION}..."
+            wget https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz
+          else
+            echo "MPICH tarball already exists"
+          fi
 
       - name: Log in to Container Registry
         uses: docker/login-action@v3
@@ -85,10 +122,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=devel-${{ needs.check-updates.outputs.short_sha }}
-            type=raw,value=devel-latest
+            type=raw,value=${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }}
+            type=raw,value=${{ env.TAG_PREFIX }}-latest
           labels: |
-            org.opencontainers.image.source=https://github.com/sstsimulator/sst-core
+            org.opencontainers.image.source=${{ env.SST_REPO }}
             org.opencontainers.image.revision=${{ needs.check-updates.outputs.current_sha }}
             org.opencontainers.image.created=${{ github.event.repository.updated_at }}
 
@@ -96,27 +133,17 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./sst-containers
-          file: ./sst-containers/Containerfile.tag
+          file: ${{ env.DOCKERFILE }}
+          target: core-build
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            SSTrepo=https://github.com/sstsimulator/sst-core.git
-            tag=devel
-            NCPUS=4
+            SSTrepo=${{ env.SST_REPO }}
+            tag=${{ env.SST_BRANCH }}
+            NCPUS=${{ env.BUILD_NCPUS }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Update last built SHA
-        run: |
-          # Update the repository variable with the new SHA
-          curl -L \
-            -X PATCH \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/${{ github.repository }}/actions/variables/LAST_BUILT_SHA \
-            -d '{"name":"LAST_BUILT_SHA","value":"${{ needs.check-updates.outputs.current_sha }}"}'
 
   validate-container:
     needs: [check-updates, build-container]
@@ -133,18 +160,19 @@ jobs:
       - name: Pull and validate container
         run: |
           # Pull the newly built image
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel-${{ needs.check-updates.outputs.short_sha }}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }}
 
           # Run basic validation
           echo "Testing SST installation..."
-          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel-${{ needs.check-updates.outputs.short_sha }} \
+          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }} \
             /bin/bash -c "which sst && sst --version"
 
           # Verify image size is reasonable (less than 2GB)
-          IMAGE_SIZE=$(docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel-${{ needs.check-updates.outputs.short_sha }} --format='{{.Size}}')
-          MAX_SIZE=2147483648  # 2GB in bytes
+          IMAGE_SIZE=$(docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }} --format='{{.Size}}')
+          MAX_SIZE=${{ env.MAX_IMAGE_SIZE }}
           if [ $IMAGE_SIZE -gt $MAX_SIZE ]; then
-            echo "Warning: Image size ($IMAGE_SIZE bytes) exceeds maximum expected size ($MAX_SIZE bytes)"
+            echo "ERROR: Image size ($IMAGE_SIZE bytes) exceeds maximum expected size ($MAX_SIZE bytes)"
+            exit 1
           else
             echo "Image size validation passed: $IMAGE_SIZE bytes"
           fi
@@ -152,6 +180,34 @@ jobs:
       - name: Container validation summary
         run: |
           echo "Container validation completed successfully"
-          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel-${{ needs.check-updates.outputs.short_sha }}"
-          echo "Also tagged as: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:devel-latest"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }}"
+          echo "Also tagged as: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-latest"
           echo "Built from SST-core commit: ${{ needs.check-updates.outputs.current_sha }}"
+
+      - name: Update last built SHA after successful validation
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              // Try to update existing variable
+              await github.rest.actions.updateRepoVariable({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                variable_name: 'LAST_BUILT_SST_SHA',
+                value: '${{ needs.check-updates.outputs.current_sha }}'
+              });
+              core.info('Updated LAST_BUILT_SST_SHA to ${{ needs.check-updates.outputs.current_sha }}');
+            } catch (error) {
+              if (error.status === 404) {
+                // Variable doesn't exist, create it
+                await github.rest.actions.createRepoVariable({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  variable_name: 'LAST_BUILT_SST_SHA',
+                  value: '${{ needs.check-updates.outputs.current_sha }}'
+                });
+                core.info('Created LAST_BUILT_SST_SHA with value ${{ needs.check-updates.outputs.current_sha }}');
+              } else {
+                throw error;
+              }
+            }
