@@ -1,0 +1,236 @@
+name: Nightly SST Container Build
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # Daily at 10AM UTC (2 AM Pacific Standard Time (PST), 3 AM Pacific Daylight Time (PDT))
+  workflow_dispatch:      # Manual trigger for testing
+    inputs:
+      force_build:
+        description: 'Force build even if no updates detected'
+        required: false
+        default: false
+        type: boolean
+      mpich_version:
+        description: 'MPICH version to use'
+        required: false
+        default: '4.0.2'
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/sst-core
+  DOCKERFILE: sst-containers/Containerfile.tag
+  SST_REPO: https://github.com/sstsimulator/sst-core.git
+  SST_BRANCH: master
+  BUILD_NCPUS: 2
+  MAX_IMAGE_SIZE: 2147483648  # 2GB in bytes
+  TAG_PREFIX: master
+  # inputs context is only available for workflow_dispatch, not scheduled runs
+  # The fallback '4.0.2' ensures scheduled runs have a default value
+  # See: https://docs.github.com/en/actions/learn-github-actions/contexts#inputs-context
+  MPICH_VERSION: ${{ inputs.mpich_version || '4.0.2' }}
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    outputs:
+      build_needed: ${{ steps.check.outputs.build_needed }}
+      current_sha: ${{ steps.check.outputs.current_sha }}
+      short_sha: ${{ steps.check.outputs.short_sha }}
+    steps:
+      - name: Check for SST-core branch updates
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get current commit from SST-core branch
+            const { data: branch } = await github.rest.repos.getBranch({
+              owner: 'sstsimulator',
+              repo: 'sst-core',
+              branch: '${{ env.SST_BRANCH }}'
+            });
+
+            const currentSha = branch.commit.sha;
+            const shortSha = currentSha.substring(0, 7);
+            const forceBuild = '${{ inputs.force_build }}' === 'true';
+
+            // Get last built SHA from repository variables
+            let lastSha = '';
+            try {
+              const { data: variable } = await github.rest.actions.getRepoVariable({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                variable_name: 'LAST_BUILT_SST_SHA'
+              });
+              lastSha = variable.value;
+            } catch (error) {
+              if (error.status === 404) {
+                core.info('LAST_BUILT_SST_SHA variable not found - this appears to be the first build');
+              } else {
+                throw error;
+              }
+            }
+
+            const buildNeeded = currentSha !== lastSha || forceBuild;
+
+            // Set outputs
+            core.setOutput('build_needed', buildNeeded);
+            core.setOutput('current_sha', currentSha);
+            core.setOutput('short_sha', shortSha);
+
+            // Log information
+            core.info(`Current ${{ env.SST_BRANCH }} SHA: ${currentSha}`);
+            core.info(`Last built SHA: ${lastSha || 'none (first build)'}`);
+            core.info(`Short SHA: ${shortSha}`);
+            core.info(`Force build: ${forceBuild}`);
+            core.info(`Build needed: ${buildNeeded}`);
+
+            if (buildNeeded) {
+              core.notice(forceBuild ?
+                'Build triggered by force_build parameter' :
+                'Build needed: Changes detected in SST-core ${{ env.SST_BRANCH }} branch');
+            } else {
+              core.notice('Build not needed: No changes detected');
+            }
+
+  build-container:
+    needs: check-updates
+    if: needs.check-updates.outputs.build_needed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache MPICH tarball
+        id: cache-mpich
+        uses: actions/cache@v4
+        with:
+          path: sst-containers/mpich-${{ env.MPICH_VERSION }}.tar.gz
+          key: mpich-${{ env.MPICH_VERSION }}
+
+      - name: Download MPICH source
+        if: steps.cache-mpich.outputs.cache-hit != 'true'
+        working-directory: ./sst-containers
+        run: |
+          echo "Downloading MPICH ${{ env.MPICH_VERSION }}..."
+          wget https://www.mpich.org/static/downloads/${{ env.MPICH_VERSION }}/mpich-${{ env.MPICH_VERSION }}.tar.gz
+
+      - name: Verify MPICH tarball
+        working-directory: ./sst-containers
+        run: |
+          if [ -f "mpich-${{ env.MPICH_VERSION }}.tar.gz" ]; then
+            echo "MPICH tarball present (from ${{ steps.cache-mpich.outputs.cache-hit == 'true' && 'cache' || 'download' }})"
+            ls -lh mpich-${{ env.MPICH_VERSION }}.tar.gz
+          else
+            echo "ERROR: MPICH tarball not found"
+            exit 1
+          fi
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }}
+            type=raw,value=${{ env.TAG_PREFIX }}-latest
+          labels: |
+            org.opencontainers.image.source=${{ env.SST_REPO }}
+            org.opencontainers.image.revision=${{ needs.check-updates.outputs.current_sha }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+
+      - name: Build and push container image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./sst-containers
+          file: ${{ env.DOCKERFILE }}
+          target: core-build
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            SSTrepo=${{ env.SST_REPO }}
+            tag=${{ env.SST_BRANCH }}
+            NCPUS=${{ env.BUILD_NCPUS }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  validate-container:
+    needs: [check-updates, build-container]
+    if: needs.check-updates.outputs.build_needed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull and validate container
+        run: |
+          # Pull the newly built image
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }}
+
+          # Run basic validation
+          echo "Testing SST installation..."
+          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }} \
+            /bin/bash -c "which sst && sst --version"
+
+          # Verify image size is reasonable (less than 2GB)
+          IMAGE_SIZE=$(docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }} --format='{{.Size}}')
+          MAX_SIZE=${{ env.MAX_IMAGE_SIZE }}
+          if [ $IMAGE_SIZE -gt $MAX_SIZE ]; then
+            echo "ERROR: Image size ($IMAGE_SIZE bytes) exceeds maximum expected size ($MAX_SIZE bytes)"
+            exit 1
+          else
+            echo "Image size validation passed: $IMAGE_SIZE bytes"
+          fi
+
+      - name: Container validation summary
+        run: |
+          echo "Container validation completed successfully"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }}"
+          echo "Also tagged as: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-latest"
+          echo "Built from SST-core commit: ${{ needs.check-updates.outputs.current_sha }}"
+
+      - name: Update last built SHA after successful validation
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              // Try to update existing variable
+              await github.rest.actions.updateRepoVariable({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                variable_name: 'LAST_BUILT_SST_SHA',
+                value: '${{ needs.check-updates.outputs.current_sha }}'
+              });
+              core.info('Updated LAST_BUILT_SST_SHA to ${{ needs.check-updates.outputs.current_sha }}');
+            } catch (error) {
+              if (error.status === 404) {
+                // Variable doesn't exist, create it
+                await github.rest.actions.createRepoVariable({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  variable_name: 'LAST_BUILT_SST_SHA',
+                  value: '${{ needs.check-updates.outputs.current_sha }}'
+                });
+                core.info('Created LAST_BUILT_SST_SHA with value ${{ needs.check-updates.outputs.current_sha }}');
+              } else {
+                throw error;
+              }
+            }
