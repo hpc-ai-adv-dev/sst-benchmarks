@@ -173,6 +173,10 @@ jobs:
     needs: [check-updates, build-container]
     if: needs.check-updates.outputs.build_needed == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      actions: write
     steps:
       - name: Log in to Container Registry
         uses: docker/login-action@v3
