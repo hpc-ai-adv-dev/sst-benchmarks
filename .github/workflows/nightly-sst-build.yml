@@ -159,6 +159,7 @@ jobs:
           file: ${{ env.DOCKERFILE }}
           target: core-build
           push: true
+          platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
@@ -183,12 +184,12 @@ jobs:
       - name: Pull and validate container
         run: |
           # Pull the newly built image
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }}
+          docker pull --platform linux/amd64 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }}
 
           # Run basic validation
           echo "Testing SST installation..."
-          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }} \
-            /bin/bash -c "which sst && sst --version"
+          docker run --rm --platform linux/amd64 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }} \
+            -c "which sst && sst --version"
 
           # Verify image size is reasonable (less than 2GB)
           IMAGE_SIZE=$(docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }} --format='{{.Size}}')
