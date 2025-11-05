@@ -62,8 +62,7 @@ RUN apt update && apt install -y \
     wget \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Download or copy MPICH source
-# RUN wget https://www.mpich.org/static/downloads/$mpich/$mpich_prefix.tar.gz --no-check-certificate
+# Copy MPICH source
 COPY ${mpich_prefix}.tar.gz /tmp/
 
 # Build MPICH from source
