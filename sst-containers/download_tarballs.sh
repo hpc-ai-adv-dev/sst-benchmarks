@@ -5,7 +5,7 @@
 set -e  # Exit on any error
 
 # Default versions
-DEFAULT_SST_VERSION="14.1.0"
+DEFAULT_SST_VERSION="15.0.0"
 DEFAULT_MPICH_VERSION="4.0.2"
 
 # Parse command line arguments
