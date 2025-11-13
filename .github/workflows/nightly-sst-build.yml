@@ -54,21 +54,36 @@ jobs:
           echo "Current SST-core ${{ env.SST_BRANCH }} SHA: $CURRENT_SHA"
           echo "Short SHA: $SHORT_SHA"
 
-          # Get authentication token for GHCR
+          # GHCR requires username to match the token owner for authentication
           echo "Getting GHCR authentication token..."
-          TOKEN_RESPONSE=$(curl -s -u "${{ github.repository_owner }}:$GITHUB_TOKEN" \
+          TOKEN_RESPONSE=$(curl -s -u "${{ github.actor }}:$GITHUB_TOKEN" \
             "https://ghcr.io/token?scope=repository:${{ github.repository_owner }}/sst-core:pull")
           TOKEN=$(echo "$TOKEN_RESPONSE" | grep -o '"token":"[^"]*' | sed 's/"token":"//')
 
+          # Debug: Check if we got a token (without printing the actual token)
+          if [ -n "$TOKEN" ]; then
+            echo "Successfully obtained GHCR token"
+          else
+            echo "::warning::Token response: $TOKEN_RESPONSE"
+          fi
+
+          # Initialize BUILD_NEEDED
+          BUILD_NEEDED="true"
+
           if [ -z "$TOKEN" ]; then
             echo "::warning::Failed to get GHCR token, will build"
-            BUILD_NEEDED="true"
           else
             # Get the manifest for the latest tag
             echo "Fetching manifest for ${{ env.TAG_PREFIX }}-latest..."
             MANIFEST=$(curl -s -H "Authorization: Bearer $TOKEN" \
               -H "Accept: application/vnd.oci.image.manifest.v1+json" \
               "https://ghcr.io/v2/${{ github.repository_owner }}/sst-core/manifests/${{ env.TAG_PREFIX }}-latest")
+
+            # Debug manifest response
+            echo "Manifest response length: ${#MANIFEST} characters"
+            if echo "$MANIFEST" | grep -q '"errors"'; then
+              echo "::warning::Manifest fetch returned errors: $(echo "$MANIFEST" | grep -o '"message":"[^"]*')"
+            fi
 
             # Extract config digest
             CONFIG_DIGEST=$(echo "$MANIFEST" | grep -o '"config":{[^}]*}' | grep -o '"digest":"[^"]*' | sed 's/"digest":"//')
@@ -77,6 +92,8 @@ jobs:
               echo "::notice::No existing image found, will build"
               BUILD_NEEDED="true"
             else
+              echo "Found config digest: ${CONFIG_DIGEST:0:20}..."
+
               # Get the config blob which contains the labels
               echo "Fetching config blob..."
               CONFIG=$(curl -s -H "Authorization: Bearer $TOKEN" \
@@ -85,21 +102,26 @@ jobs:
               # Extract the revision label (SST-core SHA)
               LAST_SHA=$(echo "$CONFIG" | grep -o '"org.opencontainers.image.revision":"[^"]*' | sed 's/"org.opencontainers.image.revision":"//')
 
-              echo "Last built SHA: $LAST_SHA"
-              echo "Current SHA:    $CURRENT_SHA"
-
-              # Compare SHAs
-              if [ "$LAST_SHA" = "$CURRENT_SHA" ]; then
-                echo "::notice::No changes detected, skipping build"
-                BUILD_NEEDED="false"
-              else
-                echo "::notice::SHA mismatch detected, build needed"
+              if [ -z "$LAST_SHA" ]; then
+                echo "::warning::Could not extract revision label from config, will build"
                 BUILD_NEEDED="true"
+              else
+                echo "Last built SHA: $LAST_SHA"
+                echo "Current SHA:    $CURRENT_SHA"
+
+                # Compare SHAs
+                if [ "$LAST_SHA" = "$CURRENT_SHA" ]; then
+                  echo "::notice::No changes detected, skipping build"
+                  BUILD_NEEDED="false"
+                else
+                  echo "::notice::SHA mismatch detected, build needed"
+                  BUILD_NEEDED="true"
+                fi
               fi
             fi
           fi
 
-          # Handle force_build override
+          # Handle force_build override (AFTER SHA check)
           FORCE_BUILD="${{ inputs.force_build }}"
           if [ "$FORCE_BUILD" = "true" ]; then
             BUILD_NEEDED="true"
