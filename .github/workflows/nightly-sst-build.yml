@@ -57,32 +57,43 @@ jobs:
           # Initialize BUILD_NEEDED
           BUILD_NEEDED="true"
 
-          # Use GitHub Packages API to check for existing image and get its metadata
+          # Use GitHub CLI to check for existing package and get its metadata
           echo "Checking for existing package version with tag ${{ env.TAG_PREFIX }}-latest..."
 
-          # Get package versions from GitHub Packages API
-          PACKAGE_API="https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/sst-core/versions"
-          VERSIONS_RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+          # Use gh api to get package versions (handles authentication automatically)
+          VERSIONS_RESPONSE=$(gh api \
             -H "Accept: application/vnd.github+json" \
-            "$PACKAGE_API?per_page=100")
+            "/orgs/${{ github.repository_owner }}/packages/container/sst-core/versions?per_page=100" 2>&1 || echo "[]")
 
-          # Check if we got a valid response
-          if echo "$VERSIONS_RESPONSE" | grep -q '"message"'; then
-            echo "::warning::API request failed: $(echo "$VERSIONS_RESPONSE" | grep -o '"message":"[^"]*' | head -1)"
+          # Debug: Show response summary
+          echo "API response length: ${#VERSIONS_RESPONSE} characters"
+
+          # Check if we got an error
+          if echo "$VERSIONS_RESPONSE" | grep -qi "HTTP 404\|Not Found\|could not resolve"; then
+            echo "::notice::Package not found (likely first build), will build"
+            BUILD_NEEDED="true"
+          elif echo "$VERSIONS_RESPONSE" | grep -q '"message"'; then
+            ERROR_MSG=$(echo "$VERSIONS_RESPONSE" | grep -o '"message":"[^"]*' | sed 's/"message":"//' || echo "Unknown error")
+            echo "::warning::API request returned error: $ERROR_MSG"
+            echo "Will build to be safe"
+            BUILD_NEEDED="true"
+          elif [ ${#VERSIONS_RESPONSE} -lt 10 ]; then
+            echo "::warning::API response too short or empty"
             echo "Will build to be safe"
             BUILD_NEEDED="true"
           else
             # Find the version with the master-latest tag
             # The API returns an array of versions with metadata including tags
-            VERSION_WITH_TAG=$(echo "$VERSIONS_RESPONSE" | grep -B 50 '"name":"${{ env.TAG_PREFIX }}-latest"' | grep -m 1 '"metadata"' -A 20)
+            VERSION_WITH_TAG=$(echo "$VERSIONS_RESPONSE" | grep -B 50 '"name":"${{ env.TAG_PREFIX }}-latest"' | grep -m 1 '"metadata"' -A 20 || echo "")
 
             if [ -z "$VERSION_WITH_TAG" ]; then
               echo "::notice::No existing image with tag ${{ env.TAG_PREFIX }}-latest found, will build"
               BUILD_NEEDED="true"
             else
-              # Extract the container.tags array and look for the revision label pattern
+              echo "Found version with matching tag"
+              # Extract the OCI label with the revision
               # GitHub Packages API includes OCI labels in the metadata
-              LAST_SHA=$(echo "$VERSION_WITH_TAG" | grep -o '"org.opencontainers.image.revision":"[^"]*' | sed 's/"org.opencontainers.image.revision":"//' | head -1)
+              LAST_SHA=$(echo "$VERSION_WITH_TAG" | grep -o '"org.opencontainers.image.revision":"[^"]*' | sed 's/"org.opencontainers.image.revision":"//' | head -1 || echo "")
 
               if [ -z "$LAST_SHA" ]; then
                 echo "::warning::Could not find revision label in package metadata, will build"
@@ -101,7 +112,9 @@ jobs:
                 fi
               fi
             fi
-          fi          # Handle force_build override (AFTER SHA check)
+          fi
+
+          # Handle force_build override (AFTER SHA check)
           FORCE_BUILD="${{ inputs.force_build }}"
           if [ "$FORCE_BUILD" = "true" ]; then
             BUILD_NEEDED="true"
