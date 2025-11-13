@@ -53,44 +53,28 @@ jobs:
           echo "Current SST-core ${{ env.SST_BRANCH }} SHA: $CURRENT_SHA"
           echo "Short SHA: $SHORT_SHA"
 
-          # Initialize BUILD_NEEDED
-          BUILD_NEEDED="true"
+          # Create our tag as master-{short_sha}
+          TARGET_TAG="${{ env.TAG_PREFIX }}-${SHORT_SHA}"
+          echo "Checking for existing tag: $TARGET_TAG"
 
-          # Use GitHub CLI to check for existing package and get its metadata
-          echo "Checking for existing package version with tag ${{ env.TAG_PREFIX }}-latest..."
+          # List all package versions and check if our tag exists
+          EXISTING_TAG=$(gh api "/orgs/${{ github.repository_owner }}/packages/container/sst-core/versions" \
+            --jq ".[] | select(.metadata.container.tags[]? == \"$TARGET_TAG\") | .metadata.container.tags[]" \
+            2>/dev/null | grep -x "$TARGET_TAG" || echo "")
 
-          # Use gh api with jq to extract revision label from package with our tag
-          LAST_SHA=$(gh api \
-            -H "Accept: application/vnd.github+json" \
-            "/orgs/${{ github.repository_owner }}/packages/container/sst-core/versions?per_page=100" \
-            --jq '.[] | select(.metadata.container.tags[] == "${{ env.TAG_PREFIX }}-latest") | .metadata.container.tags[] | select(startswith("org.opencontainers.image.revision=")) | sub("org.opencontainers.image.revision="; "")' \
-            2>/dev/null || echo "")
-
-          if [ -z "$LAST_SHA" ]; then
-            echo "::notice::No existing image with tag ${{ env.TAG_PREFIX }}-latest found or no revision label, will build"
-            BUILD_NEEDED="true"
+          if [ -n "$EXISTING_TAG" ]; then
+            echo "::notice::Image with tag $TARGET_TAG already exists, skipping build"
+            BUILD_NEEDED="false"
           else
-            echo "Last built SHA: $LAST_SHA"
-            echo "Current SHA:    $CURRENT_SHA"
-
-            # Compare SHAs
-            if [ "$LAST_SHA" = "$CURRENT_SHA" ]; then
-              echo "::notice::No changes detected, skipping build"
-              BUILD_NEEDED="false"
-            else
-              echo "::notice::SHA mismatch detected, build needed"
-              BUILD_NEEDED="true"
-            fi
+            echo "::notice::No image found with tag $TARGET_TAG, build needed"
+            BUILD_NEEDED="true"
           fi
 
-          # Handle force_build override (AFTER SHA check)
+          # Handle force_build override (only if explicitly set)
           FORCE_BUILD="${{ inputs.force_build }}"
           if [ "$FORCE_BUILD" = "true" ]; then
             BUILD_NEEDED="true"
             echo "::notice::Build forced by force_build=true parameter"
-          elif [ "$FORCE_BUILD" = "false" ]; then
-            BUILD_NEEDED="false"
-            echo "::notice::Build skipped by force_build=false parameter"
           fi
 
           # Set outputs
@@ -214,4 +198,4 @@ jobs:
           echo "Built from SST-core commit: ${{ needs.check-updates.outputs.current_sha }}"
           echo ""
           echo "The SST-core SHA is stored in the container image label: org.opencontainers.image.revision"
-          echo "Future builds will check this label to determine if a rebuild is needed"
+          echo "Future builds will check the tag (short SHA) to determine if a rebuild is needed"
