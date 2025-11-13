@@ -33,6 +33,9 @@ env:
 jobs:
   check-updates:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     outputs:
       build_needed: ${{ steps.check.outputs.build_needed }}
       current_sha: ${{ steps.check.outputs.current_sha }}
@@ -40,6 +43,8 @@ jobs:
     steps:
       - name: Check for SST-core branch updates
         id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get current commit SHA from SST-core master branch
           API_RESPONSE=$(curl -s https://api.github.com/repos/sstsimulator/sst-core/branches/${{ env.SST_BRANCH }})
@@ -49,54 +54,59 @@ jobs:
           echo "Current SST-core ${{ env.SST_BRANCH }} SHA: $CURRENT_SHA"
           echo "Short SHA: $SHORT_SHA"
 
-          # Try to get the last built SHA from the container image labels using GHCR API
-          LAST_SHA=""
-          PACKAGE_NAME="sst-core"
+          # Get authentication token for GHCR
+          echo "Getting GHCR authentication token..."
+          TOKEN_RESPONSE=$(curl -s -u "${{ github.repository_owner }}:$GITHUB_TOKEN" \
+            "https://ghcr.io/token?scope=repository:${{ github.repository_owner }}/sst-core:pull")
+          TOKEN=$(echo "$TOKEN_RESPONSE" | grep -o '"token":"[^"]*' | sed 's/"token":"//')
 
-          echo "Checking for existing image via GHCR API..."
-
-          # Use GitHub API to get package version metadata
-          # This works without special authentication for public packages
-          PACKAGES_URL="https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/${PACKAGE_NAME}/versions"
-
-          # Get the latest version with the master-latest tag
-          PACKAGE_DATA=$(curl -s -H "Accept: application/vnd.github+json" "$PACKAGES_URL?per_page=100")
-
-          # Find the version with master-latest tag and extract its metadata
-          # The metadata should contain our org.opencontainers.image.revision label
-          METADATA=$(echo "$PACKAGE_DATA" | grep -A 50 '"name": "master-latest"' | head -60)
-
-          if [ -n "$METADATA" ]; then
-            echo "Found master-latest package version"
-
-            # Try to extract the revision from metadata
-            # The GitHub API exposes container labels in the metadata.container.tags object
-            LAST_SHA=$(echo "$METADATA" | grep '"org.opencontainers.image.revision"' | sed 's/.*: "\([^"]*\)".*/\1/' | head -1)
-
-            if [ -z "$LAST_SHA" ]; then
-              echo "Could not extract SHA from package metadata, will need to build"
-            else
-              echo "Last built SHA from package metadata: $LAST_SHA"
-            fi
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::Failed to get GHCR token, will build"
+            BUILD_NEEDED="true"
           else
-            echo "No existing master-latest package found - this appears to be the first build"
+            # Get the manifest for the latest tag
+            echo "Fetching manifest for ${{ env.TAG_PREFIX }}-latest..."
+            MANIFEST=$(curl -s -H "Authorization: Bearer $TOKEN" \
+              -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+              "https://ghcr.io/v2/${{ github.repository_owner }}/sst-core/manifests/${{ env.TAG_PREFIX }}-latest")
+
+            # Extract config digest
+            CONFIG_DIGEST=$(echo "$MANIFEST" | grep -o '"config":{[^}]*}' | grep -o '"digest":"[^"]*' | sed 's/"digest":"//')
+
+            if [ -z "$CONFIG_DIGEST" ]; then
+              echo "::notice::No existing image found, will build"
+              BUILD_NEEDED="true"
+            else
+              # Get the config blob which contains the labels
+              echo "Fetching config blob..."
+              CONFIG=$(curl -s -H "Authorization: Bearer $TOKEN" \
+                "https://ghcr.io/v2/${{ github.repository_owner }}/sst-core/blobs/$CONFIG_DIGEST")
+
+              # Extract the revision label (SST-core SHA)
+              LAST_SHA=$(echo "$CONFIG" | grep -o '"org.opencontainers.image.revision":"[^"]*' | sed 's/"org.opencontainers.image.revision":"//')
+
+              echo "Last built SHA: $LAST_SHA"
+              echo "Current SHA:    $CURRENT_SHA"
+
+              # Compare SHAs
+              if [ "$LAST_SHA" = "$CURRENT_SHA" ]; then
+                echo "::notice::No changes detected, skipping build"
+                BUILD_NEEDED="false"
+              else
+                echo "::notice::SHA mismatch detected, build needed"
+                BUILD_NEEDED="true"
+              fi
+            fi
           fi
 
-          # Determine if build is needed
+          # Handle force_build override
           FORCE_BUILD="${{ inputs.force_build }}"
-          BUILD_NEEDED="false"
-
           if [ "$FORCE_BUILD" = "true" ]; then
             BUILD_NEEDED="true"
-            echo "::notice::Build triggered by force_build parameter"
-          elif [ -z "$LAST_SHA" ]; then
-            BUILD_NEEDED="true"
-            echo "::notice::Build needed: No previous build found"
-          elif [ "$CURRENT_SHA" != "$LAST_SHA" ]; then
-            BUILD_NEEDED="true"
-            echo "::notice::Build needed: Changes detected in SST-core ${{ env.SST_BRANCH }} branch"
-          else
-            echo "::notice::Build not needed: No changes detected"
+            echo "::notice::Build forced by force_build=true parameter"
+          elif [ "$FORCE_BUILD" = "false" ]; then
+            BUILD_NEEDED="false"
+            echo "::notice::Build skipped by force_build=false parameter"
           fi
 
           # Set outputs
@@ -144,7 +154,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
@@ -189,7 +199,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull and validate container
