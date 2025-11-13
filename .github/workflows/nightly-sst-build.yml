@@ -40,58 +40,69 @@ jobs:
     steps:
       - name: Check for SST-core branch updates
         id: check
-        uses: actions/github-script@v7
-        with:
-          script: |
-            // Get current commit from SST-core branch
-            const { data: branch } = await github.rest.repos.getBranch({
-              owner: 'sstsimulator',
-              repo: 'sst-core',
-              branch: '${{ env.SST_BRANCH }}'
-            });
+        run: |
+          # Get current commit SHA from SST-core master branch
+          API_RESPONSE=$(curl -s https://api.github.com/repos/sstsimulator/sst-core/branches/${{ env.SST_BRANCH }})
+          CURRENT_SHA=$(echo "$API_RESPONSE" | grep '"sha"' | head -1 | sed 's/.*"sha": "\([^"]*\)".*/\1/')
+          SHORT_SHA=${CURRENT_SHA:0:7}
 
-            const currentSha = branch.commit.sha;
-            const shortSha = currentSha.substring(0, 7);
-            const forceBuild = '${{ inputs.force_build }}' === 'true';
+          echo "Current SST-core ${{ env.SST_BRANCH }} SHA: $CURRENT_SHA"
+          echo "Short SHA: $SHORT_SHA"
 
-            // Get last built SHA from repository variables
-            let lastSha = '';
-            try {
-              const { data: variable } = await github.rest.actions.getRepoVariable({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                variable_name: 'LAST_BUILT_SST_SHA'
-              });
-              lastSha = variable.value;
-            } catch (error) {
-              if (error.status === 404) {
-                core.info('LAST_BUILT_SST_SHA variable not found - this appears to be the first build');
-              } else {
-                throw error;
-              }
-            }
+          # Try to get the last built SHA from the container image labels using GHCR API
+          LAST_SHA=""
+          PACKAGE_NAME="sst-core"
 
-            const buildNeeded = currentSha !== lastSha || forceBuild;
+          echo "Checking for existing image via GHCR API..."
 
-            // Set outputs
-            core.setOutput('build_needed', buildNeeded);
-            core.setOutput('current_sha', currentSha);
-            core.setOutput('short_sha', shortSha);
+          # Use GitHub API to get package version metadata
+          # This works without special authentication for public packages
+          PACKAGES_URL="https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/${PACKAGE_NAME}/versions"
 
-            // Log information
-            core.info(`Current ${{ env.SST_BRANCH }} SHA: ${currentSha}`);
-            core.info(`Last built SHA: ${lastSha || 'none (first build)'}`);
-            core.info(`Short SHA: ${shortSha}`);
-            core.info(`Force build: ${forceBuild}`);
-            core.info(`Build needed: ${buildNeeded}`);
+          # Get the latest version with the master-latest tag
+          PACKAGE_DATA=$(curl -s -H "Accept: application/vnd.github+json" "$PACKAGES_URL?per_page=100")
 
-            if (buildNeeded) {
-              core.notice(forceBuild ?
-                'Build triggered by force_build parameter' :
-                'Build needed: Changes detected in SST-core ${{ env.SST_BRANCH }} branch');
-            } else {
-              core.notice('Build not needed: No changes detected');
-            }
+          # Find the version with master-latest tag and extract its metadata
+          # The metadata should contain our org.opencontainers.image.revision label
+          METADATA=$(echo "$PACKAGE_DATA" | grep -A 50 '"name": "master-latest"' | head -60)
+
+          if [ -n "$METADATA" ]; then
+            echo "Found master-latest package version"
+
+            # Try to extract the revision from metadata
+            # The GitHub API exposes container labels in the metadata.container.tags object
+            LAST_SHA=$(echo "$METADATA" | grep '"org.opencontainers.image.revision"' | sed 's/.*: "\([^"]*\)".*/\1/' | head -1)
+
+            if [ -z "$LAST_SHA" ]; then
+              echo "Could not extract SHA from package metadata, will need to build"
+            else
+              echo "Last built SHA from package metadata: $LAST_SHA"
+            fi
+          else
+            echo "No existing master-latest package found - this appears to be the first build"
+          fi
+
+          # Determine if build is needed
+          FORCE_BUILD="${{ inputs.force_build }}"
+          BUILD_NEEDED="false"
+
+          if [ "$FORCE_BUILD" = "true" ]; then
+            BUILD_NEEDED="true"
+            echo "::notice::Build triggered by force_build parameter"
+          elif [ -z "$LAST_SHA" ]; then
+            BUILD_NEEDED="true"
+            echo "::notice::Build needed: No previous build found"
+          elif [ "$CURRENT_SHA" != "$LAST_SHA" ]; then
+            BUILD_NEEDED="true"
+            echo "::notice::Build needed: Changes detected in SST-core ${{ env.SST_BRANCH }} branch"
+          else
+            echo "::notice::Build not needed: No changes detected"
+          fi
+
+          # Set outputs
+          echo "build_needed=$BUILD_NEEDED" >> $GITHUB_OUTPUT
+          echo "current_sha=$CURRENT_SHA" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
 
   build-container:
     needs: check-updates
@@ -164,7 +175,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             SSTrepo=${{ env.SST_REPO }}
-            tag=${{ env.SST_BRANCH }}
+            tag=${{ needs.check-updates.outputs.current_sha }}
             NCPUS=${{ env.BUILD_NCPUS }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -173,10 +184,6 @@ jobs:
     needs: [check-updates, build-container]
     if: needs.check-updates.outputs.build_needed == 'true'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
-      actions: write
     steps:
       - name: Log in to Container Registry
         uses: docker/login-action@v3
@@ -211,31 +218,6 @@ jobs:
           echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-${{ needs.check-updates.outputs.short_sha }}"
           echo "Also tagged as: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_PREFIX }}-latest"
           echo "Built from SST-core commit: ${{ needs.check-updates.outputs.current_sha }}"
-
-      - name: Update last built SHA after successful validation
-        uses: actions/github-script@v7
-        with:
-          script: |
-            try {
-              // Try to update existing variable
-              await github.rest.actions.updateRepoVariable({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                variable_name: 'LAST_BUILT_SST_SHA',
-                value: '${{ needs.check-updates.outputs.current_sha }}'
-              });
-              core.info('Updated LAST_BUILT_SST_SHA to ${{ needs.check-updates.outputs.current_sha }}');
-            } catch (error) {
-              if (error.status === 404) {
-                // Variable doesn't exist, create it
-                await github.rest.actions.createRepoVariable({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  variable_name: 'LAST_BUILT_SST_SHA',
-                  value: '${{ needs.check-updates.outputs.current_sha }}'
-                });
-                core.info('Created LAST_BUILT_SST_SHA with value ${{ needs.check-updates.outputs.current_sha }}');
-              } else {
-                throw error;
-              }
-            }
+          echo ""
+          echo "The SST-core SHA is stored in the container image label: org.opencontainers.image.revision"
+          echo "Future builds will check this label to determine if a rebuild is needed"
