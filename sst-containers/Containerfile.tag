@@ -10,9 +10,10 @@
 #
 # STAGES DEFINED:
 #   base       – installs OS + build dependencies + compiles MPICH
-#   core-build – builds SST-core
-#   full-build – builds SST-elements (optional)
-
+#   core-base  – builds and installs SST-core (intermediate stage)
+#   core-build – inherits from core-base (default target)
+#   full-build – builds SST-elements on top of core-base
+#
 #
 # EXAMPLE USAGE:
 # Build SST-core only (default):
@@ -21,7 +22,7 @@
 #   --build-arg SSTrepo=https://github.com/sstsimulator/sst-core.git \
 #   --build-arg tag=master \
 #   --build-arg NCPUS=4 \
-#   -t sst-core:latest .
+#   -t sst-core-master:latest .
 #
 # Build SST-core + SST-elements:
 # podman build \
@@ -32,7 +33,7 @@
 #   --build-arg elementsTag=master \
 #   --build-arg NCPUS=4 \
 #   --target full-build \
-#   -t sst-full:latest .
+#   -t sst-full-master:latest .
 
 
 # This assumes access to the ubuntu image
@@ -78,25 +79,21 @@ rm -rf $mpich_prefix $mpich_prefix.tar.gz
 
 RUN /sbin/ldconfig
 
-FROM base AS full-build
+FROM base AS core-base
+RUN mkdir -p /opt/SST/dev/
 
 ARG SSTrepo
 ARG tag
-ARG SSTElementsRepo
-ARG elementsTag
 ARG NCPUS=2
 
-RUN mkdir -p /opt/SST/dev/
-
-# Download SST-core from repo and checkout tag
+# Download SST-core from repo and checkout tag (shallow clone for efficiency)
 WORKDIR /workspace
 RUN if [ -z "$NCPUS" ]; then \
         export NCPUS=$(($(nproc) / 2)); \
         if [ "$NCPUS" -lt 1 ]; then export NCPUS=1; fi; \
     fi && \
-    git clone ${SSTrepo} sst-core && \
+    git clone --depth 1 --branch ${tag} ${SSTrepo} sst-core && \
     cd sst-core && \
-    git checkout ${tag} && \
     ./autogen.sh && \
     mkdir ../build && \
     cd ../build && \
@@ -104,55 +101,42 @@ RUN if [ -z "$NCPUS" ]; then \
     make -j$NCPUS all && \
     make install && \
     cd /workspace && \
-    rm -rf sst-core build
-
-# Download SST-elements from repo and checkout tag
-RUN if [ -z "$NCPUS" ]; then \
-        export NCPUS=$(($(nproc) / 2)); \
-        if [ "$NCPUS" -lt 1 ]; then export NCPUS=1; fi; \
-    fi && \
-    git clone ${SSTElementsRepo} sst-elements && \
-    cd sst-elements && \
-    git checkout ${elementsTag} && \
-    ./autogen.sh && \
-    mkdir ../elements-build && \
-    cd ../elements-build && \
-    /workspace/sst-elements/configure --prefix=/opt/SST/dev --with-sst-core=/opt/SST/dev && \
-    make -j$NCPUS all && \
-    make install && \
-    cd /workspace && \
-    rm -rf sst-elements elements-build
+    rm -rf build
 
 ENV PATH="$PATH:/opt/SST/dev/bin/"
 ENV LD_LIBRARY_PATH="/opt/SST/dev/lib:${LD_LIBRARY_PATH}"
 WORKDIR /workspace
 ENTRYPOINT ["/bin/bash"]
 
-FROM base AS core-build
+FROM core-base AS full-build
+
+# ARG SSTrepo
+# ARG tag
+ARG SSTElementsRepo
+ARG elementsTag
+ARG NCPUS=2
 
 RUN mkdir -p /opt/SST/dev/
 
-ARG SSTrepo
-ARG tag
-ARG NCPUS=2
-
-# Download SST-core from repo and checkout tag
-WORKDIR /workspace
+# Download SST-elements from repo and checkout tag (shallow clone for efficiency)
 RUN if [ -z "$NCPUS" ]; then \
         export NCPUS=$(($(nproc) / 2)); \
         if [ "$NCPUS" -lt 1 ]; then export NCPUS=1; fi; \
     fi && \
-    git clone ${SSTrepo} sst-core && \
-    cd sst-core && \
-    git checkout ${tag} && \
+    git clone --depth 1 --branch ${elementsTag} ${SSTElementsRepo} sst-elements && \
+    cd sst-elements && \
     ./autogen.sh && \
-    mkdir ../build && \
-    cd ../build && \
-    /workspace/sst-core/configure --prefix=/opt/SST/dev && \
+    mkdir ../elements-build && \
+    cd ../elements-build && \
+    /workspace/sst-elements/configure --prefix=/opt/SST/dev --with-sst-core=/opt/SST/dev && \
     make -j$NCPUS all && \
     make install && \
-    cd /workspace && \
-    rm -rf sst-core build
+    cd /workspace/elements-build && \
+    find . -name "*.o" -delete && \
+    find . -name "*.lo" -delete && \
+    find . -name ".libs" -type d -exec rm -rf {} + 2>/dev/null || true
+
+FROM core-base AS core-build
 
 ENV PATH="$PATH:/opt/SST/dev/bin/"
 ENV LD_LIBRARY_PATH="/opt/SST/dev/lib:${LD_LIBRARY_PATH}"
