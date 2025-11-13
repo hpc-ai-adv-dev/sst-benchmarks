@@ -47,8 +47,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get current commit SHA from SST-core master branch
-          API_RESPONSE=$(curl -s https://api.github.com/repos/sstsimulator/sst-core/branches/${{ env.SST_BRANCH }})
-          CURRENT_SHA=$(echo "$API_RESPONSE" | grep '"sha"' | head -1 | sed 's/.*"sha": "\([^"]*\)".*/\1/')
+          CURRENT_SHA=$(gh api /repos/sstsimulator/sst-core/branches/${{ env.SST_BRANCH }} --jq '.commit.sha')
           SHORT_SHA=${CURRENT_SHA:0:7}
 
           echo "Current SST-core ${{ env.SST_BRANCH }} SHA: $CURRENT_SHA"
@@ -60,57 +59,27 @@ jobs:
           # Use GitHub CLI to check for existing package and get its metadata
           echo "Checking for existing package version with tag ${{ env.TAG_PREFIX }}-latest..."
 
-          # Use gh api to get package versions (handles authentication automatically)
-          VERSIONS_RESPONSE=$(gh api \
+          # Use gh api with jq to extract revision label from package with our tag
+          LAST_SHA=$(gh api \
             -H "Accept: application/vnd.github+json" \
-            "/orgs/${{ github.repository_owner }}/packages/container/sst-core/versions?per_page=100" 2>&1 || echo "[]")
+            "/orgs/${{ github.repository_owner }}/packages/container/sst-core/versions?per_page=100" \
+            --jq '.[] | select(.metadata.container.tags[] == "${{ env.TAG_PREFIX }}-latest") | .metadata.container.tags[] | select(startswith("org.opencontainers.image.revision=")) | sub("org.opencontainers.image.revision="; "")' \
+            2>/dev/null || echo "")
 
-          # Debug: Show response summary
-          echo "API response length: ${#VERSIONS_RESPONSE} characters"
-
-          # Check if we got an error
-          if echo "$VERSIONS_RESPONSE" | grep -qi "HTTP 404\|Not Found\|could not resolve"; then
-            echo "::notice::Package not found (likely first build), will build"
-            BUILD_NEEDED="true"
-          elif echo "$VERSIONS_RESPONSE" | grep -q '"message"'; then
-            ERROR_MSG=$(echo "$VERSIONS_RESPONSE" | grep -o '"message":"[^"]*' | sed 's/"message":"//' || echo "Unknown error")
-            echo "::warning::API request returned error: $ERROR_MSG"
-            echo "Will build to be safe"
-            BUILD_NEEDED="true"
-          elif [ ${#VERSIONS_RESPONSE} -lt 10 ]; then
-            echo "::warning::API response too short or empty"
-            echo "Will build to be safe"
+          if [ -z "$LAST_SHA" ]; then
+            echo "::notice::No existing image with tag ${{ env.TAG_PREFIX }}-latest found or no revision label, will build"
             BUILD_NEEDED="true"
           else
-            # Find the version with the master-latest tag
-            # The API returns an array of versions with metadata including tags
-            VERSION_WITH_TAG=$(echo "$VERSIONS_RESPONSE" | grep -B 50 '"name":"${{ env.TAG_PREFIX }}-latest"' | grep -m 1 '"metadata"' -A 20 || echo "")
+            echo "Last built SHA: $LAST_SHA"
+            echo "Current SHA:    $CURRENT_SHA"
 
-            if [ -z "$VERSION_WITH_TAG" ]; then
-              echo "::notice::No existing image with tag ${{ env.TAG_PREFIX }}-latest found, will build"
-              BUILD_NEEDED="true"
+            # Compare SHAs
+            if [ "$LAST_SHA" = "$CURRENT_SHA" ]; then
+              echo "::notice::No changes detected, skipping build"
+              BUILD_NEEDED="false"
             else
-              echo "Found version with matching tag"
-              # Extract the OCI label with the revision
-              # GitHub Packages API includes OCI labels in the metadata
-              LAST_SHA=$(echo "$VERSION_WITH_TAG" | grep -o '"org.opencontainers.image.revision":"[^"]*' | sed 's/"org.opencontainers.image.revision":"//' | head -1 || echo "")
-
-              if [ -z "$LAST_SHA" ]; then
-                echo "::warning::Could not find revision label in package metadata, will build"
-                BUILD_NEEDED="true"
-              else
-                echo "Last built SHA: $LAST_SHA"
-                echo "Current SHA:    $CURRENT_SHA"
-
-                # Compare SHAs
-                if [ "$LAST_SHA" = "$CURRENT_SHA" ]; then
-                  echo "::notice::No changes detected, skipping build"
-                  BUILD_NEEDED="false"
-                else
-                  echo "::notice::SHA mismatch detected, build needed"
-                  BUILD_NEEDED="true"
-                fi
-              fi
+              echo "::notice::SHA mismatch detected, build needed"
+              BUILD_NEEDED="true"
             fi
           fi
 
