@@ -54,56 +54,38 @@ jobs:
           echo "Current SST-core ${{ env.SST_BRANCH }} SHA: $CURRENT_SHA"
           echo "Short SHA: $SHORT_SHA"
 
-          # GHCR requires username to match the token owner for authentication
-          echo "Getting GHCR authentication token..."
-          TOKEN_RESPONSE=$(curl -s -u "${{ github.actor }}:$GITHUB_TOKEN" \
-            "https://ghcr.io/token?scope=repository:${{ github.repository_owner }}/sst-core:pull")
-          TOKEN=$(echo "$TOKEN_RESPONSE" | grep -o '"token":"[^"]*' | sed 's/"token":"//')
-
-          # Debug: Check if we got a token (without printing the actual token)
-          if [ -n "$TOKEN" ]; then
-            echo "Successfully obtained GHCR token"
-          else
-            echo "::warning::Token response: $TOKEN_RESPONSE"
-          fi
-
           # Initialize BUILD_NEEDED
           BUILD_NEEDED="true"
 
-          if [ -z "$TOKEN" ]; then
-            echo "::warning::Failed to get GHCR token, will build"
+          # Use GitHub Packages API to check for existing image and get its metadata
+          echo "Checking for existing package version with tag ${{ env.TAG_PREFIX }}-latest..."
+
+          # Get package versions from GitHub Packages API
+          PACKAGE_API="https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/sst-core/versions"
+          VERSIONS_RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$PACKAGE_API?per_page=100")
+
+          # Check if we got a valid response
+          if echo "$VERSIONS_RESPONSE" | grep -q '"message"'; then
+            echo "::warning::API request failed: $(echo "$VERSIONS_RESPONSE" | grep -o '"message":"[^"]*' | head -1)"
+            echo "Will build to be safe"
+            BUILD_NEEDED="true"
           else
-            # Get the manifest for the latest tag
-            echo "Fetching manifest for ${{ env.TAG_PREFIX }}-latest..."
-            MANIFEST=$(curl -s -H "Authorization: Bearer $TOKEN" \
-              -H "Accept: application/vnd.oci.image.manifest.v1+json" \
-              "https://ghcr.io/v2/${{ github.repository_owner }}/sst-core/manifests/${{ env.TAG_PREFIX }}-latest")
+            # Find the version with the master-latest tag
+            # The API returns an array of versions with metadata including tags
+            VERSION_WITH_TAG=$(echo "$VERSIONS_RESPONSE" | grep -B 50 '"name":"${{ env.TAG_PREFIX }}-latest"' | grep -m 1 '"metadata"' -A 20)
 
-            # Debug manifest response
-            echo "Manifest response length: ${#MANIFEST} characters"
-            if echo "$MANIFEST" | grep -q '"errors"'; then
-              echo "::warning::Manifest fetch returned errors: $(echo "$MANIFEST" | grep -o '"message":"[^"]*')"
-            fi
-
-            # Extract config digest
-            CONFIG_DIGEST=$(echo "$MANIFEST" | grep -o '"config":{[^}]*}' | grep -o '"digest":"[^"]*' | sed 's/"digest":"//')
-
-            if [ -z "$CONFIG_DIGEST" ]; then
-              echo "::notice::No existing image found, will build"
+            if [ -z "$VERSION_WITH_TAG" ]; then
+              echo "::notice::No existing image with tag ${{ env.TAG_PREFIX }}-latest found, will build"
               BUILD_NEEDED="true"
             else
-              echo "Found config digest: ${CONFIG_DIGEST:0:20}..."
-
-              # Get the config blob which contains the labels
-              echo "Fetching config blob..."
-              CONFIG=$(curl -s -H "Authorization: Bearer $TOKEN" \
-                "https://ghcr.io/v2/${{ github.repository_owner }}/sst-core/blobs/$CONFIG_DIGEST")
-
-              # Extract the revision label (SST-core SHA)
-              LAST_SHA=$(echo "$CONFIG" | grep -o '"org.opencontainers.image.revision":"[^"]*' | sed 's/"org.opencontainers.image.revision":"//')
+              # Extract the container.tags array and look for the revision label pattern
+              # GitHub Packages API includes OCI labels in the metadata
+              LAST_SHA=$(echo "$VERSION_WITH_TAG" | grep -o '"org.opencontainers.image.revision":"[^"]*' | sed 's/"org.opencontainers.image.revision":"//' | head -1)
 
               if [ -z "$LAST_SHA" ]; then
-                echo "::warning::Could not extract revision label from config, will build"
+                echo "::warning::Could not find revision label in package metadata, will build"
                 BUILD_NEEDED="true"
               else
                 echo "Last built SHA: $LAST_SHA"
@@ -119,9 +101,7 @@ jobs:
                 fi
               fi
             fi
-          fi
-
-          # Handle force_build override (AFTER SHA check)
+          fi          # Handle force_build override (AFTER SHA check)
           FORCE_BUILD="${{ inputs.force_build }}"
           if [ "$FORCE_BUILD" = "true" ]; then
             BUILD_NEEDED="true"
