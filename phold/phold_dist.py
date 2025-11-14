@@ -24,67 +24,67 @@ def build_parser() -> argparse.ArgumentParser:
         description="Run a simulation of the PHOLD benchmark.",
     )
     parser.add_argument(
-        "--N",
+        "--height",
         type=int,
         default=10,
         help="Height of grid (number of rows)",
     )
     parser.add_argument(
-        "--M",
+        "--width",
         type=int,
         default=10,
         help="Width of grid (number of columns)",
     )
     parser.add_argument(
-        "--timeToRun",
+        "--timeToRun", "--time-to-run",
         type=str,
         default="1000ns",
         help="Time to run the simulation",
     )
     parser.add_argument(
-        "--linkDelay",
+        "--linkDelay", '--link-delay',
         type=str,
         default="1ns",
         help="Delay for each link",
     )
     parser.add_argument(
-        "--numRings",
+        "--numRings", '--num-rings', '--ring-size',
         type=int,
         default=1,
         help="Number of rings of neighbors to connect to each component",
     )
     parser.add_argument(
-        "--eventDensity",
+        "--eventDensity", '--event-density',
         type=float,
         default=0.1,
         help="How many events to transmit per component.",
     )
     parser.add_argument(
-        "--exponentMultiplier",
+        "--exponentMultiplier", '--exponent-multiplier',
         type=float,
         default=1.0,
         help="Multiplier for exponential distribution of event generation",
     )
     parser.add_argument(
-        "--nodeType",
+        "--nodeType", '--node-type',
         type=str,
         default="phold.Node",
         help="Type of node to create (default: phold.Node)",
     )
     parser.add_argument(
-        "--smallPayload",
+        "--smallPayload", '--small-payload',
         type=int,
         default=8,
         help="Size of small event payloads in bytes",
     )
     parser.add_argument(
-        "--largePayload",
+        "--largePayload", '--large-payload',
         type=int,
         default=1024,
         help="Size of large event payloads in bytes",
     )
     parser.add_argument(
-        "--largeEventFraction",
+        "--largeEventFraction", '--large-event-fraction',
         type=float,
         default=0.0,
         help="Fraction of events that are large (default: 0.1)",
@@ -99,7 +99,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--componentSize",
+        "--componentSize", '--component-size',
         type=int,
         default=0,
         help="Size of the additional data field of the component in bytes",
@@ -159,8 +159,8 @@ def create_component(i: int, j: int, args, rows_per_rank: int, num_ranks: int,
             "numRings": args.numRings,
             "i": i,
             "j": j,
-            "colCount": args.M,
-            "rowCount": args.N,
+            "colCount": args.width,
+            "rowCount": args.height,
             "timeToRun": args.timeToRun,
             "multiplier": args.exponentMultiplier,
             "eventDensity": args.eventDensity,
@@ -172,8 +172,8 @@ def create_component(i: int, j: int, args, rows_per_rank: int, num_ranks: int,
         }
     )
     comp.setRank(
-        row_to_rank(i, args.N, rows_per_rank, num_ranks),
-        col_to_thread(j, args.M, thread_map),
+        row_to_rank(i, args.height, rows_per_rank, num_ranks),
+        col_to_thread(j, args.width, thread_map),
     )
     return comp
 
@@ -204,7 +204,7 @@ def connect_upwards(local_i: int, local_j: int, num_rings: int, comps,
         nbr_i = local_i + nbr_ring_i - my_ring_i
         nbr_j = local_j + nbr_ring_j - my_ring_j
 
-        if nbr_i < 0 or nbr_i >= len(comps) or nbr_j < 0 or nbr_j >= args.M:
+        if nbr_i < 0 or nbr_i >= len(comps) or nbr_j < 0 or nbr_j >= args.width:
             continue
 
         port1 = port_num(local_i, local_j, nbr_i, nbr_j, num_rings)
@@ -216,8 +216,8 @@ def connect_upwards(local_i: int, local_j: int, num_rings: int, comps,
         nbr_global_j = nbr_j
 
         # Require at least one endpoint on this rank
-        local_rank = row_to_rank(global_i, args.N, rows_per_rank, num_ranks)
-        nbr_rank = row_to_rank(nbr_global_i, args.N, rows_per_rank, num_ranks)
+        local_rank = row_to_rank(global_i, args.height, rows_per_rank, num_ranks)
+        nbr_rank = row_to_rank(nbr_global_i, args.height, rows_per_rank, num_ranks)
         if local_rank != my_rank and nbr_rank != my_rank:
             continue
 
@@ -241,21 +241,21 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    rows_per_rank = max(1, args.N // num_ranks)
+    rows_per_rank = max(1, args.height // num_ranks)
     thread_map = imbalance_thread_map(
-        args.M, args.imbalance_factor, num_threads
+        args.width, args.imbalance_factor, num_threads
     )
 
     # Build local + ghost rows
     my_row_start = my_rank * rows_per_rank
     my_row_end = my_row_start + rows_per_rank
     if my_rank == num_ranks - 1:
-        my_row_end = args.N
+        my_row_end = args.height
 
     low_ghost_start = max(0, my_row_start - args.numRings)
     low_ghost_end = my_row_start
     high_ghost_start = my_row_end
-    high_ghost_end = min(args.N, my_row_end + args.numRings)
+    high_ghost_end = min(args.height, my_row_end + args.numRings)
 
     comps = []
 
@@ -263,7 +263,7 @@ def main() -> None:
     for i in range(low_ghost_start, low_ghost_end):
         row = [
             create_component(i, j, args, rows_per_rank, num_ranks, thread_map)
-            for j in range(args.M)
+            for j in range(args.width)
         ]
         comps.append(row)
 
@@ -271,7 +271,7 @@ def main() -> None:
     for i in range(my_row_start, my_row_end):
         row = [
             create_component(i, j, args, rows_per_rank, num_ranks, thread_map)
-            for j in range(args.M)
+            for j in range(args.width)
         ]
         comps.append(row)
 
@@ -279,13 +279,13 @@ def main() -> None:
     for i in range(high_ghost_start, high_ghost_end):
         row = [
             create_component(i, j, args, rows_per_rank, num_ranks, thread_map)
-            for j in range(args.M)
+            for j in range(args.width)
         ]
         comps.append(row)
 
     link_counter = {"count": 0}
     for local_i in range(len(comps)):
-        for local_j in range(args.M):
+        for local_j in range(args.width):
             connect_upwards(
                 local_i,
                 local_j,

@@ -24,9 +24,9 @@ outFile=${prefix}.err
 outDir=${prefix}_dir
 
 
-simFlags="--N $height --M $width --eventDensity $eventDensity --timeToRun ${timeToRun}ns --numRings $ringSize --smallPayload $smallPayload --largePayload $largePayload --largeEventFraction $largeEventFraction --imbalance-factor $imbalanceFactor --componentSize $componentSize"
+simFlags="--height $height --width $width --eventDensity $eventDensity --timeToRun ${timeToRun}ns --numRings $ringSize --smallPayload $smallPayload --largePayload $largePayload --largeEventFraction $largeEventFraction --imbalance-factor $imbalanceFactor --componentSize $componentSize"
 
-sstFlags="--num-threads $threadCount --print-timing-info=true --parallel-load=SINGLE ${scriptDir}/phold_dist.py"
+sstFlags="--num-threads $threadCount --print-timing-info=3 --parallel-load=SINGLE ${scriptDir}/phold_dist.py"
 
 srunPortion="srun --verbose --oom-kill-step=1 -N $nodeCount --cpus-per-task=$threadCount --ntasks-per-node=$ranksPerNode"
 
@@ -37,8 +37,8 @@ rm $timeFile
 touch $timeFile
 $srunPortion sst $sstFlags -- $simFlags 1> $tmpFile 2> $outFile
 
-grep "Build time:" $tmpFile | awk '{print $3}' > $timeFile
-grep "Run stage Time:" $tmpFile | awk '{print $4}' >> $timeFile
+grep "├ ■ build" -A 2 $tmpFile | grep "Duration: " |  awk '{print $5}' > $timeFile
+grep "  ├ ■ run" -A 2 $tmpFile | grep "Duration: " |  awk '{print $4}' >> $timeFile
 grep "Max Resident Set Size:" $tmpFile | awk -F': *' '{print $2}' >> $timeFile
 grep "Approx. Global Max RSS Size:" $tmpFile | awk -F': *' '{print $2}' >> $timeFile
 
