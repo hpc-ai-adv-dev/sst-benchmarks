@@ -4,326 +4,170 @@ on:
   pull_request:
 
 jobs:
-  # Build jobs - create libraries once and share as artifacts
-  build_gameoflife_v15:
+  # Build jobs - create libraries once for each SST version and share as artifacts
+  build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix: &test-matrix
+        sst_version:
+          - { tag: "15.0.0", image: "arezaiihpe/sst-core:15.0.0" }
+          - { tag: "15.1.0", image: "arezaiihpe/sst-core:15.1.0" }
+          - { tag: "master", image: "ghcr.io/hpc-ai-adv-dev/sst-core:master-latest" }
+        component: ["gameoflife", "pingpong", "phold"]
     container:
-      image: arezaiihpe/sst-core:15.0.0
+      image: ${{ matrix.sst_version.image }}
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build gameoflife library
+    - name: Build ${{ matrix.component }} library
       run: |
-        cd gameoflife
+        cd ${{ matrix.component }}
         make
 
-    - name: Upload gameoflife library
+    - name: Upload ${{ matrix.component }} library
       uses: actions/upload-artifact@v4
       with:
-        name: gameoflife-lib-v15
-        path: gameoflife/libgol.so
-        retention-days: 1
-
-  build_pingpong_v15:
-    runs-on: ubuntu-latest
-    container:
-      image: arezaiihpe/sst-core:15.0.0
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Build pingpong library
-      run: |
-        cd pingpong
-        make
-
-    - name: Upload pingpong library
-      uses: actions/upload-artifact@v4
-      with:
-        name: pingpong-lib-v15
-        path: pingpong/libpingpong.so
-        retention-days: 1
-
-  build_phold_v15:
-    runs-on: ubuntu-latest
-    container:
-      image: arezaiihpe/sst-core:15.0.0
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Build PHOLD library
-      run: |
-        cd phold
-        make
-
-    - name: Upload PHOLD library
-      uses: actions/upload-artifact@v4
-      with:
-        name: phold-lib-v15
-        path: phold/libphold.so
+        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}
+        path: ${{ matrix.component }}/lib*.so
         retention-days: 1
 
   # Test jobs - use pre-built libraries
-  gameoflife_test_v15:
+  test:
     runs-on: ubuntu-latest
-    needs: build_gameoflife_v15
+    needs: build
+    strategy:
+      matrix: *test-matrix
     container:
-      image: arezaiihpe/sst-core:15.0.0
+      image: ${{ matrix.sst_version.image }}
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Download gameoflife library
+    - name: Download ${{ matrix.component }} library
       uses: actions/download-artifact@v4
       with:
-        name: gameoflife-lib-v15
-        path: gameoflife/
+        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}
+        path: ${{ matrix.component }}/
 
-    - name: Run gameoflife test
+    - name: Run ${{ matrix.component }} test
       run: |
-        cd gameoflife
-        sst-register gol gol_LIBDIR=$(pwd)
-        sst gol.py -- --verbose --seed 42 > gol_sim.out
-        diff ../.github/workflows/gol.good ./gol_sim.out
+        cd ${{ matrix.component }}
+        case "${{ matrix.component }}" in
+          "gameoflife")
+            sst-register gol gol_LIBDIR=$(pwd)
+            sst gol.py -- --verbose --seed 42 > gol_sim.out
+            diff ../.github/workflows/gol.good ./gol_sim.out
+            ;;
+          "pingpong")
+            sst-register pingpong pingpong_LIBDIR=$(pwd)
+            sst pingpong.py -- --corners --verbose > pingpong_sim.out
+            diff ../.github/workflows/pingpong.good ./pingpong_sim.out
+            ;;
+          "phold")
+            sst-register phold phold_LIBDIR=$(pwd)
+            sst phold_dist.py -- --verbose 1 > phold_sim.out 2>&1
+            diff ../.github/workflows/phold.good ./phold_sim.out
+            ;;
+        esac
 
-  pingpong_test_v15:
+  # Checkpoint testing jobs - run with checkpoint enabled
+  checkpoint:
     runs-on: ubuntu-latest
-    needs: build_pingpong_v15
+    needs: build
+    strategy:
+      matrix: *test-matrix
     container:
-      image: arezaiihpe/sst-core:15.0.0
+      image: ${{ matrix.sst_version.image }}
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Download pingpong library
+    - name: Download ${{ matrix.component }} library
       uses: actions/download-artifact@v4
       with:
-        name: pingpong-lib-v15
-        path: pingpong/
+        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}
+        path: ${{ matrix.component }}/
 
-    - name: Run pingpong test
+    - name: Run ${{ matrix.component }} with checkpoint enabled
       run: |
-        cd pingpong
-        sst-register pingpong pingpong_LIBDIR=$(pwd)
-        sst pingpong.py -- --corners --verbose > pingpong_sim.out
-        diff ../.github/workflows/pingpong.good ./pingpong_sim.out
-
-  phold_test_v15:
-    runs-on: ubuntu-latest
-    needs: build_phold_v15
-    container:
-      image: arezaiihpe/sst-core:15.0.0
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Download PHOLD library
-      uses: actions/download-artifact@v4
-      with:
-        name: phold-lib-v15
-        path: phold/
-
-    - name: Run PHOLD test
-      run: |
-        cd phold
-        sst-register phold phold_LIBDIR=$(pwd)
-        sst phold_dist.py -- --verbose 1 > phold_sim.out 2>&1
-        diff ../.github/workflows/phold.good ./phold_sim.out
-
-  # Checkpoint testing jobs for Game of Life
-  gameoflife_checkpoint_v15:
-    runs-on: ubuntu-latest
-    needs: build_gameoflife_v15
-    container:
-      image: arezaiihpe/sst-core:15.0.0
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Download gameoflife library
-      uses: actions/download-artifact@v4
-      with:
-        name: gameoflife-lib-v15
-        path: gameoflife/
-
-    - name: Run with checkpoint enabled
-      run: |
-        cd gameoflife
-        sst-register gol gol_LIBDIR=$(pwd)
-        sst --checkpoint-sim-period=1.5s gol.py -- --verbose --seed 42 2>&1 | grep -v "Real CPU time" > gol_checkpoint.out
-        diff ../.github/workflows/gol_checkpoint.good ./gol_checkpoint.out
+        cd ${{ matrix.component }}
+        case "${{ matrix.component }}" in
+          "gameoflife")
+            sst-register gol gol_LIBDIR=$(pwd)
+            sst --checkpoint-sim-period=1.5s gol.py -- --verbose --seed 42 2>&1 | grep -v "Real CPU time" > gol_checkpoint.out
+            diff ../.github/workflows/gol_checkpoint.good ./gol_checkpoint.out
+            ;;
+          "pingpong")
+            sst-register pingpong pingpong_LIBDIR=$(pwd)
+            sst --checkpoint-sim-period=50ps pingpong.py -- --corners --verbose 2>&1 | grep -v "Real CPU time" > pingpong_checkpoint.out
+            diff ../.github/workflows/pingpong_checkpoint.good ./pingpong_checkpoint.out
+            ;;
+          "phold")
+            sst-register phold phold_LIBDIR=$(pwd)
+            sst --checkpoint-sim-period=250ns phold_dist.py -- --verbose 1 2>&1 | grep -v "Real CPU time" > phold_checkpoint.out
+            diff ../.github/workflows/phold_checkpoint.good ./phold_checkpoint.out
+            ;;
+        esac
         # Verify checkpoint files were created
         ls -la checkpoint_*/ || echo "No checkpoint directory found"
 
     - name: Upload checkpoint artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: gameoflife-checkpoint-v15
-        path: gameoflife/checkpoint/
+        name: ${{ matrix.component }}-checkpoint-${{ matrix.sst_version.tag }}
+        path: ${{ matrix.component }}/checkpoint/
         retention-days: 1
 
-  gameoflife_restore_v15:
+  # Checkpoint restore testing jobs - restore from checkpoint
+  restore:
     runs-on: ubuntu-latest
-    needs: gameoflife_checkpoint_v15
+    needs: checkpoint
+    strategy:
+      matrix: *test-matrix
     container:
-      image: arezaiihpe/sst-core:15.0.0
+      image: ${{ matrix.sst_version.image }}
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Download gameoflife library
+    - name: Download ${{ matrix.component }} library
       uses: actions/download-artifact@v4
       with:
-        name: gameoflife-lib-v15
-        path: gameoflife/
+        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}
+        path: ${{ matrix.component }}/
 
     - name: Download checkpoint artifacts
       uses: actions/download-artifact@v4
       with:
-        name: gameoflife-checkpoint-v15
-        path: gameoflife/checkpoint/
+        name: ${{ matrix.component }}-checkpoint-${{ matrix.sst_version.tag }}
+        path: ${{ matrix.component }}/checkpoint/
 
-    - name: Restore from checkpoint
+    - name: Restore ${{ matrix.component }} from checkpoint
       run: |
-        cd gameoflife
-        sst-register gol gol_LIBDIR=$(pwd)
-        # Find the earliest checkpoint directory
-        CHECKPOINT_FILE=$(find checkpoint -name "*.sstcpt" | sort | head -1)
-        echo "Restoring from: $CHECKPOINT_FILE"
-        sst --load-checkpoint "$CHECKPOINT_FILE" > gol_restore.out 2>&1
-        diff ../.github/workflows/gol_restore.good ./gol_restore.out
+        cd ${{ matrix.component }}
+        case "${{ matrix.component }}" in
+          "gameoflife")
+            sst-register gol gol_LIBDIR=$(pwd)
+            CHECKPOINT_FILE=$(find checkpoint -name "*.sstcpt" | sort | head -1)
+            echo "Restoring from: $CHECKPOINT_FILE"
+            sst --load-checkpoint "$CHECKPOINT_FILE" > gol_restore.out 2>&1
+            diff ../.github/workflows/gol_restore.good ./gol_restore.out
+            ;;
+          "pingpong")
+            sst-register pingpong pingpong_LIBDIR=$(pwd)
+            CHECKPOINT_FILE=$(find checkpoint -name "*.sstcpt" | sort | head -1)
+            echo "Restoring from: $CHECKPOINT_FILE"
+            sst --load-checkpoint "$CHECKPOINT_FILE" > pingpong_restore.out 2>&1
+            diff ../.github/workflows/pingpong_restore.good ./pingpong_restore.out
+            ;;
+          "phold")
+            sst-register phold phold_LIBDIR=$(pwd)
+            CHECKPOINT_FILE=$(find checkpoint -name "*.sstcpt" | sort | head -1)
+            echo "Restoring from: $CHECKPOINT_FILE"
+            sst --load-checkpoint "$CHECKPOINT_FILE" > phold_restore.out 2>&1
+            diff ../.github/workflows/phold_restore.good ./phold_restore.out
+            ;;
+        esac
         # Verify simulation completed
-        grep -q "Simulation is complete" gol_restore.out
-
-  # Checkpoint testing jobs for Pingpong
-  pingpong_checkpoint_v15:
-    runs-on: ubuntu-latest
-    needs: build_pingpong_v15
-    container:
-      image: arezaiihpe/sst-core:15.0.0
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Download pingpong library
-      uses: actions/download-artifact@v4
-      with:
-        name: pingpong-lib-v15
-        path: pingpong/
-
-    - name: Run with checkpoint enabled
-      run: |
-        cd pingpong
-        sst-register pingpong pingpong_LIBDIR=$(pwd)
-        sst --checkpoint-sim-period=50ps pingpong.py -- --corners --verbose 2>&1 | grep -v "Real CPU time" > pingpong_checkpoint.out
-        diff ../.github/workflows/pingpong_checkpoint.good ./pingpong_checkpoint.out
-        # Verify checkpoint files were created
-        ls -la checkpoint_*/ || echo "No checkpoint directory found"
-
-    - name: Upload checkpoint artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: pingpong-checkpoint-v15
-        path: pingpong/checkpoint/
-        retention-days: 1
-
-  pingpong_restore_v15:
-    runs-on: ubuntu-latest
-    needs: pingpong_checkpoint_v15
-    container:
-      image: arezaiihpe/sst-core:15.0.0
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Download pingpong library
-      uses: actions/download-artifact@v4
-      with:
-        name: pingpong-lib-v15
-        path: pingpong/
-
-    - name: Download checkpoint artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: pingpong-checkpoint-v15
-        path: pingpong/checkpoint/
-
-    - name: Restore from checkpoint
-      run: |
-        cd pingpong
-        sst-register pingpong pingpong_LIBDIR=$(pwd)
-        # Find the earliest checkpoint directory
-        CHECKPOINT_FILE=$(find checkpoint -name "*.sstcpt" | sort | head -1)
-        echo "Restoring from: $CHECKPOINT_FILE"
-        sst --load-checkpoint "$CHECKPOINT_FILE" > pingpong_restore.out 2>&1
-        diff ../.github/workflows/pingpong_restore.good ./pingpong_restore.out
-        # Verify simulation completed
-        grep -q "Simulation is complete" pingpong_restore.out
-
-  # Checkpoint testing jobs for PHOLD
-  phold_checkpoint_v15:
-    runs-on: ubuntu-latest
-    needs: build_phold_v15
-    container:
-      image: arezaiihpe/sst-core:15.0.0
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Download PHOLD library
-      uses: actions/download-artifact@v4
-      with:
-        name: phold-lib-v15
-        path: phold/
-
-    - name: Run with checkpoint enabled
-      run: |
-        cd phold
-        sst-register phold phold_LIBDIR=$(pwd)
-        sst --checkpoint-sim-period=250ns phold_dist.py -- --verbose 1 2>&1 | grep -v "Real CPU time" > phold_checkpoint.out
-        diff ../.github/workflows/phold_checkpoint.good ./phold_checkpoint.out
-        # Verify checkpoint files were created
-        ls -la checkpoint_*/ || echo "No checkpoint directory found"
-
-    - name: Upload checkpoint artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: phold-checkpoint-v15
-        path: phold/checkpoint/
-        retention-days: 1
-
-  phold_restore_v15:
-    runs-on: ubuntu-latest
-    needs: phold_checkpoint_v15
-    container:
-      image: arezaiihpe/sst-core:15.0.0
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Download PHOLD library
-      uses: actions/download-artifact@v4
-      with:
-        name: phold-lib-v15
-        path: phold/
-
-    - name: Download checkpoint artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: phold-checkpoint-v15
-        path: phold/checkpoint/
-
-    - name: Restore from checkpoint
-      run: |
-        cd phold
-        sst-register phold phold_LIBDIR=$(pwd)
-        # Find the earliest checkpoint directory
-        CHECKPOINT_FILE=$(find checkpoint -name "*.sstcpt" | sort | head -1)
-        echo "Restoring from: $CHECKPOINT_FILE"
-        sst --load-checkpoint "$CHECKPOINT_FILE" > phold_restore.out 2>&1
-        diff ../.github/workflows/phold_restore.good ./phold_restore.out
-        # Verify simulation completed
-        grep -q "Simulation is complete" phold_restore.out
-
+        grep -q "Simulation is complete" *_restore.out
