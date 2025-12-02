@@ -1,7 +1,5 @@
 #include "Node.h"
 
-int64_t gArtificialWork = 1000;
-
 FasterNode::FasterNode(SST::ComponentId_t id, SST::Params& params) : SST::Component(id) {
   payload = params.find<int64_t>("payload", 0);
 
@@ -50,14 +48,6 @@ void FasterNode::serialize_order(SST::Core::Serialization::serializer& ser) {
   SST_SER(payload);
 }
 
-static double artificialWorkValue = 1.1;
-static double artificialWorkMultiplier = 1.23;
-static void conductArtificialWork(int64_t count) {
-  for(int64_t i = 0; i < count; i++) {
-    artificialWorkValue += artificialWorkMultiplier;
-  }
-}
-
 SlowerNode::SlowerNode(SST::ComponentId_t id, SST::Params& params) : SST::Component(id) {
   payload = params.find<int64_t>("payload", 0);
 
@@ -93,11 +83,8 @@ bool SlowerNode::tick(SST::Cycle_t /* currentCycle */)
 
 void SlowerNode::handleEvent(SST::Event* ev) {
   std::cout << "Received event at timestamp " << ev->getDeliveryTime();
-  std::cout << ", artificialWork was " << std::to_string(artificialWorkValue);
-  std::cout << "\n";
+  std::cout << ", in slower node " << "\n";
   delete ev;
-
-  conductArtificialWork(gArtificialWork);
 
   myPort->send(new SST::Event());
 }
