@@ -15,3 +15,5 @@ hpcstruct*
 *hpc-measurements*
 *.pyc
 *.so
+*~
+*.so.dSYM
