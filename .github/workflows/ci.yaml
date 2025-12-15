@@ -10,8 +10,8 @@ jobs:
     strategy:
       matrix: &test-matrix
         sst_version:
-          - { tag: "15.0.0", image: "arezaiihpe/sst-core:15.0.0" }
-          - { tag: "15.1.0", image: "arezaiihpe/sst-core:15.1.0" }
+          - { tag: "15.0.0", image: "ghcr.io/hpc-ai-adv-dev/sst-core:15.0.0" }
+          - { tag: "15.1.0", image: "ghcr.io/hpc-ai-adv-dev/sst-core:15.1.0" }
           - { tag: "master", image: "ghcr.io/hpc-ai-adv-dev/sst-core:master-latest" }
         component: ["gameoflife", "pingpong", "phold"]
     container:
