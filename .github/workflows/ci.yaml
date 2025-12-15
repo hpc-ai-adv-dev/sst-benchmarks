@@ -6,7 +6,7 @@ on:
 jobs:
   # Build jobs - create libraries once for each SST version and share as artifacts
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.architecture.runner }}
     strategy:
       matrix: &test-matrix
         sst_version:
@@ -14,6 +14,9 @@ jobs:
           - { tag: "15.1.0", image: "ghcr.io/hpc-ai-adv-dev/sst-core:15.1.0" }
           - { tag: "master", image: "ghcr.io/hpc-ai-adv-dev/sst-core:master-latest" }
         component: ["gameoflife", "pingpong", "phold"]
+        architecture:
+          - { name: "x86_64", runner: "ubuntu-latest" }
+          - { name: "arm64", runner: "ubuntu-24.04-arm" }
     container:
       image: ${{ matrix.sst_version.image }}
 
@@ -28,13 +31,13 @@ jobs:
     - name: Upload ${{ matrix.component }} library
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}
+        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}-${{ matrix.architecture.name }}
         path: ${{ matrix.component }}/lib*.so
         retention-days: 1
 
   # Test jobs - use pre-built libraries
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.architecture.runner }}
     needs: build
     strategy:
       matrix: *test-matrix
@@ -47,7 +50,7 @@ jobs:
     - name: Download ${{ matrix.component }} library
       uses: actions/download-artifact@v4
       with:
-        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}
+        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}-${{ matrix.architecture.name }}
         path: ${{ matrix.component }}/
 
     - name: Run ${{ matrix.component }} test
@@ -82,7 +85,7 @@ jobs:
 
   # Checkpoint testing jobs - run with checkpoint enabled
   checkpoint:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.architecture.runner }}
     needs: build
     strategy:
       matrix: *test-matrix
@@ -95,7 +98,7 @@ jobs:
     - name: Download ${{ matrix.component }} library
       uses: actions/download-artifact@v4
       with:
-        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}
+        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}-${{ matrix.architecture.name }}
         path: ${{ matrix.component }}/
 
     - name: Run ${{ matrix.component }} with checkpoint enabled
@@ -133,13 +136,13 @@ jobs:
     - name: Upload checkpoint artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.component }}-checkpoint-${{ matrix.sst_version.tag }}
+        name: ${{ matrix.component }}-checkpoint-${{ matrix.sst_version.tag }}-${{ matrix.architecture.name }}
         path: ${{ matrix.component }}/checkpoint/
         retention-days: 1
 
   # Checkpoint restore testing jobs - restore from checkpoint
   restore:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.architecture.runner }}
     needs: checkpoint
     strategy:
       matrix: *test-matrix
@@ -152,13 +155,13 @@ jobs:
     - name: Download ${{ matrix.component }} library
       uses: actions/download-artifact@v4
       with:
-        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}
+        name: ${{ matrix.component }}-lib-${{ matrix.sst_version.tag }}-${{ matrix.architecture.name }}
         path: ${{ matrix.component }}/
 
     - name: Download checkpoint artifacts
       uses: actions/download-artifact@v4
       with:
-        name: ${{ matrix.component }}-checkpoint-${{ matrix.sst_version.tag }}
+        name: ${{ matrix.component }}-checkpoint-${{ matrix.sst_version.tag }}-${{ matrix.architecture.name }}
         path: ${{ matrix.component }}/checkpoint/
 
     - name: Restore ${{ matrix.component }} from checkpoint
