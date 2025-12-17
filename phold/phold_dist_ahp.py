@@ -97,7 +97,6 @@ args = parser.parse_args()
 
 
 if SST:
-    sst.setProgramOption("stop-at", args.timeToRun)
     my_rank = sst.getMyMPIRank()
     num_ranks = sst.getMPIRankCount()
 else:
