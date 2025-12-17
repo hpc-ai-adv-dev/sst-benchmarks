@@ -110,6 +110,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="Whether or not to write the recvCount to file.",
     )
+    parser.add_argument(
+        "--no-self-links",
+        action="store_true",
+        help="Turn off self-links.",
+    )
     return parser
 
 
@@ -204,6 +209,9 @@ def connect_upwards(local_i: int, local_j: int, num_rings: int, comps,
         nbr_i = local_i + nbr_ring_i - my_ring_i
         nbr_j = local_j + nbr_ring_j - my_ring_j
 
+        if args.no_self_links and nbr_i == local_i and nbr_j == local_j:
+            continue
+        
         if nbr_i < 0 or nbr_i >= len(comps) or nbr_j < 0 or nbr_j >= args.width:
             continue
 
