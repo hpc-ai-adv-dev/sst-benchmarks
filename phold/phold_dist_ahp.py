@@ -82,6 +82,10 @@ parser.add_argument(
     help='Print detailed link wiring information.'
 )
 parser.add_argument(
+    '--no-self-links', action='store_true', default=False,
+    help='Disable self-links; by default self-links are enabled.'
+)
+parser.add_argument(
     '--partitioner', type=str, default='ahp_graph',
     help='Which partitioner to use: ahp_graph or sst?'
 )
@@ -255,9 +259,14 @@ class SubGrid(Device):
 
                         # Internal neighbor within this subgrid
                         if self.row_start <= ni < self.row_end:
-                            # Duplicate-avoid rule only for internal wiring
-                            if not (di < 0 or (di == 0 and dj < 0)):
-                                continue
+                            # Self-link handling: include unless disabled
+                            if di == 0 and dj == 0:
+                                if args.no_self_links:
+                                    continue
+                            else:
+                                # Duplicate-avoid rule for non-self internal wiring
+                                if not (di < 0 or (di == 0 and dj < 0)):
+                                    continue
 
                             if args.verbose >= 2:
                                 msg = (
