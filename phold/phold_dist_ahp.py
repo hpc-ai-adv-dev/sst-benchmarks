@@ -232,6 +232,9 @@ class SubGrid(Device):
             self.nodes[i] = {}
             for j in range(args.width):
                 n = Node(f"comp_{i}_{j}", i, j)
+                # Ensure child nodes inherit the SubGrid's partition (rank, thread)
+                if getattr(self, 'partition', None) is not None:
+                    n.set_partition(self.partition[0], self.partition[1])
                 self.nodes[i][j] = n
 
         M = args.width
@@ -355,7 +358,6 @@ def architecture(num_boards: int) -> DeviceGraph:
         row_end = (i + 1) * rows_per if i != num_boards - 1 else args.height
         sub = SubGrid(f"SubGrid{i}", row_start, row_end)
         sub.set_partition(i)
-        sub.model = f"rank{i}"
         graph.add(sub)
         subgrids[i] = sub
 
@@ -411,12 +413,12 @@ else:
     # This will generate a flat dot graph and a single JSON file
     if args.partitioner.lower() == 'sst':
         ahp_graph.flatten()
-        ahp_graph.write_dot('pholdFlat', draw=True, ports=True, hierarchy=False)
-        sst_graph.write_json('pholdFlat')
+        ahp_graph.write_dot('ahp_phold_flat.dot', draw=True, ports=True, hierarchy=False)
+        sst_graph.write_json('ahp_phold_flat.json')
 
     # If ahp_graph is partitioning, we generate a hierarchical DOT graph
     # and a JSON file for the rank that is specified from the command line
     elif args.partitioner.lower() == 'ahp_graph':
         if args.rank == 0:
-            ahp_graph.write_dot('phold', draw=True, ports=True)
-        sst_graph.write_json('phold', nranks=num_ranks, rank=args.rank)
+            ahp_graph.write_dot('ahp_phold.dot', draw=True, ports=True)
+        sst_graph.write_json('ahp_phold.json', nranks=num_ranks, rank=args.rank)
