@@ -170,6 +170,7 @@ class Node(Device):
         Ports follow the ring neighborhood up to `NUM_RINGS`, including self.
         """
         super().__init__(name)
+        self.type = None
         self.portinfo = PortInfo()
         
         # Iterate neighbor offsets within ring radius; include self (0,0).
