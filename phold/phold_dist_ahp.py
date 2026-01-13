@@ -97,6 +97,18 @@ parser.add_argument(
     '--numRanks', type=int, default=1,
     help='When running without SST, specify the number of ranks.'
 )
+parser.add_argument(
+    '--build', action='store_true', default=False,
+    help='Build the topology with SST.'
+)
+parser.add_argument(
+    '--write', action='store_true', default=False,
+    help='Write the topology to JSON.'
+)
+parser.add_argument(
+    '--draw', action='store_true', default=False,
+    help='Write the topology to DOT.'
+)
 args = parser.parse_args()
 
 
@@ -388,38 +400,31 @@ def architecture(num_boards: int) -> DeviceGraph:
 
     return graph
 
+if sum([args.write, args.build, args.draw]) > 1:
+    raise SystemExit("Error: Only one of --write, --build, or --draw can be specified.") 
+
+if args.draw:
+    raise SystemExit("Error: --draw is not implemented.")
+
 ahp_graph = architecture(num_ranks)
 sst_graph = SSTGraph(ahp_graph)
 
 
 if SST:
-    # If running within SST, generate the SST graph
-    # There are multiple ways to run, below are two examples
-
-    # SST partitioner
-    # This will work in serial or running SST with MPI in parallel
-    if args.partitioner.lower() == 'sst':
+    if args.partitioner.lower() == 'sst' and args.build:
         sst_graph.build()
-
-    # MPI mode with ahp_graph graph partitioning. Specifying nranks tells
-    # ahp_graph that it is doing the partitioning, not SST
-    # For this to work you need to pass --parallel-load=SINGLE to sst
-    elif args.partitioner.lower() == 'ahp_graph':
-        # Fully flatten assemblies ahead of SST build to avoid expansion
-        # and ensure no SubGrid assemblies remain in the graph.
-        # ahp_graph.flatten()
+    elif args.partitioner.lower() == 'sst' and args.write:
+        sst_graph.write_json('ahp_phold_sst_part_mpi.json', nranks=num_ranks, rank=my_rank)
+    elif args.partitioner.lower() == 'ahp_graph' and args.build:
         sst_graph.build(num_ranks)
+    elif args.partitioner.lower() == 'ahp_graph' and args.write:
+        sst_graph.write_json('ahp_phold_ahp_part_mpi.json', nranks=num_ranks, rank=my_rank)
+    else:
+        raise SystemExit("Error: Invalid partitioner or missing action (--build or --write).")
 else:
-    # SST partitioner
-    # This will generate a flat dot graph and a single JSON file
-    if args.partitioner.lower() == 'sst':
-        ahp_graph.flatten()
-        ahp_graph.write_dot('ahp_phold_flat.dot', draw=True, ports=True, hierarchy=False)
-        sst_graph.write_json('ahp_phold_flat.json')
-
-    # If ahp_graph is partitioning, we generate a hierarchical DOT graph
-    # and a JSON file for the rank that is specified from the command line
-    elif args.partitioner.lower() == 'ahp_graph':
-        if args.rank == 0:
-            ahp_graph.write_dot('ahp_phold.dot', draw=True, ports=True)
-        sst_graph.write_json('ahp_phold.json', nranks=num_ranks, rank=args.rank)
+    if args.partitioner.lower() == 'sst' and args.write:
+        sst_graph.write_json('ahp_phold_sst_part_python.json', nranks=num_ranks, rank=my_rank)
+    elif args.partitioner.lower() == 'ahp_graph' and args.write:
+        sst_graph.write_json('ahp_phold_ahp_part_python.json', nranks=num_ranks, rank=my_rank)
+    else:
+        raise SystemExit("Error: Invalid partitioner or missing action (--write).")
