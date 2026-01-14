@@ -119,6 +119,9 @@ else:
     my_rank = args.rank
     num_ranks = args.numRanks
 
+output_dir = f"output/height-{args.height}_width-{args.width}_numRings-{args.numRings}_numRanks-{num_ranks}"
+os.makedirs(output_dir, exist_ok=True)
+
 
 def log_link(msg: str, level: int = 1) -> None:
     """Log link wiring if verbosity is sufficient or print-links is set."""
@@ -414,17 +417,17 @@ if SST:
     if args.partitioner.lower() == 'sst' and args.build:
         sst_graph.build()
     elif args.partitioner.lower() == 'sst' and args.write:
-        sst_graph.write_json('ahp_phold_sst_part_mpi.json', nranks=num_ranks, rank=my_rank)
+        sst_graph.write_json('ahp_phold_sst_part_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     elif args.partitioner.lower() == 'ahp_graph' and args.build:
         sst_graph.build(num_ranks)
     elif args.partitioner.lower() == 'ahp_graph' and args.write:
-        sst_graph.write_json('ahp_phold_ahp_part_mpi.json', nranks=num_ranks, rank=my_rank)
+        sst_graph.write_json('ahp_phold_ahp_part_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     else:
         raise SystemExit("Error: Invalid partitioner or missing action (--build or --write).")
 else:
     if args.partitioner.lower() == 'sst' and args.write:
-        sst_graph.write_json('ahp_phold_sst_part_python.json', nranks=num_ranks, rank=my_rank)
+        sst_graph.write_json('ahp_phold_sst_part_python.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     elif args.partitioner.lower() == 'ahp_graph' and args.write:
-        sst_graph.write_json('ahp_phold_ahp_part_python.json', nranks=num_ranks, rank=my_rank)
+        sst_graph.write_json('ahp_phold_ahp_part_python.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     else:
         raise SystemExit("Error: Invalid partitioner or missing action (--write).")
