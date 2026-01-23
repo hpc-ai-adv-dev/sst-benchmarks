@@ -90,12 +90,16 @@ parser.add_argument(
     help='Which partitioner to use: ahp_graph or sst?'
 )
 parser.add_argument(
-    '--rank', type=int, default=0,
-    help='which rank to generate the JSON file for'
+    '--numNodes', '--num-nodes', type=int, default=1,
+    help='When running without SST, specify the number of nodes.'
 )
 parser.add_argument(
     '--numRanks', type=int, default=1,
     help='When running without SST, specify the number of ranks.'
+)
+parser.add_argument(
+    '--rank', type=int, default=0,
+    help='Which rank to generate the JSON file for.'
 )
 parser.add_argument(
     '--build', action='store_true', default=False,
@@ -115,9 +119,18 @@ args = parser.parse_args()
 if SST:
     my_rank = sst.getMyMPIRank()
     num_ranks = sst.getMPIRankCount()
+    num_nodes = args.numNodes
 else:
     my_rank = args.rank
     num_ranks = args.numRanks
+    num_nodes = args.numNodes
+
+# We divide number of ranks by number of nodes to get the number of ranks per node in the filename as that is how the submission scripts expect it.
+if SST:
+    output_dir = f"output/height-{args.height}_width-{args.width}_numRings-{args.numRings}_numNodes-{num_nodes}_numRanks-{int(num_ranks/num_nodes)}"
+else:
+    output_dir = f"output/height-{args.height}_width-{args.width}_numRings-{args.numRings}_numNodes-{num_nodes}_numRanks-{num_ranks}"
+os.makedirs(output_dir, exist_ok=True)
 
 
 def log_link(msg: str, level: int = 1) -> None:
@@ -406,7 +419,10 @@ if sum([args.write, args.build, args.draw]) > 1:
 if args.draw:
     raise SystemExit("Error: --draw is not implemented.")
 
-ahp_graph = architecture(num_ranks)
+if SST:
+    ahp_graph = architecture(num_ranks)
+else:
+    ahp_graph = architecture(num_nodes*num_ranks)
 sst_graph = SSTGraph(ahp_graph)
 
 
@@ -414,17 +430,17 @@ if SST:
     if args.partitioner.lower() == 'sst' and args.build:
         sst_graph.build()
     elif args.partitioner.lower() == 'sst' and args.write:
-        sst_graph.write_json('ahp_phold_sst_part_mpi.json', nranks=num_ranks, rank=my_rank)
+        sst_graph.write_json('ahp_phold_sst_part_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     elif args.partitioner.lower() == 'ahp_graph' and args.build:
         sst_graph.build(num_ranks)
     elif args.partitioner.lower() == 'ahp_graph' and args.write:
-        sst_graph.write_json('ahp_phold_ahp_part_mpi.json', nranks=num_ranks, rank=my_rank)
+        sst_graph.write_json('ahp_phold_ahp_part_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     else:
         raise SystemExit("Error: Invalid partitioner or missing action (--build or --write).")
 else:
     if args.partitioner.lower() == 'sst' and args.write:
-        sst_graph.write_json('ahp_phold_sst_part_python.json', nranks=num_ranks, rank=my_rank)
+        sst_graph.write_json('ahp_phold_sst_part_python.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     elif args.partitioner.lower() == 'ahp_graph' and args.write:
-        sst_graph.write_json('ahp_phold_ahp_part_python.json', nranks=num_ranks, rank=my_rank)
+        sst_graph.write_json('ahp_phold_ahp_part_python.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     else:
         raise SystemExit("Error: Invalid partitioner or missing action (--write).")
