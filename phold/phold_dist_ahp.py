@@ -438,9 +438,10 @@ if SST:
     else:
         raise SystemExit("Error: Invalid partitioner or missing action (--build or --write).")
 else:
+    total_ranks = num_nodes * num_ranks
     if args.partitioner.lower() == 'sst' and args.write:
-        sst_graph.write_json('ahp_phold_sst_part_python.json', output=output_dir, nranks=num_ranks, rank=my_rank)
+        sst_graph.write_json('ahp_phold_sst_part_python.json', output=output_dir, nranks=total_ranks, rank=my_rank)
     elif args.partitioner.lower() == 'ahp_graph' and args.write:
-        sst_graph.write_json('ahp_phold_ahp_part_python.json', output=output_dir, nranks=num_ranks, rank=my_rank)
+        sst_graph.write_json('ahp_phold_ahp_part_python.json', output=output_dir, nranks=total_ranks, rank=my_rank)
     else:
         raise SystemExit("Error: Invalid partitioner or missing action (--write).")
