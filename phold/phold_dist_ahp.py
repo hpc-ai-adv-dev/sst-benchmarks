@@ -113,6 +113,10 @@ parser.add_argument(
     '--draw', action='store_true', default=False,
     help='Write the topology to DOT.'
 )
+parser.add_argument(
+    '--trial', type=int, default=-1,
+    help='Trial number for output filename. When >= 0, output files become ahp_phold_*_part_trialY_TYPEX.json'
+)
 args = parser.parse_args()
 
 
@@ -430,18 +434,30 @@ if SST:
     if args.partitioner.lower() == 'sst' and args.build:
         sst_graph.build()
     elif args.partitioner.lower() == 'sst' and args.write:
-        sst_graph.write_json('ahp_phold_sst_part_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
+        if args.trial >= 0:
+            sst_graph.write_json(f'ahp_phold_sst_part_trial{args.trial}_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
+        else:
+            sst_graph.write_json('ahp_phold_sst_part_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     elif args.partitioner.lower() == 'ahp_graph' and args.build:
         sst_graph.build(num_ranks)
     elif args.partitioner.lower() == 'ahp_graph' and args.write:
-        sst_graph.write_json('ahp_phold_ahp_part_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
+        if args.trial >= 0:
+            sst_graph.write_json(f'ahp_phold_ahp_part_trial{args.trial}_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
+        else:
+            sst_graph.write_json('ahp_phold_ahp_part_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     else:
         raise SystemExit("Error: Invalid partitioner or missing action (--build or --write).")
 else:
     total_ranks = num_nodes * num_ranks
     if args.partitioner.lower() == 'sst' and args.write:
-        sst_graph.write_json('ahp_phold_sst_part_python.json', output=output_dir, nranks=total_ranks, rank=my_rank)
+        if args.trial >= 0:
+            sst_graph.write_json(f'ahp_phold_sst_part_trial{args.trial}_python.json', output=output_dir, nranks=total_ranks, rank=my_rank)
+        else:
+            sst_graph.write_json('ahp_phold_sst_part_python.json', output=output_dir, nranks=total_ranks, rank=my_rank)
     elif args.partitioner.lower() == 'ahp_graph' and args.write:
-        sst_graph.write_json('ahp_phold_ahp_part_python.json', output=output_dir, nranks=total_ranks, rank=my_rank)
+        if args.trial >= 0:
+            sst_graph.write_json(f'ahp_phold_ahp_part_trial{args.trial}_python.json', output=output_dir, nranks=total_ranks, rank=my_rank)
+        else:
+            sst_graph.write_json('ahp_phold_ahp_part_python.json', output=output_dir, nranks=total_ranks, rank=my_rank)
     else:
         raise SystemExit("Error: Invalid partitioner or missing action (--write).")
