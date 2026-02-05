@@ -134,7 +134,9 @@ if SST:
     output_dir = f"output/height-{args.height}_width-{args.width}_numRings-{args.numRings}_numNodes-{num_nodes}_numRanks-{int(num_ranks/num_nodes)}"
 else:
     output_dir = f"output/height-{args.height}_width-{args.width}_numRings-{args.numRings}_numNodes-{num_nodes}_numRanks-{num_ranks}"
-os.makedirs(output_dir, exist_ok=True)
+
+if args.write:
+    os.makedirs(output_dir, exist_ok=True)
 
 
 def log_link(msg: str, level: int = 1) -> None:
