@@ -279,3 +279,57 @@ If topologies differ:
 ```
 
 When plotting is enabled, a side-by-side visualization is saved showing both topologies with differing edges highlighted in red.
+
+### `verify_correctness_ahp.py`
+
+`verify_correctness_ahp.py` runs correctness tests that compare the simulation behavior of `phold_dist_ahp.py` against the original `phold_dist.py`. It verifies that the `recvCount` values (number of events received by each component) match for every (i, j) component in the grid.
+
+#### How It Works
+
+The script runs both implementations with `--verbose=1` enabled (which outputs `recvCount` values), parses the output, and compares the counts for each component. This validates that the AHP topology produces identical simulation results to the original implementation.
+
+#### Arguments
+
+* `--test`: Run only a specific test by name.
+* `--list`: List all available tests and their validity status.
+* `--quiet`: Only show pass/fail summary, suppress verbose output.
+* `--inspect`: Print detailed `recvCount` values for manual comparison.
+
+#### Usage
+
+List available tests:
+```bash
+python3 verify_correctness_ahp.py --list
+```
+
+Run all tests:
+```bash
+python3 verify_correctness_ahp.py
+```
+
+Run a specific test:
+```bash
+python3 verify_correctness_ahp.py --test ring2_1n_4r
+```
+
+#### Test Cases
+
+The script includes tests covering various configurations:
+- **Base cases**: 8x8 grids with ring size 2
+- **Ring sizes 1-5**: Each with single-node multi-rank and multi-node multi-rank configurations
+- Grid sizes and rank counts are chosen to ensure sufficient rows per rank (at least `num_rings` rows per rank)
+
+#### Output
+
+The script prints pass/fail status for each test and a summary:
+```
+TEST SUMMARY
+  ✓ base_8x8_1n_2r: PASS
+  ✓ ring1_1n_4r: PASS
+  ✓ ring2_2n_2r: PASS
+  ○ base_8x8_2n_2r: SKIP (invalid config)
+
+Total: 10 passed, 0 failed, 2 skipped
+```
+
+**Note**: This script requires a SLURM environment as it uses `srun` to execute the simulations.
