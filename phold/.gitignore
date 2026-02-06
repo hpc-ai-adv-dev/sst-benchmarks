@@ -2,3 +2,5 @@
 *dir
 rank*
 *.csv
+*.png
+**/output/
