@@ -130,3 +130,206 @@ Also keep in mind that in addition to the file containing the results of success
 This filename simply inserts `-failures` before the `.csv` in the provided output file argument.
 In the `exp-all` example, it would produce `exp-all-failures.csv`.
 
+## PHOLD AHP
+
+PHOLD AHP is an alternative implementation of the PHOLD benchmark using the [AHP Graph](https://github.com/lpsmodsimteam/ahp_graph) library for topology construction. This approach uses a hierarchical device graph abstraction that partitions the 2D grid into row-based subgrids.
+
+### Prerequisites
+
+In addition to SST, you need the `ahp_graph` library.
+```bash
+git clone https://github.com/lpsmodsimteam/ahp_graph.git
+cd ahp_graph
+pip install -e .
+```
+
+### `phold_dist_ahp.py`
+
+`phold_dist_ahp.py` is the AHP-based SST simulation description file. It constructs the same 2D grid topology as `phold_dist.py` but uses AHP's `Device` and `DeviceGraph` abstractions.
+
+#### Simulation Parameters
+
+Most parameters mirror those in `phold_dist.py`:
+
+* `--height` and `--width`: Define the shape of the 2D grid of components.
+* `--time-to-run`: Duration to run the simulation (SST-style time string, e.g., `100ns`).
+* `--link-delay`: Delay for each link (default: `1ns`).
+* `--num-rings` or `--ring-size`: Number of rings of neighbors to connect. `0` produces only self-links, `1` produces 9 links (self + 8 neighbors), etc.
+* `--event-density`: Number of events per component at initialization.
+* `--node-type`: Component type to use (default: `phold.Node`). Also supports `phold.ExponentialNode` and `phold.UniformNode`.
+* `--exponent-multiplier`: Scales the exponential distribution for `phold.ExponentialNode`.
+* `--small-payload` and `--large-payload`: Sizes of event payloads in bytes (defaults: 8 and 1024).
+* `--large-event-fraction`: Fraction of events using the large payload (default: 0.0).
+* `--component-size`: Size of additional memory allocated per component in bytes (default: 0).
+* `--imbalance-factor`: Thread-level load imbalance factor between 0 (balanced) and 1 (all work on one thread).
+* `--verbose`: Verbosity level for logging. Higher values print more detailed link wiring information.
+
+#### AHP-Specific Parameters
+
+* `--print-links`: Print detailed link wiring information during topology construction.
+* `--no-self-links`: Disable self-links (by default, each component has a self-link).
+* `--partitioner`: Choose the partitioner: `ahp_graph` (default) or `sst`.
+
+#### Execution Mode Parameters
+
+* `--build`: Build and run the topology with SST (default if no mode specified).
+* `--write`: Write the topology to JSON files instead of running.
+* `--draw`: Write the topology to DOT format (not currently implemented).
+* `--numNodes` or `--num-nodes`: Number of compute nodes (used when running without SST).
+* `--numRanks`: Number of MPI ranks per node (used when running without SST).
+* `--rank`: Which rank to generate JSON for (used when running without SST).
+* `--trial`: Trial number for output filename. When >= 0, output files use the pattern `ahp_phold_*_part_trialY_TYPEX.json`.
+
+#### Example Usage
+
+Run a simulation directly with SST:
+```bash
+sst phold_dist_ahp.py -- --height 100 --width 100 --num-rings 2 --event-density 1.0 --time-to-run 100ns
+```
+
+Generate JSON topology files for verification (without running SST):
+```bash
+python3 phold_dist_ahp.py --height 10 --width 10 --num-rings 2 --numNodes 2 --numRanks 1 --rank 0 --write
+python3 phold_dist_ahp.py --height 10 --width 10 --num-rings 2 --numNodes 2 --numRanks 1 --rank 1 --write
+```
+
+This creates JSON files in `output/height-10_width-10_numRings-2_numNodes-2_numRanks-1/` for each rank.
+
+### `compare_topologies.py`
+
+`compare_topologies.py` is a utility script that compares topologies from SST JSON output files using NetworkX. It supports both the original PHOLD link naming convention and the AHP naming convention, making it useful for verifying that the AHP implementation produces equivalent topologies.
+
+#### Features
+
+- Parses both link naming conventions:
+  - **Original**: `link_x_y_to_x_y` (e.g., `link_0_0_to_0_1`)
+  - **AHP**: `SubGridN.comp_x_y.portN__delay__SubGridM.comp_a_b.portM`
+- Loads and merges topologies from multiple JSON files (one per rank)
+- Compares node sets, edge sets, and node degrees between graphs
+- Generates visualization plots highlighting differences
+
+#### Usage
+
+```bash
+python3 compare_topologies.py --og og_rank0.json og_rank1.json --ahp ahp_rank0.json ahp_rank1.json
+```
+
+#### Arguments
+
+* `--og`: One or more JSON files containing the original topology (required).
+* `--ahp`: One or more JSON files containing the AHP topology (required).
+* `--output` or `-o`: Output image filename (default: `topology_comparison.png`).
+* `--no-plot`: Skip plotting and only print the comparison results.
+
+#### Example 1
+
+Compare a 2-rank original topology against the AHP equivalent using SST JSON writing.
+```bash
+# Generate original topology JSON files
+mpiexec -n 2 sst phold_dist.py --output-json=og_rank.json --parallel-output=true -- --height 10 --width 10 --num-rings 2
+
+# Generate AHP topology JSON files
+mpiexec -n 2 sst phold_dist_ahp.py --output-json=ahp_rank.json --parallel-output=true -- --height 10 --width 10 --num-rings 2
+
+# Compare the topologies
+python3 compare_topologies.py \
+    --og og_rank0.json og_rank1.json \
+    --ahp ahp_rank0.json ahp_rank1.json \
+    --output comparison.png
+```
+
+#### Example 2
+
+Compare a 2-rank original topology against the AHP equivalent using AHP JSON writing. For this we will directly use AHP's JSON writing functionality. For this, you need to specify directly the number of nodes, number of ranks per node, and the rank for which to write the JSON file. The script will automatically get the total number of ranks by multiplying number of nodes by number of ranks. 
+
+```bash
+# Generate the JSON for rank 0
+python3 phold_dist_ahp.py --height 10 --width 10 --num-rings 2 --num-rings 2 --num-nodes 1 --num-ranks 2 --rank 0 --write
+
+# Generate the JSON for rank 1
+python3 phold_dist_ahp.py --height 10 --width 10 --num-rings 2 --num-rings 2 --num-nodes 1 --num-ranks 2 --rank 1 --write
+
+# Compare the topologies
+python3 compare_topologies.py \
+    --og og_rank0.json og_rank1.json \
+    --ahp output/height-10_width-10_numRings-2_numNodes-1_numRanks-2/ahp_phold_ahp_part_python0.json \
+          output/height-10_width-10_numRings-2_numNodes-1_numRanks-2/ahp_phold_ahp_part_python0.json \
+    --output comparison.png
+```
+
+Use this method to sidestep SST's build step if the end goal is only to generate JSON files.
+
+#### Output
+
+The script prints:
+- Node counts for each topology
+- Nodes unique to each topology
+- Edge counts for each topology
+- Edges unique to each topology
+- Degree comparison for nodes present in both graphs
+
+If topologies match:
+```
+✓ Topologies are IDENTICAL
+```
+
+If topologies differ:
+```
+✗ Topologies are DIFFERENT
+```
+
+When plotting is enabled, a side-by-side visualization is saved showing both topologies with differing edges highlighted in red.
+
+### `verify_correctness_ahp.py`
+
+`verify_correctness_ahp.py` runs correctness tests that compare the simulation behavior of `phold_dist_ahp.py` against the original `phold_dist.py`. It verifies that the `recvCount` values (number of events received by each component) match for every (i, j) component in the grid.
+
+#### How It Works
+
+The script runs both implementations with `--verbose=1` enabled (which outputs `recvCount` values), parses the output, and compares the counts for each component. This validates that the AHP topology produces identical simulation results to the original implementation.
+
+#### Arguments
+
+* `--test`: Run only a specific test by name.
+* `--list`: List all available tests and their validity status.
+* `--quiet`: Only show pass/fail summary, suppress verbose output.
+* `--inspect`: Print detailed `recvCount` values for manual comparison.
+
+#### Usage
+
+List available tests:
+```bash
+python3 verify_correctness_ahp.py --list
+```
+
+Run all tests:
+```bash
+python3 verify_correctness_ahp.py
+```
+
+Run a specific test:
+```bash
+python3 verify_correctness_ahp.py --test ring2_1n_4r
+```
+
+#### Test Cases
+
+The script includes tests covering various configurations:
+- **Base cases**: 8x8 grids with ring size 2
+- **Ring sizes 1-5**: Each with single-node multi-rank and multi-node multi-rank configurations
+- Grid sizes and rank counts are chosen to ensure sufficient rows per rank (at least `num_rings` rows per rank)
+
+#### Output
+
+The script prints pass/fail status for each test and a summary:
+```
+TEST SUMMARY
+  ✓ base_8x8_1n_2r: PASS
+  ✓ ring1_1n_4r: PASS
+  ✓ ring2_2n_2r: PASS
+  ○ base_8x8_2n_2r: SKIP (invalid config)
+
+Total: 10 passed, 0 failed, 2 skipped
+```
+
+**Note**: This script requires a SLURM environment as it uses `srun` to execute the simulations.

@@ -91,11 +91,11 @@ parser.add_argument(
 )
 parser.add_argument(
     '--numNodes', '--num-nodes', type=int, default=1,
-    help='When running without SST, specify the number of nodes.'
+    help='When running without SST, specify the number of compute nodes.'
 )
 parser.add_argument(
-    '--numRanks', type=int, default=1,
-    help='When running without SST, specify the number of ranks.'
+    '--numRanks', '--num-ranks', type=int, default=1,
+    help='When running without SST, specify the number of ranks per node.'
 )
 parser.add_argument(
     '--rank', type=int, default=0,
@@ -139,6 +139,23 @@ if args.write:
     os.makedirs(output_dir, exist_ok=True)
 
 
+def log_init(my_rank: int, num_ranks: int, num_threads: int) -> None:
+    """Log initial simulation context."""
+    print(
+        "initializing simulation on rank",
+        my_rank,
+        "of",
+        num_ranks,
+        "with",
+        num_threads,
+        "threads",
+    )
+
+
+if SST:
+    log_init(my_rank, num_ranks, sst.getThreadCount())
+
+
 def log_link(msg: str, level: int = 1) -> None:
     """Log link wiring if verbosity is sufficient or print-links is set."""
     if args.print_links or args.verbose >= level:
@@ -173,13 +190,23 @@ def offset_index(di: int, dj: int) -> int:
     return ip * SIDE + jp
 
 
-def border_index(col_j: int, di: int, dj: int) -> int:
-    """Compute global multi-port index for a border based on column and offset.
+def border_index(col_j: int, dj: int, src_row_offset: int, tgt_row_offset: int) -> int:
+    """Compute global multi-port index for a border based on column and offsets.
 
-    We allocate M * (2R+1)^2 multi-ports per side. For column j we reserve a
-    contiguous block of size (2R+1)^2 and index into it using (di, dj).
+    Encodes:
+    - col_j: source column
+    - dj: column offset to target
+    - src_row_offset: source row's distance from boundary (0 = at boundary)
+    - tgt_row_offset: target row's distance past boundary (0 = first row past)
+    
+    This ensures unique indices for each (source_row, target_row, col, dj) tuple.
     """
-    return col_j * MAX_SIZE + offset_index(di, dj)
+    # Allocate space for all combinations
+    # Each column gets NUM_RINGS * NUM_RINGS * SIDE slots
+    base = col_j * NUM_RINGS * NUM_RINGS * SIDE
+    # Within that, index by src_row_offset, tgt_row_offset, and dj
+    dj_idx = dj + NUM_RINGS  # Convert dj from [-R, R] to [0, 2R]
+    return base + src_row_offset * NUM_RINGS * SIDE + tgt_row_offset * SIDE + dj_idx
 
 
 def index_to_offset(idx: int) -> tuple[int, int]:
@@ -242,9 +269,10 @@ class SubGrid(Device):
 
     # Expose indexed north/south border multi-ports sized for all columns and
     # all offsets within the ring neighborhood.
+    # Size: width * NUM_RINGS * NUM_RINGS * SIDE (for src_row_offset, tgt_row_offset, dj)
     portinfo = PortInfo()
-    portinfo.add('northBorder', 'String', limit=args.width*MAX_SIZE, required=False)
-    portinfo.add('southBorder', 'String', limit=args.width*MAX_SIZE, required=False)
+    portinfo.add('northBorder', 'String', limit=args.width*NUM_RINGS*NUM_RINGS*SIDE, required=False)
+    portinfo.add('southBorder', 'String', limit=args.width*NUM_RINGS*NUM_RINGS*SIDE, required=False)
 
     def __init__(self, name, row_start, row_end):
         """Initialize subgrid covering rows [row_start, row_end)."""
@@ -323,59 +351,77 @@ class SubGrid(Device):
                             continue
 
         # Single-link border sweeps: one anchor per border index.
-        top = self.row_start
-        bot = self.row_end - 1
+        tops = list(range(self.row_start, min(self.row_start + NUM_RINGS, self.row_end)))
+        bots = list(range(max(self.row_start, self.row_end - NUM_RINGS), self.row_end))
         
         # North border sweep
-        for bidx in range(args.width * MAX_SIZE):
-            nb = self.northBorder(bidx)
-            if nb.link is None:
-                continue
-            col = bidx // MAX_SIZE
-            off = bidx % MAX_SIZE
-            di, dj = index_to_offset(off)
-            
-            # Boundary node on top row
-            j = col
+        # Connect to neighbors above this subgrid
+        # From this subgrid's perspective: source at (i,j), target at (ni,nj) = (i+di, j+dj) where di<0
+        # Must compute bidx to match what upper subgrid's south sweep computed:
+        #   upper's source was at (ni, nj), upper's target was at (i, j)
+        #   upper's src_row_offset = (upper.row_end - 1) - ni
+        #   upper's tgt_row_offset = i - upper.row_end
+        #   upper's bidx = border_index(nj, -dj, src_row_offset, tgt_row_offset)
+        for top in tops:
             i = top
-            ni = i + di
-            nj = j + dj
-            if 0 <= nj < args.width and ni < self.row_start:
-                src_idx = port_num(i, j, ni, nj)
-                node = self.nodes[i][j]
-                if args.verbose >= 2:
-                    msg = (
-                        f"Border link (north): {self.name}.comp_{i}_{j}.port{src_idx} "
-                        f"-> {self.name}.northBorder[{bidx}] (delay {args.linkDelay})"
-                    )
-                    log_link(msg, level=2)
-                graph.link(getattr(node, f"port{src_idx}"), nb, args.linkDelay)
+            for j in range(args.width):
+                for di in range(-NUM_RINGS, 0):  # Only negative di (going up)
+                    for dj in range(-NUM_RINGS, NUM_RINGS + 1):
+                        if max(abs(di), abs(dj)) > NUM_RINGS:
+                            continue
+                        ni = i + di
+                        nj = j + dj
+                        # Only create border link if neighbor is above this subgrid
+                        if ni < self.row_start and 0 <= nj < args.width and 0 <= ni:
+                            # Compute bidx from upper subgrid's south perspective:
+                            # upper.row_end = self.row_start
+                            upper_row_end = self.row_start
+                            # upper's source was at row ni, column nj
+                            src_row_offset = (upper_row_end - 1) - ni
+                            # upper's target (this comp) is at row i
+                            tgt_row_offset = i - upper_row_end
+                            # upper used column nj and dj' = j - nj = -dj
+                            bidx = border_index(nj, -dj, src_row_offset, tgt_row_offset)
+                            nb = self.northBorder(bidx)
+                            src_idx = port_num(i, j, ni, nj)
+                            node = self.nodes[i][j]
+                            if args.verbose >= 2:
+                                msg = (
+                                    f"Border link (north): {self.name}.comp_{i}_{j}.port{src_idx} "
+                                    f"-> {self.name}.northBorder[{bidx}] (delay {args.linkDelay})"
+                                )
+                                log_link(msg, level=2)
+                            graph.link(getattr(node, f"port{src_idx}"), nb, args.linkDelay)
         
         # South border sweep
-        for bidx in range(args.width * MAX_SIZE):
-            sb = self.southBorder(bidx)
-            if sb.link is None:
-                continue
-            
-            col = bidx // MAX_SIZE
-            off = bidx % MAX_SIZE
-            di, dj = index_to_offset(off)
-            
-            # Boundary node on bottom row
-            j = col
+        # Connect to neighbors below this subgrid
+        # source is comp at (i,j), target is at (i+di, j+dj) where di>0
+        for bot in bots:
             i = bot
-            ni = i + di
-            nj = j + dj
-            if 0 <= nj < args.width and ni >= self.row_end:
-                src_idx = port_num(i, j, ni, nj)
-                node = self.nodes[i][j]
-                if args.verbose >= 2:
-                    msg = (
-                        f"Border link (south): {self.name}.comp_{i}_{j}.port{src_idx} "
-                        f"-> {self.name}.southBorder[{bidx}] (delay {args.linkDelay})"
-                    )
-                    log_link(msg, level=2)
-                graph.link(getattr(node, f"port{src_idx}"), sb, args.linkDelay)
+            for j in range(args.width):
+                for di in range(1, NUM_RINGS + 1):  # Only positive di (going down)
+                    for dj in range(-NUM_RINGS, NUM_RINGS + 1):
+                        if max(di, abs(dj)) > NUM_RINGS:
+                            continue
+                        ni = i + di
+                        nj = j + dj
+                        # Only create border link if neighbor is below this subgrid
+                        if ni >= self.row_end and 0 <= nj < args.width and ni < args.height:
+                            # src_row_offset: how far source is from bottom boundary
+                            src_row_offset = (self.row_end - 1) - i
+                            # tgt_row_offset: how far target is past the boundary  
+                            tgt_row_offset = ni - self.row_end
+                            bidx = border_index(j, dj, src_row_offset, tgt_row_offset)
+                            sb = self.southBorder(bidx)
+                            src_idx = port_num(i, j, ni, nj)
+                            node = self.nodes[i][j]
+                            if args.verbose >= 2:
+                                msg = (
+                                    f"Border link (south): {self.name}.comp_{i}_{j}.port{src_idx} "
+                                    f"-> {self.name}.southBorder[{bidx}] (delay {args.linkDelay})"
+                                )
+                                log_link(msg, level=2)
+                            graph.link(getattr(node, f"port{src_idx}"), sb, args.linkDelay)
 
 
 def architecture(num_boards: int) -> DeviceGraph:
@@ -394,30 +440,44 @@ def architecture(num_boards: int) -> DeviceGraph:
         subgrids[i] = sub
 
     # Connect borders between adjacent SubGrids.
+    # Iterate over all possible cross-boundary connections.
     for i in range(1, num_boards):
         upper = subgrids[i - 1]
         lower = subgrids[i]
-        for j in range(args.width):
-            for di in range(1, NUM_RINGS + 1):  # south from upper
-                for dj in range(-NUM_RINGS, NUM_RINGS + 1):
-                    jj = j + dj
-                    if not (0 <= jj < args.width):
-                        continue
-                    u_idx = border_index(j, di, dj)
-                    l_idx = jj * MAX_SIZE + offset_index(-di, -dj)
-                    if args.verbose >= 2:
-                        msg = (
-                            f"Inter-subgrid link: {upper.name}.southBorder[{u_idx}] "
-                            f"<-> {lower.name}.northBorder[{l_idx}] (delay {args.linkDelay})"
+        # For each source row in upper's bottom region that can reach into lower
+        for src_row_offset in range(NUM_RINGS):
+            # src_row is (upper.row_end - 1) - src_row_offset
+            # For each target row in lower's top region
+            for tgt_row_offset in range(NUM_RINGS):
+                # tgt_row is lower.row_start + tgt_row_offset
+                # Total vertical distance = src_row_offset + 1 + tgt_row_offset
+                total_di = src_row_offset + 1 + tgt_row_offset
+                if total_di > NUM_RINGS:
+                    continue  # Beyond ring neighborhood
+                for j in range(args.width):
+                    for dj in range(-NUM_RINGS, NUM_RINGS + 1):
+                        if max(total_di, abs(dj)) > NUM_RINGS:
+                            continue
+                        jj = j + dj
+                        if not (0 <= jj < args.width):
+                            continue
+                        bidx = border_index(j, dj, src_row_offset, tgt_row_offset)
+                        if args.verbose >= 2:
+                            msg = (
+                                f"Inter-subgrid link: {upper.name}.southBorder[{bidx}] "
+                                f"<-> {lower.name}.northBorder[{bidx}] (delay {args.linkDelay})"
+                            )
+                            log_link(msg, level=2)
+                        graph.link(
+                            upper.southBorder(bidx),
+                            lower.northBorder(bidx), 
+                            args.linkDelay
                         )
-                        log_link(msg, level=2)
-                    graph.link(
-                        upper.southBorder(u_idx),
-                        lower.northBorder(l_idx), 
-                        args.linkDelay
-                    )
 
     return graph
+
+if not (args.write or args.build or args.draw):
+    args.build = True
 
 if sum([args.write, args.build, args.draw]) > 1:
     raise SystemExit("Error: Only one of --write, --build, or --draw can be specified.") 
