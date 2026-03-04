@@ -20,6 +20,7 @@ public:
 
     bool tick(SST::Cycle_t currentCycle);
 
+    void componentCompute();
     void handleEvent(SST::Event* ev);
 
     SST::Interfaces::StringEvent* createEvent();
@@ -71,6 +72,9 @@ public:
          "0"},
         {"componentSize",
          "Additional size of components in bytes",
+         "0"},
+        {"componentCompute",
+         "How much additional computation to do as part of event handling, as a count of random numbers to generate and assign",
          "0"})
 
     SST_ELI_DOCUMENT_PORTS({{"port%d", "Ports to others", {}}})
@@ -101,6 +105,9 @@ public:
     int smallPayload, largePayload;
     float largeEventFraction;
     char* additionalData;
+    int componentComputeCount;
+    volatile int computeSink;
+    
 
     int recvCount;
 
