@@ -105,7 +105,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Size of the additional data field of the component in bytes",
     )
     parser.add_argument(
-        "--componentCompute", '--component-compute',
+        "--componentComputation", '--component-computation',
         type=int,
         default=0,
         help=(
@@ -183,7 +183,7 @@ def create_component(i: int, j: int, args, rows_per_rank: int, num_ranks: int,
             "largeEventFraction": args.largeEventFraction,
             "verbose": args.verbose,
             "componentSize": args.componentSize,
-            "componentCompute": args.componentCompute,
+            "componentComputation": args.componentComputation,
         }
     )
     comp.setRank(

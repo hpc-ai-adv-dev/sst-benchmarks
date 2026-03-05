@@ -165,6 +165,49 @@ def calculate_grid_shapes(args):
       shapes.append((grid_width, grid_height, node_count, rank_count, thread_count))
   return shapes
 
+def generate_phold_args(node_counts=[1], thread_counts=[1], rank_counts=[1], 
+                        widths=[100], heights=[100], components_per_node=None,
+                        event_densities=[0.1], ring_sizes=[1], times_to_run=[1000],
+                        small_payloads=[8], large_payloads=[1024], large_event_fractions=[0.0], 
+                        imbalance_factors=[0.0], component_sizes=[0], component_computations=[0],
+                        name="phold", weak_scaling=False, stochastic=None):
+  args = argparse.Namespace(node_counts=node_counts, thread_counts=thread_counts, rank_counts=rank_counts, widths=widths, heights=heights,
+                          components_per_node=components_per_node, event_densities=event_densities, ring_sizes=ring_sizes, times_to_run=times_to_run,
+                          small_payloads=small_payloads, large_payloads=large_payloads, large_event_fractions=large_event_fractions, 
+                          imbalance_factors=imbalance_factors, component_sizes=component_sizes, component_computations=component_computations,
+                          name=name, weak_scaling=weak_scaling, stochastic=stochastic)
+  
+  
+  args = convert_to_ranges(args)
+  if args.stochastic is not None:
+    
+    shape_parameters = stochastic_grid_shapes(args)
+    
+    non_shape_parameters = []
+    for i in range(args.stochastic):
+      density = round(random.uniform(*args.event_densities), 2)
+      non_shape_point = (density, random.randint(*args.ring_sizes), random.randint(*args.times_to_run), random.randint(*args.small_payloads),
+              random.randint(*args.large_payloads), random.uniform(*args.large_event_fractions), random.uniform(*args.imbalance_factors), random.randint(*args.component_sizes), random.randint(*args.component_computations))
+      non_shape_parameters.append(non_shape_point)
+
+    parameters = list(zip(shape_parameters, non_shape_parameters))
+  else:
+    # Non stochastic run, so we do cartesian product of the parameters
+    shape_parameters = calculate_grid_shapes(args)
+    non_shape_parameters = list(itertools.product(args.event_densities, args.ring_sizes, args.times_to_run,
+                                                  args.small_payloads, args.large_payloads, args.large_event_fractions, 
+                                                  args.imbalance_factors, args.component_sizes, args.component_computations))
+    parameters = list(itertools.product(shape_parameters, non_shape_parameters))
+
+  arg_tuples = []
+  for ((width, height, node_count, rank_count, thread_count), 
+       (event_density, ring_size, time_to_run, small_payload, large_payload, 
+        large_event_fraction, imbalance_factor, component_size, component_computation)) in parameters:
+    srun_args = f"--nodes={node_count} --cpus-per-task={thread_count} --ntasks-per-node={rank_count}"
+    phold_args = f"--height {height} --width {width} --eventDensity {event_density} --timeToRun {time_to_run}ns --numRings {ring_size} --smallPayload {small_payload} --largePayload {large_payload} --largeEventFraction {large_event_fraction} --imbalance-factor {imbalance_factor} --componentSize {component_size} --componentComputation {component_computation}"
+    run_name = f"{name}_{node_count}_{rank_count}_{thread_count}_{width}_{height}_{event_density}_{ring_size}_{time_to_run}_{small_payload}_{large_payload}_{large_event_fraction}_{imbalance_factor}_{component_size}_{component_computation}"
+    arg_tuples.append((srun_args, phold_args, run_name))
+  return arg_tuples
 
 if __name__ == "__main__":
   args = parse_arguments()

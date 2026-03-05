@@ -73,7 +73,7 @@ public:
         {"componentSize",
          "Additional size of components in bytes",
          "0"},
-        {"componentCompute",
+        {"componentComputation",
          "How much additional computation to do as part of event handling, as a count of random numbers to generate and assign",
          "0"})
 

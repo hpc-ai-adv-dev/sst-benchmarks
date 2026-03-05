@@ -53,7 +53,7 @@ Node::Node(SST::ComponentId_t id, SST::Params& params)
         additionalData = (char*)malloc(componentSize * sizeof(char));
     }
 
-    componentComputeCount = params.find<int>("componentCompute", 0);
+    componentComputeCount = params.find<int>("componentComputation", 0);
 
     recvCount = 0;
     numLinks = (2 * numRings + 1) * (2 * numRings + 1);
