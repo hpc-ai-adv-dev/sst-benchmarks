@@ -8,6 +8,7 @@ Some of the characteristic parameters in this implementation are:
 - distribution of the data sizes of components and events
 - number of events
 - link delays
+- computational intensity of event handling
 
 ## Prerequisites
 
@@ -73,6 +74,7 @@ The PHOLD simulation has a large number of parameters:
 * `--exponent-multiplier`: For `phold.ExponentialNode`, this argument scales the exponential distribution from which additional delays on links are drawn.
 * `--small-payload`, `--large-payload`, and `large-event-fraction`: Each event carries an (unused) payload of either a small or large size. These parameters set those sizes, in bytes, and the fraction of events that are sent with the large payload. By default, small is 8 bytes, large is 1024 bytes, and large event fraction is 0.1.
 * `--component-size`: Each component has an additional field that is an allocated block of memory. This allows experimentation with the amount of memory used by each component. This argument controls the size of that field in bytes, and is 0 by default.
+* `--component-compute`: The number of random numbers a component should generate as part of handling an event. This allows simulations with more or less heavyweight components.
 * `--imbalance-factor`: This parameter adds thread-level load imbalance to the distribution of components. Values should be between 0 and 1. A value of 0 indicates perfect balance and a value of 1 indicates complete imbalance (all work on one thread). 
 * `--verbose`: This argument controls whether, at the end of the simulation, each component prints the number of events it received. This is useful for verifying correctness.
 
