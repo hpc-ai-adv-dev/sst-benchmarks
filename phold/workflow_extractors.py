@@ -229,11 +229,11 @@ def identify_result_dirs(search_dir, logfile_name, experiment_name=None):
             continue
 
         # Check for a log file and at least one sync file
-        has_output_file = any(file.endswith('run.log') for file in os.listdir(candidate_path))
+        has_output_file = any(file.endswith(logfile_name) for file in os.listdir(candidate_path))
         has_rank_files = any(file.startswith('rank') for file in os.listdir(candidate_path))
 
         if not has_output_file:
-            invalid_dirs.append((candidate, "Missing run.log file"))
+            invalid_dirs.append((candidate, f"Missing {logfile_name} file"))
         elif not has_rank_files:
             invalid_dirs.append((candidate, "Missing rank files"))
         else:
