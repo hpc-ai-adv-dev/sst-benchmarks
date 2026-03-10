@@ -8,19 +8,58 @@ import random
 working_dir = os.getcwd()
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
-def int_list(value):
+def int_list(value: str) -> list[int]:
+  """Parse a whitespace-separated string into a list of integers.
+  Args:
+      value: A whitespace-separated string of integers or mathematical expressions.
+      
+  Returns:
+      A list of integers parsed from the input string.
+      
+  Raises:
+      argparse.ArgumentTypeError: If the input cannot be converted to integers.
+      
+  Examples:
+      >>> int_list('1 2 3')
+      [1, 2, 3]
+      >>> int_list('1 2*2 4')
+      [1, 4, 4]
+  """
   try:
     return [int(eval(x)) for x in value.split()]
   except ValueError:
     raise argparse.ArgumentTypeError(f"Invalid list of integers: '{value}'")
   
-def float_list(value):
+def float_list(value: str) -> list[float]:
+  """Parse a whitespace-separated string into a list of floating-point numbers.
+
+  Args:
+      value: A whitespace-separated string of floating-point numbers.
+      
+  Returns:
+      A list of floats parsed from the input string.
+      
+  Raises:
+      argparse.ArgumentTypeError: If the input cannot be converted to floats.
+      
+  Examples:
+      >>> float_list('0.1 0.5 1.0')
+      [0.1, 0.5, 1.0]
+      >>> float_list('1.5 2.5 3.5')
+      [1.5, 2.5, 3.5]
+  """
   try:
     return [float(x) for x in value.split()]
   except ValueError:
     raise argparse.ArgumentTypeError(f"Invalid list of floats: '{value}'")
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
+  """Parse and validate command-line arguments for PHOLD benchmark submission.
+  
+  Raises:
+      AssertionError: If neither --width nor --components-per-node is specified.
+      SystemExit: If parsing fails or required arguments are missing.
+  """
   parser = argparse.ArgumentParser(description="Submit PHOLD benchmark jobs.")
 
   parser.add_argument('--node_counts', '--node-counts', type=int_list, help="List of node counts to use for the benchmark, e.g., '4 8 16'", required=True)
@@ -59,6 +98,9 @@ def parse_arguments():
 
 
 def convert_to_ranges(args):
+  """
+  Normalizes the arguments for stochastic runs by expanding single-value arguments into a single-value range.
+  """
   if args.stochastic is not None:
     # Turn the single values into ranges with a single element
     if len(args.node_counts) == 1:
@@ -96,11 +138,11 @@ def convert_to_ranges(args):
 
 # 
 def stochastic_grid_shapes(args):
-  '''
+  """
   Calculate grid shapes for stochastic runs. 
   We are treating the arguments as ranges, and need to sample from them based 
   on if we are doing weak scaling and if the components_per_node or width is specified
-  '''
+  """
 
   node_counts = []
   for i in range(args.stochastic):
@@ -165,31 +207,28 @@ def calculate_grid_shapes(args):
       shapes.append((grid_width, grid_height, node_count, rank_count, thread_count))
   return shapes
 
-def generate_phold_args(node_counts=[1], thread_counts=[1], rank_counts=[1], 
-                        widths=[100], heights=[100], components_per_node=None,
-                        event_densities=[0.1], ring_sizes=[1], times_to_run=[1000],
-                        small_payloads=[8], large_payloads=[1024], large_event_fractions=[0.0], 
-                        imbalance_factors=[0.0], component_sizes=[0], component_computations=[0],
-                        name="phold", weak_scaling=False, stochastic=None):
-  args = argparse.Namespace(node_counts=node_counts, thread_counts=thread_counts, rank_counts=rank_counts, widths=widths, heights=heights,
-                          components_per_node=components_per_node, event_densities=event_densities, ring_sizes=ring_sizes, times_to_run=times_to_run,
-                          small_payloads=small_payloads, large_payloads=large_payloads, large_event_fractions=large_event_fractions, 
-                          imbalance_factors=imbalance_factors, component_sizes=component_sizes, component_computations=component_computations,
-                          name=name, weak_scaling=weak_scaling, stochastic=stochastic)
-  
-  
+def generate_parameter_list(args):
+  """
+  Given an argparser Namespace `args`, produces a list of tuples representing the parameters of each run to execute. 
+  Each tuple contains two tuples: (shape_parameter_tuple, non_shape_parameter_tuple).
+  The shape parameter tuple is: (width, height, node_count, rank_count, thread_count)
+  The non-shape parameter tuple is:
+    (event_density, ring_size, time_to_run, 
+     small_payload, large_payload, large_event_fraction, 
+     imbalance_factor, component_size, component_computation)
+  """
   args = convert_to_ranges(args)
   if args.stochastic is not None:
-    
     shape_parameters = stochastic_grid_shapes(args)
-    
     non_shape_parameters = []
     for i in range(args.stochastic):
       density = round(random.uniform(*args.event_densities), 2)
-      non_shape_point = (density, random.randint(*args.ring_sizes), random.randint(*args.times_to_run), random.randint(*args.small_payloads),
-              random.randint(*args.large_payloads), random.uniform(*args.large_event_fractions), random.uniform(*args.imbalance_factors), random.randint(*args.component_sizes), random.randint(*args.component_computations))
+      non_shape_point = (density, random.randint(*args.ring_sizes), 
+                         random.randint(*args.times_to_run), random.randint(*args.small_payloads),
+                         random.randint(*args.large_payloads), random.uniform(*args.large_event_fractions),
+                         random.uniform(*args.imbalance_factors), random.randint(*args.component_sizes), 
+                         random.randint(*args.component_computations))
       non_shape_parameters.append(non_shape_point)
-
     parameters = list(zip(shape_parameters, non_shape_parameters))
   else:
     # Non stochastic run, so we do cartesian product of the parameters
@@ -198,11 +237,86 @@ def generate_phold_args(node_counts=[1], thread_counts=[1], rank_counts=[1],
                                                   args.small_payloads, args.large_payloads, args.large_event_fractions, 
                                                   args.imbalance_factors, args.component_sizes, args.component_computations))
     parameters = list(itertools.product(shape_parameters, non_shape_parameters))
+  
+  return parameters
 
-  arg_tuples = []
+def generate_phold_args(node_counts=[1], thread_counts=[1], rank_counts=[1], 
+                        widths=[100], heights=[100], components_per_node=None,
+                        event_densities=[0.1], ring_sizes=[1], times_to_run=[1000],
+                        small_payloads=[8], large_payloads=[1024], large_event_fractions=[0.0], 
+                        imbalance_factors=[0.0], component_sizes=[0], component_computations=[0],
+                        name="phold", weak_scaling=False, stochastic=None) -> list[tuple[str, str, str]]:
+  """Generate PHOLD benchmark parameter combinations and corresponding srun/phold arguments.
+  
+  This is the primary library interface for generating PHOLD benchmark configurations.
+  It supports both deterministic parametric sweeps (Cartesian product of parameters) and
+  stochastic sampling of the parameter space. Useful for notebook workflows and programmatic
+  benchmark configuration.
+  
+  Args:
+      node_counts (list[int]): Node counts for benchmark runs. Each value represents the number
+          of computing nodes to allocate for a run. Default is [1].
+      thread_counts (list[int]): Thread counts per node. Controls CPU parallelism within each rank.
+          Default is [1].
+      rank_counts (list[int]): Number of MPI ranks to run per node. Controls MPI parallelism
+          within each node. Default is [1].
+      widths (list[int]): Grid widths for the simulation. Represents the first dimension of the
+          component grid. Either this or components_per_node must be specified. Default is [100].
+      heights (list[int]): Grid heights or per-node heights (see weak_scaling). Represents the
+          second dimension over which the grid is distributed. Default is [100].
+      components_per_node (list[int] | None): Target component counts per node. When specified,
+          grid widths are dynamically calculated to achieve approximately this many components per
+          node. Mutually exclusive with direct width specification for weak scaling calculations.
+          Default is None.
+      event_densities (list[float]): Event densities for the simulation. Controls the frequency
+          of events generated per component. Higher densities produce more events. Examples: 0.1, 0.5, 10.
+          Default is [0.1].
+      ring_sizes (list[int]): Number of rings of neighboring components each component should connect to.
+          Controls graph connectivity. ring_size=1 means only immediate neighbors, ring_size=2 includes
+          neighbors one ring further out, etc. Default is [1].
+      times_to_run (list[int]): Simulation times in nanoseconds (ns). Controls how long each simulation runs.
+          Examples: 1000, 10000, 100000. Default is [1000].
+      small_payloads (list[int]): Small event payload sizes in bytes. Default is [8].
+      large_payloads (list[int]): Large event payload sizes in bytes. Default is [1024].
+      large_event_fractions (list[float]): Fraction of events that should be large (vs. small).
+          Must be in range [0.0, 1.0]. 0.0 means all events are small, 1.0 means all are large.
+          Default is [0.0].
+      imbalance_factors (list[float]): Load imbalance factors. Controls computational load variation
+          across components. 0.0 means perfectly balanced, > 0.0 introduces increasing imbalance.
+          Default is [0.0].
+      component_sizes (list[int]): Component memory sizes in bytes. Allows simulation of varying
+          component footprints. Default is [0] (minimal).
+      component_computations (list[int]): Computation iterations per event. Controls the amount of
+          work performed per event reception. Specified in random number generations. Default is [0] (no computation).
+      name (str): Job name prefix prepended to all output filenames. Useful for organizing benchmark runs.
+          Default is "phold".
+      weak_scaling (bool): If True, height parameters are treated as per-node heights (components scale
+          with node count). If False, height represents the total grid height (strong scaling).
+          Default is False.
+      stochastic (int | None): If set to a positive integer N, treats list parameters as range bounds
+          [min, max] and randomly samples N points from each parameter's range instead of performing
+          a Cartesian product. Enables efficient exploration of high-dimensional parameter spaces.
+          Default is None (deterministic Cartesian product).
+          
+  Returns:
+      list[tuple[str, str, str]]: List of tuples, one per benchmark run, containing:
+          - srun_args (str): srun command-line arguments (--nodes, --cpus-per-task, --ntasks-per-node)
+          - phold_args (str): PHOLD executable arguments (height, width, event density, etc.)
+          - run_name (str): Unique identifier for the run based on all parameters
+  """
+
+  args = argparse.Namespace(node_counts=node_counts, thread_counts=thread_counts, rank_counts=rank_counts, widths=widths, heights=heights,
+                          components_per_node=components_per_node, event_densities=event_densities, ring_sizes=ring_sizes, times_to_run=times_to_run,
+                          small_payloads=small_payloads, large_payloads=large_payloads, large_event_fractions=large_event_fractions, 
+                          imbalance_factors=imbalance_factors, component_sizes=component_sizes, component_computations=component_computations,
+                          name=name, weak_scaling=weak_scaling, stochastic=stochastic)
+  
+  parameter_tuples = generate_parameter_list(args)
+  
+  arg_tuples = [] # The triples that contain the srun arguments, phold script arguments, and the run name
   for ((width, height, node_count, rank_count, thread_count), 
        (event_density, ring_size, time_to_run, small_payload, large_payload, 
-        large_event_fraction, imbalance_factor, component_size, component_computation)) in parameters:
+        large_event_fraction, imbalance_factor, component_size, component_computation)) in parameter_tuples:
     srun_args = f"--nodes={node_count} --cpus-per-task={thread_count} --ntasks-per-node={rank_count}"
     phold_args = f"--height {height} --width {width} --eventDensity {event_density} --timeToRun {time_to_run}ns --numRings {ring_size} --smallPayload {small_payload} --largePayload {large_payload} --largeEventFraction {large_event_fraction} --imbalance-factor {imbalance_factor} --componentSize {component_size} --componentComputation {component_computation}"
     run_name = f"{name}_{node_count}_{rank_count}_{thread_count}_{width}_{height}_{event_density}_{ring_size}_{time_to_run}_{small_payload}_{large_payload}_{large_event_fraction}_{imbalance_factor}_{component_size}_{component_computation}"
@@ -216,27 +330,7 @@ if __name__ == "__main__":
   subprocess.run("make", shell=True, check=True)
   os.chdir(working_dir)
 
-  args = convert_to_ranges(args)
-  if args.stochastic is not None:
-    
-    shape_parameters = stochastic_grid_shapes(args)
-    
-    non_shape_parameters = []
-    for i in range(args.stochastic):
-      density = round(random.uniform(*args.event_densities), 2)
-      non_shape_point = (density, random.randint(*args.ring_sizes), random.randint(*args.times_to_run), random.randint(*args.small_payloads),
-              random.randint(*args.large_payloads), random.uniform(*args.large_event_fractions), random.uniform(*args.imbalance_factors), random.randint(*args.component_sizes), random.randint(*args.component_computations))
-      non_shape_parameters.append(non_shape_point)
-
-    parameters = list(zip(shape_parameters, non_shape_parameters))
-  else:
-    # Non stochastic run, so we do cartesian product of the parameters
-
-    shape_parameters = calculate_grid_shapes(args)
-    non_shape_parameters = list(itertools.product(args.event_densities, args.ring_sizes, args.times_to_run,
-                                                  args.small_payloads, args.large_payloads, args.large_event_fractions, 
-                                                  args.imbalance_factors, args.component_sizes, args.component_computations))
-    parameters = list(itertools.product(shape_parameters, non_shape_parameters))
+  parameters = generate_parameter_list(args)
 
   print("parameters: ", parameters)
   for ((width, height, node_count, rank_count, thread_count), (event_density, ring_size, time_to_run, small_payload, large_payload, large_event_fraction, imbalance_factor, component_size, component_computation)) in parameters:

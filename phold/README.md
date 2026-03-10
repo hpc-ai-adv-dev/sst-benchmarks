@@ -122,7 +122,7 @@ Each job that `submit.py` queues is actually an instance of the `dispatch.sh` co
 This command prepares the `sst` command, directing its outputs to different files, and collects global simulation metrics.
 The metrics collected are: build time, run stage time, maximum global memory usage, and maximum per-rank memory usage.
 
-## `consolidate.py`
+#### `consolidate.py`
 
 Once the runs from an experiment are done, the `consolidate.py` script can be used to gather the results into a single `.csv` file.
 The first argument to this script is the output `.csv` file name. All subsequent arguments are substrings to look for in the beginning of the output files.
