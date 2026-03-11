@@ -4,22 +4,30 @@ from plotnine import *
 pd.set_option("display.max_columns", 100)
 
 def parameter_columns(): 
+  """Returns a list of the DataFrame columns that contain input parameters
+  """
   return ['Experiment Name', 'Node Count', 'Ranks Per Node', 'Thread Count',
        'Width', 'Height', 'Event Density', 'Ring Size', 'Time to Run (ns)',
        'Small Payload (bytes)', 'Large Payload (bytes)',
-       'Large Event Fraction', 'Imbalance Factor', 'Component Size']
+       'Large Event Fraction', 'Imbalance Factor', 'Component Size', 'Component Computation']
 
 def varied_parameters(data):
+  """Identifies parameters that have variable values within the DataFrame
+  """
   mask = data[data.columns.intersection(parameter_columns())].nunique() > 1
   return  mask.index[mask].tolist()
 
 def memory_columns():
+  """Returns the name of the columns that have to do with memory usage
+  """
   return ['Max Local Memory Usage (GiB)',
        'Max Global Memory Usage (GiB)', 'SLURM Allocated Memory (GiB)',
        'Max Local Memory Utilization (%)', 'Max Global Memory Utilization (%)']
 
   
 def measurement_columns():
+  """Returns a list of the column names that are measured output values. This does not include calculated metrics
+  """
   return ['Build Time (s)', 'Run Time (s)', 'Max Resident Set Size (bytes)',
        'Max Global Set Size (bytes)', 'Rank Sync Time Max (s)',
        'Rank Sync Time Min (s)', 'Rank Sync Time Mean (s)',
@@ -32,6 +40,8 @@ def measurement_columns():
        'Status']
 
 def calculated_columns():
+  """Returns a list of the column names that are calculated output columns.
+  """
   return ['Rank Count', 'Total Threads', 'Threads Per Node', 'Components', 'Million Components',
        'Components Per Node', 'Million Components Per Node', 'StencilLength',
        'Total Links', 'Boundary Count', 'Remote Links', 'Remote Links (Ranks)',
@@ -64,6 +74,7 @@ def read_all_csvs(directory):
   return pd.concat(dataframes, ignore_index=True)
 
 def triangular(n):
+  """Calculates the nth triangular number, which is used to calculate the link count"""
   return n * (n + 1) // 2
 
    
@@ -114,16 +125,22 @@ def height_from_fraction(target_fraction, ring_size, width, boundary_count):
   return height
 
 def fill_missing_fields(data):
+  """Adds fields to the DataFrame to allow for compatibility with different versions of PHOLD
+  """
   if 'Small Payload (bytes)' not in data.columns:
     data['Small Payload (bytes)'] = 0
   if 'Large Payload (bytes)' not in data.columns:
     data['Large Payload (bytes)'] = 0
   if 'Large Event Fraction' not in data.columns:
     data['Large Event Fraction'] = 0
+  if 'Component Computation' not in data.columns:
+    data['Component Computation'] = 0
   return data
 
 
 def mem_based_fields(data):
+  """Calculates memory-based fields, including GiB based usage metrics, total allocations, and utilization based on 512GiB system
+  """
   data['Max Local Memory Usage (GiB)'] = data['Max Resident Set Size (bytes)'] / (1024.0 ** 3)
   data['Max Global Memory Usage (GiB)'] = data['Max Global Set Size (bytes)'] / (1024.0 ** 3)
   data['SLURM Allocated Memory (GiB)'] = 512.0 * data['Node Count'] # hotlum
@@ -131,7 +148,11 @@ def mem_based_fields(data):
   data['Max Global Memory Utilization (%)'] = 100 * data['Max Global Memory Usage (GiB)'] / data['SLURM Allocated Memory (GiB)']
 
   return data
+
+
 def time_based_fields(data):
+  """Calculates fields related to time spent in various parts of the simulation
+  """
   if 'Sync Time Mean (s)' not in data.columns:
     data['Sync Time Mean (s)'] = data['Rank Sync Time Mean (s)'] + data['Thread Sync Time Mean (s)']
   if 'Sync Time Max (s)' not in data.columns:
@@ -151,7 +172,6 @@ def time_based_fields(data):
   data['Events/Second Total'] = data['Event Count'] / (data['Run Time (s)'] + data['Build Time (s)'])
   data['Million Events Per Second Total'] = data['Events/Second Total'] / 1e6
 
-
   data['SyncFraction'] = '0% to 10%'
   data.loc[data['Mean Sync Time Fraction (%)'] >= 10, 'SyncFraction'] = '10% to 20%'
   data.loc[data['Mean Sync Time Fraction (%)'] >= 20, 'SyncFraction'] = '20% to 30%'
@@ -164,6 +184,8 @@ def time_based_fields(data):
 
 
 def topology_fields(data):
+  """Calculates fields related to the topology of the simulation"""
+  
   if 'Ranks Per Node' in data.columns:
     data['Rank Count'] = data['Node Count'] * data['Ranks Per Node']
   if 'Thread Count' in data.columns:
@@ -219,13 +241,16 @@ def topology_fields(data):
   return data
 
 def add_aliases(data):
-
+  """Adds a couple of column aliases"""
   data['Nodes'] = data['Node Count']
   data['Density'] = data['Event Density']
   data['Remote Event Fraction (%)'] = data['Remote Link Fraction (%)']
   return data
 
 def clean_and_calculate(data):
+  """This function is the main function to prepare extracted data for analysis. 
+     This is to be used on the dataframe of successful runs
+  """
   data = fill_missing_fields(data)
   
   data = topology_fields(data)
@@ -237,6 +262,9 @@ def clean_and_calculate(data):
   return data
 
 def clean_failures(data):
+  """
+  The main function to be used to prepare a dataframe of failed runs for processing
+  """
   data = fill_missing_fields(data)
   
   data = topology_fields(data)
