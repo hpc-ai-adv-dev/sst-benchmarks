@@ -78,6 +78,8 @@ The PHOLD simulation has a large number of parameters:
 * `--imbalance-factor`: This parameter adds thread-level load imbalance to the distribution of components. Values should be between 0 and 1. A value of 0 indicates perfect balance and a value of 1 indicates complete imbalance (all work on one thread). 
 * `--verbose`: This argument controls whether, at the end of the simulation, each component prints the number of events it received. This is useful for verifying correctness.
 
+
+
 ## `submit.py` and `dispatch.sh`
 
 These two scripts, together, handle submitting, running, and collecting data from multiple PHOLD simulations in a single command.
@@ -131,6 +133,41 @@ This usually corresponds to the `--name` argument to the `submit.py` script. How
 Also keep in mind that in addition to the file containing the results of successful runs, `consolidate.py` also creates a parallel `.csv` file containing information about failures.
 This filename simply inserts `-failures` before the `.csv` in the provided output file argument.
 In the `exp-all` example, it would produce `exp-all-failures.csv`.
+
+## `workflow_*.py`
+
+There are also libraries in the repository for use in notebook-only workflows. 
+When writing notebook-based experiments/workflows using PHOLD, we recommend having the notebook clone a copy of this benchmark repository, then use the following import statements:
+```
+from submit import generate_phold_args
+from workflow_extractors import extract_results
+from workflow_processing import clean_and_calculate
+```
+
+`generate_phold_args` takes arguments with the same names as the `submit.py` script above and, rather than launching the PHOLD simulations outright, generates tuples of arguments to use to invoke PHOLD simulations. 
+The output tuples are triples of the form `(srun_args, phold_args, run_name)`. 
+The `srun_args` are a tuple of the arguments that need to be passed to `srun` to request the correct resources for the job. 
+This will include arguments like `--nodes=4` and `--ntasks-per-node=8`.
+The `phold_args` are a tuple of the arguments that are passed to the SST benchmark itself. 
+This will include arguments like `--height 100` and `--componentSize 1024`.
+Finally, `run_name` is the a unique identifier for the run that can be used as the name for output directories and other files. 
+It concatenates the run's parameters into an identifier string.
+
+
+`extract_results` helps process the output of PHOLD simulations. 
+It has two required arguments, `results_dir` and `sst_version`, and two optional arguments: `logfile_name` and `experiment_name`.
+`results_dir` should be the path to a directory containing subdirectories, each with a name matching a `run_name` from the `generate_phold_args` function.
+`extract_results` crawls through the subdirectories, extracting timing and resource usage information.
+It is important that the PHOLD simulation writes its output to a file within the subdirectory with a name matching `logfile_name`.
+The default value is `run.log`.
+`sst_version` should be a string representation of the version of SST in use. 
+This is important because timing information is reported differently for different versions of SST.
+Finally, `experiment_name`, if specified, is used as a filter for the results directory. 
+If used, only runs whose `name` arg matches the `experiment_name` will be collected.
+This function returns two dataframes, one of the successful runs and one of the failures.
+
+Finally, `clean_and_calculate` can be used to process the resulting DataFrames, filling out empty/unspecified columns and calculating useful performance metrics for evaluation.
+
 
 ## PHOLD AHP
 
