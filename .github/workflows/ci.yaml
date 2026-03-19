@@ -71,7 +71,11 @@ jobs:
             echo "=== Running pingpong simulation ==="
             sst pingpong.py -- --corners --verbose | tee pingpong_sim.out
             echo "=== Comparing output with expected results ==="
-            diff ../.github/workflows/pingpong.good ./pingpong_sim.out
+            if [[ "${{ matrix.sst_version.tag }}" == "master" ]]; then
+              diff ../.github/workflows/pingpong_ordered.good ./pingpong_sim.out
+            else
+              diff ../.github/workflows/pingpong_interleaved.good ./pingpong_sim.out
+            fi
             ;;
           "phold")
             echo "=== Registering phold component ==="
@@ -119,7 +123,11 @@ jobs:
             echo "=== Running pingpong simulation with checkpointing ==="
             sst --checkpoint-sim-period=50ps pingpong.py -- --corners --verbose 2>&1 | grep -v "Real CPU time" | tee pingpong_checkpoint.out
             echo "=== Comparing checkpoint output with expected results ==="
-            diff ../.github/workflows/pingpong_checkpoint.good ./pingpong_checkpoint.out
+            if [[ "${{ matrix.sst_version.tag }}" == "master" ]]; then
+              diff ../.github/workflows/pingpong_checkpoint_ordered.good ./pingpong_checkpoint.out
+            else
+              diff ../.github/workflows/pingpong_checkpoint_interleaved.good ./pingpong_checkpoint.out
+            fi
             ;;
           "phold")
             echo "=== Registering phold component ==="
@@ -184,7 +192,11 @@ jobs:
             echo "=== Restoring pingpong from checkpoint: $CHECKPOINT_FILE ==="
             sst --load-checkpoint "$CHECKPOINT_FILE" 2>&1 | tee pingpong_restore.out
             echo "=== Comparing restore output with expected results ==="
-            diff ../.github/workflows/pingpong_restore.good ./pingpong_restore.out
+            if [[ "${{ matrix.sst_version.tag }}" == "master" ]]; then
+              diff ../.github/workflows/pingpong_restore_ordered.good ./pingpong_restore.out
+            else
+              diff ../.github/workflows/pingpong_restore_interleaved.good ./pingpong_restore.out
+            fi
             ;;
           "phold")
             echo "=== Registering phold component ==="
