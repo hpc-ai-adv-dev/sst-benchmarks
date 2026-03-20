@@ -105,6 +105,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Size of the additional data field of the component in bytes",
     )
     parser.add_argument(
+        "--componentComputation", '--component-computation',
+        type=int,
+        default=0,
+        help=(
+            "Amount of additional computation to do as part of event handling, "
+            "as a count of random numbers to generate and assign to a volatile variable."
+        ),
+    )
+    parser.add_argument(
         "--verbose",
         type=int,
         default=0,
@@ -174,6 +183,7 @@ def create_component(i: int, j: int, args, rows_per_rank: int, num_ranks: int,
             "largeEventFraction": args.largeEventFraction,
             "verbose": args.verbose,
             "componentSize": args.componentSize,
+            "componentComputation": args.componentComputation,
         }
     )
     comp.setRank(

@@ -53,6 +53,8 @@ Node::Node(SST::ComponentId_t id, SST::Params& params)
         additionalData = (char*)malloc(componentSize * sizeof(char));
     }
 
+    componentComputeCount = params.find<int>("componentComputation", 0);
+
     recvCount = 0;
     numLinks = (2 * numRings + 1) * (2 * numRings + 1);
 
@@ -141,6 +143,12 @@ SST::Interfaces::StringEvent* Node::createEvent()
     return ev;
 }
 
+void Node::componentCompute() {
+    for (int i = 0; i < componentComputeCount; i++) {
+        computeSink = rng->generateNextUInt32();
+    }
+}
+
 void Node::handleEvent(SST::Event* ev)
 {
     SST::Interfaces::StringEvent* payloadEv =
@@ -154,6 +162,8 @@ void Node::handleEvent(SST::Event* ev)
               << " with timestamp " << ev->getDeliveryTime() << "\n";
 #endif
     recvCount += 1;
+
+    componentCompute();
 
     size_t nextRecipientLinkId = movementFunction();
     while (links.at(nextRecipientLinkId) == nullptr) {
