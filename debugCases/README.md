@@ -87,48 +87,48 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 
 #### `wrongPath`
 
-We expect an event to originate at component A, go to component B, then C, but it ends up in D instead.
+An event propagates throughout the model, its intended path is A -> B -> C, but B misroutes the event to D instead.
 
 ![wrongPath flowchart](story_flowcharts/wrongPath.png)
 
 #### `infiniteLoop`
 
-An event cycles between A, B, and C when the intent was for it to move from C to D.
+An event is supposed to move onward to D, but A, B, and C keep forwarding it in a cycle, creating an infinite loop.
 
 
 ![infiniteLoop flowchart](story_flowcharts/infiniteLoop.png)
 
 #### `unexpectedDisappear`
 
-We expect to see the event move from A to B to C to D, but somewhere along the path it is removed.
+The intended path is A -> B -> C -> D, but the event vanishes at C because it is never forwarded onward.
 
 
 ![unexpectedDisappear flowchart](story_flowcharts/unexpectedDisappear.png)
 
 #### `missedDeadline`
 
-We expected component D to receive an event by a specific time, but it arrived later. The goal is to identify where the slowdown occurred.
+D is expected to receive an event by a target time, but the A -> B -> C -> D path uses enough link latency that arrival is late; the goal is to locate which link is causing the slowdown.
 
 
 ![missedDeadline flowchart](story_flowcharts/missedDeadline.png)
 
 #### `outOfOrderReceipt`
 
-Component E expects to receive `ev1` before `ev2` but receives them in the opposite order.
+E is intended to see `ev1` before `ev2`, but two events launched on different branches with different delays arrive in the opposite order.
 
 
 ![outOfOrderReceipt flowchart](story_flowcharts/outOfOrderReceipt.png)
 
 #### `duplicateSepTimes`
 
-Component D expects to receive a given event once, but it receives it multiple times at different time steps.
+D is expected to receive a given event once, but A injects it at setup and again on later ticks, so repeated deliveries occur at different times.
 
 
 ![duplicateSepTimes flowchart](story_flowcharts/duplicateSepTimes.png)
 
 #### `duplicateSameTime`
 
-Component B expects a single event at a given time step but receives multiple.
+B is expected to receive a given event once, but A injects it twice at setup.
 
 
 ![duplicateSameTime flowchart](story_flowcharts/duplicateSameTime.png)
@@ -141,14 +141,14 @@ Component B expects a single event at a given time step but receives multiple.
 
 #### `broadcastStorm`
 
-An event is broadcast too broadly and triggers a storm of cascading traffic across the topology.
+An event is broadcast too broadly from A to all six neighbors at startup.
 
 
 ![broadcastStorm flowchart](story_flowcharts/broadcastStorm.png)
 
 #### `badMerge`
 
-Component C merges input it gets from A and B, but the merged result coming out of C is wrong.
+C receives values from A and B and should merge them correctly, but it multiplies `10 * 2` instead of performing the intended add-style merge before sending the result to D.
 
 
 ![badMerge flowchart](story_flowcharts/badMerge.png)
@@ -161,21 +161,21 @@ Component C merges input it gets from A and B, but the merged result coming out 
 
 #### `missingLink`
 
-We expect B to be linked to C, but that link is missing.
+The intended topology includes a B <-> C connection, but that link is absent.
 
 
 ![missingLink flowchart](story_flowcharts/missingLink.png)
 
 #### `wrongLink`
 
-We expect A to link to B, but instead it links to C.
+The intended topology is A -> B, but A is connected to C instead.
 
 
 ![wrongLink flowchart](story_flowcharts/wrongLink.png)
 
 #### `unexpectedDuplicateLink`
 
-We expect A to link to B one time, but instead it links multiple times.
+A and B are linked twice instead of once.
 
 
 ![unexpectedDuplicateLink flowchart](story_flowcharts/unexpectedDuplicateLink.png)
@@ -188,14 +188,14 @@ We expect A to link to B one time, but instead it links multiple times.
 
 #### `directDeadlock`
 
-Component A waits for an event from B, while B waits for an event from A, so neither can proceed.
+A waits for an event from B while B waits for an event from A, so neither side ever makes progress.
 
 
 ![directDeadlock flowchart](story_flowcharts/directDeadlock.png)
 
 #### `indirectDeadlock`
 
-This is the same situation as direct deadlock, but with additional components between the blocked endpoints.
+This is the same wait cycle as direct deadlock, but with B sitting between A and C as a relay, so the blocked endpoints are separated by an intermediate component.
 
 
 ![indirectDeadlock flowchart](story_flowcharts/indirectDeadlock.png)
@@ -208,63 +208,62 @@ This is the same situation as direct deadlock, but with additional components be
 
 #### `detectWhenComponentBecomesInvalid`
 
-At some point, the state of component A becomes invalid.
+A starts valid and then flips its `valid` flag to false on a 40ns clock tick, modeling a component whose state becomes invalid during execution.
 
 
 ![detectWhenComponentBecomesInvalid flowchart](story_flowcharts/detectWhenComponentBecomesInvalid.png)
 
 #### `badInvariantBetweenComponents`
 
-An invariant should hold across multiple components, but at some point it no longer does.
+A cross-component invariant is supposed to hold, but C follows a different update rule when it receives certain values, breaking the invariant.
 
 
 ![badInvariantBetweenComponents flowchart](story_flowcharts/badInvariantBetweenComponents.png)
 
 #### `componentsLoseParity`
 
-We expect components A and B to always have matching state, but eventually they diverge.
+A and B are expected to stay in matching state over time, but their scripted values diverge at cycle 40 when they become 5 and 7.
 
 
 ![componentsLoseParity flowchart](story_flowcharts/componentsLoseParity.png)
 
 #### `divergedModels` (`divergedModels_A` and `divergedModels_B` substories)
 
-This story represents a pair of corresponding models whose states should match throughout the lifetime of the simulation.
-To run each pair separately use the `divergedModels_A` and `divergedModels_B` substories.
+This pair of stories represent separate models that are intended to retain parity with each other throughout execution, but at timestamp 40, `divergedModels_A` uses value 5 while `divergedModels_B` uses value 7.
 
 ![divergedModels_A flowchart](story_flowcharts/divergedModels_A.png)
 
 #### `componentCausesSegfault`
 
-Processing an event at a given component causes a segfault. The goal is to identify which component and event are responsible.
+Component C asserts once its clock reaches cycle 50 or later. The goal is to identify which component is responsible for the segfault and at what point in time the segfault occurs.
 
 
 ![componentCausesSegfault flowchart](story_flowcharts/componentCausesSegfault.png)
 
 #### `badInitialState`
 
-We want to inspect component state at time `0ns` to detect whether something is already wrong before execution proceeds.
+Four unconnected components are intended to initialize to the same state, but C starts with a different value than the others.
 
 
 ![badInitialState flowchart](story_flowcharts/badInitialState.png)
 
 #### `badTerminatingState`
 
-We want to inspect component state near the end of the simulation to detect whether something is wrong at termination.
+Similar to `badInitialState`, but the issue is that C changes to a different value before the simulation terminates. The goal is to identify which component has the bad value just prior to termination.
 
 
 ![badTerminatingState flowchart](story_flowcharts/badTerminatingState.png)
 
 #### `findFirstToComplete`
 
-We want to determine which component reaches completion first.
+The goal is to determine which component finishes first; the completion order is D first, then B, then C, then A.
 
 
 ![findFirstToComplete flowchart](story_flowcharts/findFirstToComplete.png)
 
 #### `determineWhatNotComplete`
 
-We want to detect which components are not marked complete when the simulation should be done.
+The goal is to find components that never mark complete when the simulation ought to be done; here A, D, and E finish, while B and C never do.
 
 
 ![determineWhatNotComplete flowchart](story_flowcharts/determineWhatNotComplete.png)
@@ -277,35 +276,35 @@ We want to detect which components are not marked complete when the simulation s
 
 #### `findEventHeavyComponent`
 
-We want to determine which component processes the most events throughout a simulation.
+The goal is to identify which component processes the most events; in this four-node ring each component sends to its neighbor to the right.
 
 
 ![findEventHeavyComponent flowchart](story_flowcharts/findEventHeavyComponent.png)
 
 #### `findSlowProcessingComponent`
 
-One component takes longer to process its events than the others.
+One component should be noticeably slower at processing than the others; all nodes send one event at startup to their right neighbor, but the event received by B takes much longer to process.
 
 
 ![findSlowProcessingComponent flowchart](story_flowcharts/findSlowProcessingComponent.png)
 
 #### `findMemHeavyComponent`
 
-We expect all components to use roughly the same amount of memory, but one component is much more memory intensive.
+The goal is to spot a component with unusually high memory usage; four unconnected components allocate different local buffer sizes, with B holding by far the largest payload.
 
 
 ![findMemHeavyComponent flowchart](story_flowcharts/findMemHeavyComponent.png)
 
 #### `findMemHeavyEvent`
 
-We expect all events to use roughly the same amount of memory, but one event is much more memory intensive than the others.
+The goal is to spot an unusually large event; each node in a ring sends one rightward event with a payload buffer, and one of those messages is much larger than the others.
 
 
 ![findMemHeavyEvent flowchart](story_flowcharts/findMemHeavyEvent.png)
 
 #### `findStarvedComponent`
 
-We expect all components to receive events, but one component never receives any.
+The intended pattern is that all components should receive work, but one does not; in the current ring with uneven send quotas, C receives no events while the others do.
 
 
 ![findStarvedComponent flowchart](story_flowcharts/findStarvedComponent.png)

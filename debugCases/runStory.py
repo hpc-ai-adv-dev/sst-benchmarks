@@ -1,7 +1,13 @@
+# Builds SST topologies for each debug use case story.  The script is intended
+# to be run by sst itself, not directly, but will be forwarded an argument
+# indicating which story to run.  For information about the stories and how to
+# run them, see README.md in this directory.
+
 import argparse
 import sst
 
 VALID_STORIES = [
+    # --- Event Tracing ---
     "wrongPath",
     "infiniteLoop",
     "unexpectedDisappear",
@@ -9,13 +15,21 @@ VALID_STORIES = [
     "outOfOrderReceipt",
     "duplicateSepTimes",
     "duplicateSameTime",
+
+    # --- Event Processing ---
     "broadcastStorm",
     "badMerge",
+
+    # --- Incorrect Topology ---
     "missingLink",
     "wrongLink",
     "unexpectedDuplicateLink",
+
+    # --- Deadlock ---
     "directDeadlock",
     "indirectDeadlock",
+
+    # --- Fault Detection And Attribution ---
     "detectWhenComponentBecomesInvalid",
     "badInvariantBetweenComponents",
     "componentsLoseParity",
@@ -26,6 +40,8 @@ VALID_STORIES = [
     "badTerminatingState",
     "findFirstToComplete",
     "determineWhatNotComplete",
+
+    # --- Load Imbalances ---
     "findEventHeavyComponent",
     "findSlowProcessingComponent",
     "findMemHeavyComponent",
@@ -49,6 +65,8 @@ def error_story_not_yet_implemented():
     print("Story not yet implemented")
     raise SystemExit(1)
 
+
+# --- Event Tracing ---
 def story_wrongPath():
     comp_A = sst.Component("A", "debugUseCases.Node")
     comp_B = sst.Component("B", "debugUseCases.Node")
@@ -114,10 +132,6 @@ def story_missedDeadline():
     sst.Link('c_d').connect((comp_C, "port1", "10ns"), (comp_D, "port0", "10ns"))
 
 
-def story_broadcastStorm():
-    error_story_not_yet_implemented()
-
-
 def story_outOfOrderReceipt():
     comp_A = sst.Component("A", "debugUseCases.Node")
     comp_B = sst.Component("B", "debugUseCases.Node")
@@ -129,9 +143,9 @@ def story_outOfOrderReceipt():
     comp_B.addParams({'story': 'outOfOrderReceipt', 'name': 'B', 'numLinks': 2})
     comp_C.addParams({'story': 'outOfOrderReceipt', 'name': 'C', 'numLinks': 1})
     comp_D.addParams({'story': 'outOfOrderReceipt', 'name': 'D', 'numLinks': 2})
-    comp_E.addParams({'story': 'outOfOrderReceipt', 'name': 'D', 'numLinks': 2})
+    comp_E.addParams({'story': 'outOfOrderReceipt', 'name': 'E', 'numLinks': 2})
 
-    sst.Link('a_b').connect((comp_A, "port0", "2ns"), (comp_B, "port0", "2ns"))
+    sst.Link('a_b').connect((comp_A, "port0", "1ns"), (comp_B, "port0", "1ns"))
     sst.Link('b_e').connect((comp_B, "port1", "1ns"), (comp_E, "port0", "1ns"))
     sst.Link('c_d').connect((comp_C, "port0", "1ns"), (comp_D, "port0", "1ns"))
     sst.Link('d_e').connect((comp_D, "port1", "1ns"), (comp_E, "port1", "1ns"))
@@ -169,89 +183,305 @@ def story_duplicateSameTime():
     sst.Link('c_d').connect((comp_C, "port1", "1ns"), (comp_D, "port0", "1ns"))
 
 
+# --- Event Processing ---
+def story_broadcastStorm():
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+    comp_E = sst.Component("E", "debugUseCases.Node")
+    comp_F = sst.Component("F", "debugUseCases.Node")
+    comp_G = sst.Component("G", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'broadcastStorm', 'name': 'A', 'numLinks': 6})
+    comp_B.addParams({'story': 'broadcastStorm', 'name': 'B', 'numLinks': 1})
+    comp_C.addParams({'story': 'broadcastStorm', 'name': 'C', 'numLinks': 1})
+    comp_D.addParams({'story': 'broadcastStorm', 'name': 'D', 'numLinks': 1})
+    comp_E.addParams({'story': 'broadcastStorm', 'name': 'E', 'numLinks': 1})
+    comp_F.addParams({'story': 'broadcastStorm', 'name': 'F', 'numLinks': 1})
+    comp_G.addParams({'story': 'broadcastStorm', 'name': 'G', 'numLinks': 1})
+
+    sst.Link('a_b').connect((comp_A, "port0", "1ns"), (comp_B, "port0", "1ns"))
+    sst.Link('a_c').connect((comp_A, "port1", "1ns"), (comp_C, "port0", "1ns"))
+    sst.Link('a_d').connect((comp_A, "port2", "1ns"), (comp_D, "port0", "1ns"))
+    sst.Link('a_e').connect((comp_A, "port3", "1ns"), (comp_E, "port0", "1ns"))
+    sst.Link('a_f').connect((comp_A, "port4", "1ns"), (comp_F, "port0", "1ns"))
+    sst.Link('a_g').connect((comp_A, "port5", "1ns"), (comp_G, "port0", "1ns"))
+
+
 
 def story_badMerge():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'badMerge', 'name': 'A', 'numLinks': 1})
+    comp_B.addParams({'story': 'badMerge', 'name': 'B', 'numLinks': 1})
+    comp_C.addParams({'story': 'badMerge', 'name': 'C', 'numLinks': 3})
+    comp_D.addParams({'story': 'badMerge', 'name': 'D', 'numLinks': 1})
+
+    sst.Link('a_c').connect((comp_A, "port0", "1ns"), (comp_C, "port0", "1ns"))
+    sst.Link('b_c').connect((comp_B, "port0", "1ns"), (comp_C, "port1", "1ns"))
+    sst.Link('c_d').connect((comp_C, "port2", "1ns"), (comp_D, "port0", "1ns"))
+
+
+# --- Incorrect Topology ---
 
 
 def story_missingLink():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'badMerge', 'name': 'A', 'numLinks': 1})
+    comp_B.addParams({'story': 'badMerge', 'name': 'B', 'numLinks': 2})
+    comp_C.addParams({'story': 'badMerge', 'name': 'C', 'numLinks': 2})
+    comp_D.addParams({'story': 'badMerge', 'name': 'D', 'numLinks': 1})
+
+    sst.Link('a_b').connect((comp_A, "port0", "1ns"), (comp_B, "port0", "1ns"))
+    sst.Link('c_d').connect((comp_C, "port1", "1ns"), (comp_D, "port0", "1ns"))
+
 
 
 def story_wrongLink():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'wrongLink', 'name': 'A', 'numLinks': 1})
+    comp_B.addParams({'story': 'wrongLink', 'name': 'B', 'numLinks': 1})
+    comp_C.addParams({'story': 'wrongLink', 'name': 'C', 'numLinks': 1})
+
+    # Intentionally connect A to C instead of A to B
+    sst.Link('a_b').connect((comp_A, "port0", "1ns"), (comp_C, "port0", "1ns"))
 
 
 def story_unexpectedDuplicateLink():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'unexpectedDuplicateLink', 'name': 'A', 'numLinks': 2})
+    comp_B.addParams({'story': 'unexpectedDuplicateLink', 'name': 'B', 'numLinks': 2})
+
+    sst.Link('a_b'    ).connect((comp_A, "port0", "1ns"), (comp_B, "port0", "1ns"))
+    sst.Link('a_b_dup').connect((comp_A, "port1", "1ns"), (comp_B, "port1", "1ns"))
+
+
+
+# --- Deadlock ---
 
 
 def story_directDeadlock():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'directDeadlock', 'name': 'A', 'numLinks': 1})
+    comp_B.addParams({'story': 'directDeadlock', 'name': 'B', 'numLinks': 1})
+
+    sst.Link('a_b').connect((comp_A, "port0", "1ns"), (comp_B, "port0", "1ns"))
 
 
 def story_indirectDeadlock():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'indirectDeadlock', 'name': 'A', 'numLinks': 1})
+    comp_B.addParams({'story': 'indirectDeadlock', 'name': 'B', 'numLinks': 2})
+    comp_C.addParams({'story': 'indirectDeadlock', 'name': 'C', 'numLinks': 1})
+
+    sst.Link('a_b').connect((comp_A, "port0", "1ns"), (comp_B, "port0", "1ns"))
+    sst.Link('b_c').connect((comp_B, "port1", "1ns"), (comp_C, "port0", "1ns"))
+
+
+# --- Fault Detection And Attribution ---
 
 
 def story_detectWhenComponentBecomesInvalid():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_A.addParams({'story': 'detectWhenComponentBecomesInvalid', 'name': 'A', 'numLinks': 0})
 
 
 def story_badInvariantBetweenComponents():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'badInvariantBetweenComponents', 'name': 'A', 'numLinks': 1})
+    comp_B.addParams({'story': 'badInvariantBetweenComponents', 'name': 'B', 'numLinks': 1})
+    comp_C.addParams({'story': 'badInvariantBetweenComponents', 'name': 'C', 'numLinks': 2})
+
+    sst.Link('a_c').connect((comp_A, "port0", "1ns"), (comp_C, "port0", "1ns"))
+    sst.Link('b_c').connect((comp_B, "port0", "1ns"), (comp_C, "port1", "1ns"))
 
 
 def story_componentsLoseParity():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'componentsLoseParity', 'name': 'A', 'numLinks': 0})
+    comp_B.addParams({'story': 'componentsLoseParity', 'name': 'B', 'numLinks': 0})
 
 
 def story_divergedModels_A():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_A.addParams({'story': 'divergedModels_A', 'name': 'A', 'numLinks': 0})
 
 
 def story_divergedModels_B():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_A.addParams({'story': 'divergedModels_B', 'name': 'A', 'numLinks': 0})
 
 
 def story_componentCausesSegfault():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'componentCausesSegfault', 'name': 'A', 'numLinks': 0})
+    comp_B.addParams({'story': 'componentCausesSegfault', 'name': 'B', 'numLinks': 0})
+    comp_C.addParams({'story': 'componentCausesSegfault', 'name': 'C', 'numLinks': 0})
+    comp_D.addParams({'story': 'componentCausesSegfault', 'name': 'D', 'numLinks': 0})
 
 
 def story_badInitialState():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'badInitialState', 'name': 'A', 'numLinks': 0})
+    comp_B.addParams({'story': 'badInitialState', 'name': 'B', 'numLinks': 0})
+    comp_C.addParams({'story': 'badInitialState', 'name': 'C', 'numLinks': 0})
+    comp_D.addParams({'story': 'badInitialState', 'name': 'D', 'numLinks': 0})
 
 
 def story_badTerminatingState():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'badTerminatingState', 'name': 'A', 'numLinks': 0})
+    comp_B.addParams({'story': 'badTerminatingState', 'name': 'B', 'numLinks': 0})
+    comp_C.addParams({'story': 'badTerminatingState', 'name': 'C', 'numLinks': 0})
+    comp_D.addParams({'story': 'badTerminatingState', 'name': 'D', 'numLinks': 0})
 
 
 def story_findFirstToComplete():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'findFirstToComplete', 'name': 'A', 'numLinks': 0})
+    comp_B.addParams({'story': 'findFirstToComplete', 'name': 'B', 'numLinks': 0})
+    comp_C.addParams({'story': 'findFirstToComplete', 'name': 'C', 'numLinks': 0})
+    comp_D.addParams({'story': 'findFirstToComplete', 'name': 'D', 'numLinks': 0})
 
 
 def story_determineWhatNotComplete():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+    comp_E = sst.Component("E", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'determineWhatNotComplete', 'name': 'A', 'numLinks': 0})
+    comp_B.addParams({'story': 'determineWhatNotComplete', 'name': 'B', 'numLinks': 0})
+    comp_C.addParams({'story': 'determineWhatNotComplete', 'name': 'C', 'numLinks': 0})
+    comp_D.addParams({'story': 'determineWhatNotComplete', 'name': 'D', 'numLinks': 0})
+    comp_E.addParams({'story': 'determineWhatNotComplete', 'name': 'E', 'numLinks': 0})
+
+
+# --- Load Imbalances ---
 
 
 def story_findEventHeavyComponent():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'findEventHeavyComponent', 'name': 'A', 'numLinks': 2})
+    comp_B.addParams({'story': 'findEventHeavyComponent', 'name': 'B', 'numLinks': 2})
+    comp_C.addParams({'story': 'findEventHeavyComponent', 'name': 'C', 'numLinks': 2})
+    comp_D.addParams({'story': 'findEventHeavyComponent', 'name': 'D', 'numLinks': 2})
+
+    # Ring A-B-C-D-A (clockwise); port0=left link, port1=right link
+    sst.Link('link_AB').connect((comp_A, "port1", "1ns"), (comp_B, "port0", "1ns"))
+    sst.Link('link_BC').connect((comp_B, "port1", "1ns"), (comp_C, "port0", "1ns"))
+    sst.Link('link_CD').connect((comp_C, "port1", "1ns"), (comp_D, "port0", "1ns"))
+    sst.Link('link_DA').connect((comp_D, "port1", "1ns"), (comp_A, "port0", "1ns"))
 
 
 def story_findSlowProcessingComponent():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'findSlowProcessingComponent', 'name': 'A', 'numLinks': 2})
+    comp_B.addParams({'story': 'findSlowProcessingComponent', 'name': 'B', 'numLinks': 2})
+    comp_C.addParams({'story': 'findSlowProcessingComponent', 'name': 'C', 'numLinks': 2})
+    comp_D.addParams({'story': 'findSlowProcessingComponent', 'name': 'D', 'numLinks': 2})
+
+    # Ring A-B-C-D-A (clockwise); port0=left link, port1=right link
+    sst.Link('link_AB').connect((comp_A, "port1", "1ns"), (comp_B, "port0", "1ns"))
+    sst.Link('link_BC').connect((comp_B, "port1", "1ns"), (comp_C, "port0", "1ns"))
+    sst.Link('link_CD').connect((comp_C, "port1", "1ns"), (comp_D, "port0", "1ns"))
+    sst.Link('link_DA').connect((comp_D, "port1", "1ns"), (comp_A, "port0", "1ns"))
 
 
 def story_findMemHeavyComponent():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'findMemHeavyComponent', 'name': 'A', 'numLinks': 0})
+    comp_B.addParams({'story': 'findMemHeavyComponent', 'name': 'B', 'numLinks': 0})
+    comp_C.addParams({'story': 'findMemHeavyComponent', 'name': 'C', 'numLinks': 0})
+    comp_D.addParams({'story': 'findMemHeavyComponent', 'name': 'D', 'numLinks': 0})
 
 
 def story_findMemHeavyEvent():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'findMemHeavyEvent', 'name': 'A', 'numLinks': 2})
+    comp_B.addParams({'story': 'findMemHeavyEvent', 'name': 'B', 'numLinks': 2})
+    comp_C.addParams({'story': 'findMemHeavyEvent', 'name': 'C', 'numLinks': 2})
+    comp_D.addParams({'story': 'findMemHeavyEvent', 'name': 'D', 'numLinks': 2})
+
+    # Ring A-B-C-D-A (clockwise); port0=left link, port1=right link
+    sst.Link('link_AB').connect((comp_A, "port1", "1ns"), (comp_B, "port0", "1ns"))
+    sst.Link('link_BC').connect((comp_B, "port1", "1ns"), (comp_C, "port0", "1ns"))
+    sst.Link('link_CD').connect((comp_C, "port1", "1ns"), (comp_D, "port0", "1ns"))
+    sst.Link('link_DA').connect((comp_D, "port1", "1ns"), (comp_A, "port0", "1ns"))
 
 
 def story_findStarvedComponent():
-    error_story_not_yet_implemented()
+    comp_A = sst.Component("A", "debugUseCases.Node")
+    comp_B = sst.Component("B", "debugUseCases.Node")
+    comp_C = sst.Component("C", "debugUseCases.Node")
+    comp_D = sst.Component("D", "debugUseCases.Node")
+
+    comp_A.addParams({'story': 'findStarvedComponent', 'name': 'A', 'numLinks': 2})
+    comp_B.addParams({'story': 'findStarvedComponent', 'name': 'B', 'numLinks': 2})
+    comp_C.addParams({'story': 'findStarvedComponent', 'name': 'C', 'numLinks': 2})
+    comp_D.addParams({'story': 'findStarvedComponent', 'name': 'D', 'numLinks': 2})
+
+    # Ring A-B-C-D-A (clockwise); port0=left link, port1=right link
+    sst.Link('link_AB').connect((comp_A, "port1", "1ns"), (comp_B, "port0", "1ns"))
+    sst.Link('link_BC').connect((comp_B, "port1", "1ns"), (comp_C, "port0", "1ns"))
+    sst.Link('link_CD').connect((comp_C, "port1", "1ns"), (comp_D, "port0", "1ns"))
+    sst.Link('link_DA').connect((comp_D, "port1", "1ns"), (comp_A, "port0", "1ns"))
 
 
 def main():
