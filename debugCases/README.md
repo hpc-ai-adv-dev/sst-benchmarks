@@ -35,6 +35,8 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 
 ### Event Tracing
 
+<div style="margin-left: 2.53125em;">
+
 - [`wrongPath`](#wrongpath)
 - [`infiniteLoop`](#infiniteloop)
 - [`unexpectedDisappear`](#unexpecteddisappear)
@@ -43,23 +45,39 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 - [`duplicateSepTimes`](#duplicateseptimes)
 - [`duplicateSameTime`](#duplicatesametime)
 
+</div>
+
 ### Event Processing
+
+<div style="margin-left: 2.53125em;">
 
 - [`broadcastStorm`](#broadcaststorm)
 - [`badMerge`](#badmerge)
 
+</div>
+
 ### Incorrect Topology
+
+<div style="margin-left: 2.53125em;">
 
 - [`missingLink`](#missinglink)
 - [`wrongLink`](#wronglink)
 - [`unexpectedDuplicateLink`](#unexpectedduplicatelink)
 
+</div>
+
 ### Deadlock
+
+<div style="margin-left: 2.53125em;">
 
 - [`directDeadlock`](#directdeadlock)
 - [`indirectDeadlock`](#indirectdeadlock)
 
+</div>
+
 ### Fault Detection And Attribution
+
+<div style="margin-left: 2.53125em;">
 
 - [`detectWhenComponentBecomesInvalid`](#detectwhencomponentbecomesinvalid)
 - [`badInvariantBetweenComponents`](#badinvariantbetweencomponents)
@@ -71,7 +89,11 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 - [`findFirstToComplete`](#findfirsttocomplete)
 - [`determineWhatNotComplete`](#determinewhatnotcomplete)
 
+</div>
+
 ### Load Imbalances
+
+<div style="margin-left: 2.53125em;">
 
 - [`findEventHeavyComponent`](#findeventheavycomponent)
 - [`findSlowProcessingComponent`](#findslowprocessingcomponent)
@@ -79,9 +101,13 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 - [`findMemHeavyEvent`](#findmemheavyevent)
 - [`findStarvedComponent`](#findstarvedcomponent)
 
+</div>
+
 ## Story Details
 
 ### Event Tracing
+
+<div style="margin-left: 2.53125em;">
 
 #### `wrongPath`
 
@@ -132,7 +158,11 @@ Component B expects a single event at a given time step but receives multiple.
 
 ![duplicateSameTime flowchart](story_flowcharts/duplicateSameTime.png)
 
+</div>
+
 ### Event Processing
+
+<div style="margin-left: 2.53125em;">
 
 #### `broadcastStorm`
 
@@ -148,7 +178,11 @@ Component C merges input it gets from A and B, but the merged result coming out 
 
 ![badMerge flowchart](story_flowcharts/badMerge.png)
 
+</div>
+
 ### Incorrect Topology
+
+<div style="margin-left: 2.53125em;">
 
 #### `missingLink`
 
@@ -171,7 +205,11 @@ We expect A to link to B one time, but instead it links multiple times.
 
 ![unexpectedDuplicateLink flowchart](story_flowcharts/unexpectedDuplicateLink.png)
 
+</div>
+
 ### Deadlock
+
+<div style="margin-left: 2.53125em;">
 
 #### `directDeadlock`
 
@@ -187,7 +225,11 @@ This is the same situation as direct deadlock, but with additional components be
 
 ![indirectDeadlock flowchart](story_flowcharts/indirectDeadlock.png)
 
+</div>
+
 ### Fault Detection And Attribution
+
+<div style="margin-left: 2.53125em;">
 
 #### `detectWhenComponentBecomesInvalid`
 
@@ -252,7 +294,11 @@ We want to detect which components are not marked complete when the simulation s
 
 ![determineWhatNotComplete flowchart](story_flowcharts/determineWhatNotComplete.png)
 
+</div>
+
 ### Load Imbalances
+
+<div style="margin-left: 2.53125em;">
 
 #### `findEventHeavyComponent`
 
@@ -288,6 +334,8 @@ We expect all components to receive events, but one component never receives any
 
 
 ![findStarvedComponent flowchart](story_flowcharts/findStarvedComponent.png)
+
+</div>
 
 ## Adding a New Story
 
