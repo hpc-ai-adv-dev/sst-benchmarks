@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -x -e
+
+make clean
+if make; then
+  sst --interactive-start ./runStory.py -- "$1"
+fi
