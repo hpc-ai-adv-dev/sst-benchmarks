@@ -138,6 +138,7 @@ Component B expects a single event at a given time step but receives multiple.
 
 An event is broadcast too broadly and triggers a storm of cascading traffic across the topology.
 
+
 ![broadcastStorm flowchart](story_flowcharts/broadcastStorm.png)
 
 #### `badMerge`
