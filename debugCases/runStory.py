@@ -9,6 +9,7 @@ VALID_STORIES = [
     "outOfOrderReceipt",
     "duplicateSepTimes",
     "duplicateSameTime",
+    "broadcastStorm",
     "badMerge",
     "missingLink",
     "wrongLink",
@@ -16,7 +17,7 @@ VALID_STORIES = [
     "directDeadlock",
     "indirectDeadlock",
     "detectWhenComponentBecomesInvalid",
-    "badInvariantBetweenStates",
+    "badInvariantBetweenComponents",
     "componentsLoseParity",
     "divergedModels_A",
     "divergedModels_B",
@@ -27,8 +28,8 @@ VALID_STORIES = [
     "determineWhatNotComplete",
     "findEventHeavyComponent",
     "findSlowProcessingComponent",
-    "findMemIntensiveComponent",
-    "findMemIntensiveEvent",
+    "findMemHeavyComponent",
+    "findMemHeavyEvent",
     "findStarvedComponent",
 ]
 
@@ -113,6 +114,10 @@ def story_missedDeadline():
     sst.Link('c_d').connect((comp_C, "port1", "10ns"), (comp_D, "port0", "10ns"))
 
 
+def story_broadcastStorm():
+    error_story_not_yet_implemented()
+
+
 def story_outOfOrderReceipt():
     comp_A = sst.Component("A", "debugUseCases.Node")
     comp_B = sst.Component("B", "debugUseCases.Node")
@@ -193,7 +198,7 @@ def story_detectWhenComponentBecomesInvalid():
     error_story_not_yet_implemented()
 
 
-def story_badInvariantBetweenStates():
+def story_badInvariantBetweenComponents():
     error_story_not_yet_implemented()
 
 
@@ -237,11 +242,11 @@ def story_findSlowProcessingComponent():
     error_story_not_yet_implemented()
 
 
-def story_findMemIntensiveComponent():
+def story_findMemHeavyComponent():
     error_story_not_yet_implemented()
 
 
-def story_findMemIntensiveEvent():
+def story_findMemHeavyEvent():
     error_story_not_yet_implemented()
 
 

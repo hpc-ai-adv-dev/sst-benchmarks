@@ -33,6 +33,8 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 
 ## Valid Stories
 
+### Event Tracing
+
 - [`wrongPath`](#wrongpath)
 - [`infiniteLoop`](#infiniteloop)
 - [`unexpectedDisappear`](#unexpecteddisappear)
@@ -40,14 +42,27 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 - [`outOfOrderReceipt`](#outoforderreceipt)
 - [`duplicateSepTimes`](#duplicateseptimes)
 - [`duplicateSameTime`](#duplicatesametime)
+
+### Event Processing
+
+- [`broadcastStorm`](#broadcaststorm)
 - [`badMerge`](#badmerge)
+
+### Incorrect Topology
+
 - [`missingLink`](#missinglink)
 - [`wrongLink`](#wronglink)
 - [`unexpectedDuplicateLink`](#unexpectedduplicatelink)
+
+### Deadlock
+
 - [`directDeadlock`](#directdeadlock)
 - [`indirectDeadlock`](#indirectdeadlock)
+
+### Fault Detection And Attribution
+
 - [`detectWhenComponentBecomesInvalid`](#detectwhencomponentbecomesinvalid)
-- [`badInvariantBetweenStates`](#badinvariantbetweenstates)
+- [`badInvariantBetweenComponents`](#badinvariantbetweencomponents)
 - [`componentsLoseParity`](#componentsloseparity)
 - [diverged models: `divergedModels_A` and `divergedModels_B`](#divergedmodels-divergedmodels_a-and-divergedmodels_b-substories)
 - [`componentCausesSegfault`](#componentcausessegfault)
@@ -55,10 +70,13 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 - [`badTerminatingState`](#badterminatingstate)
 - [`findFirstToComplete`](#findfirsttocomplete)
 - [`determineWhatNotComplete`](#determinewhatnotcomplete)
+
+### Load Imbalances
+
 - [`findEventHeavyComponent`](#findeventheavycomponent)
 - [`findSlowProcessingComponent`](#findslowprocessingcomponent)
-- [`findMemIntensiveComponent`](#findmemintensivecomponent)
-- [`findMemIntensiveEvent`](#findmemintensiveevent)
+- [`findMemHeavyComponent`](#findmemheavycomponent)
+- [`findMemHeavyEvent`](#findmemheavyevent)
 - [`findStarvedComponent`](#findstarvedcomponent)
 
 ## Story Details
@@ -114,7 +132,11 @@ Component B expects a single event at a given time step but receives multiple.
 
 ![duplicateSameTime flowchart](story_flowcharts/duplicateSameTime.png)
 
-### Event Processing And Topology
+### Event Processing
+
+#### `broadcastStorm`
+
+An event is broadcast too broadly and triggers a storm of cascading traffic across the topology.
 
 #### `badMerge`
 
@@ -122,6 +144,8 @@ Component C merges input it gets from A and B, but the merged result coming out 
 
 
 ![badMerge flowchart](story_flowcharts/badMerge.png)
+
+### Incorrect Topology
 
 #### `missingLink`
 
@@ -169,12 +193,12 @@ At some point, the state of component A becomes invalid.
 
 ![detectWhenComponentBecomesInvalid flowchart](story_flowcharts/detectWhenComponentBecomesInvalid.png)
 
-#### `badInvariantBetweenStates`
+#### `badInvariantBetweenComponents`
 
 An invariant should hold across multiple components, but at some point it no longer does.
 
 
-![badInvariantBetweenStates flowchart](story_flowcharts/badInvariantBetweenStates.png)
+![badInvariantBetweenComponents flowchart](story_flowcharts/badInvariantBetweenComponents.png)
 
 #### `componentsLoseParity`
 
@@ -241,19 +265,19 @@ One component takes longer to process its events than the others.
 
 ![findSlowProcessingComponent flowchart](story_flowcharts/findSlowProcessingComponent.png)
 
-#### `findMemIntensiveComponent`
+#### `findMemHeavyComponent`
 
 We expect all components to use roughly the same amount of memory, but one component is much more memory intensive.
 
 
-![findMemIntensiveComponent flowchart](story_flowcharts/findMemIntensiveComponent.png)
+![findMemHeavyComponent flowchart](story_flowcharts/findMemHeavyComponent.png)
 
-#### `findMemIntensiveEvent`
+#### `findMemHeavyEvent`
 
 We expect all events to use roughly the same amount of memory, but one event is much more memory intensive than the others.
 
 
-![findMemIntensiveEvent flowchart](story_flowcharts/findMemIntensiveEvent.png)
+![findMemHeavyEvent flowchart](story_flowcharts/findMemHeavyEvent.png)
 
 #### `findStarvedComponent`
 

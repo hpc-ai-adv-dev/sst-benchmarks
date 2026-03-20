@@ -9,10 +9,11 @@
 
 class Node : public SST::Component
 {
-  std::vector<SST::Link*> links;
   std::string name;
-  std::string story;
   int visited;
+
+  std::vector<SST::Link*> links;
+  std::string story;
 
   public:
     SST_ELI_REGISTER_COMPONENT(
@@ -52,6 +53,7 @@ class Node : public SST::Component
     void setup_outOfOrderReceipt();
     void setup_duplicateSepTimes();
     void setup_duplicateSameTime();
+    void setup_broadcastStorm();
     void setup_badMerge();
     void setup_missingLink();
     void setup_wrongLink();
@@ -59,7 +61,7 @@ class Node : public SST::Component
     void setup_directDeadlock();
     void setup_indirectDeadlock();
     void setup_detectWhenComponentBecomesInvalid();
-    void setup_badInvariantBetweenStates();
+    void setup_badInvariantBetweenComponents();
     void setup_componentsLoseParity();
     void setup_divergedModels_A();
     void setup_divergedModels_B();
@@ -70,8 +72,8 @@ class Node : public SST::Component
     void setup_determineWhatNotComplete();
     void setup_findEventHeavyComponent();
     void setup_findSlowProcessingComponent();
-    void setup_findMemIntensiveComponent();
-    void setup_findMemIntensiveEvent();
+    void setup_findMemHeavyComponent();
+    void setup_findMemHeavyEvent();
     void setup_findStarvedComponent();
 
     bool clockTick_duplicateSepTimes(SST::Cycle_t currentCycle);
@@ -83,6 +85,7 @@ class Node : public SST::Component
     void handleEvent_outOfOrderReceipt(SST::Event *ev);
     void handleEvent_duplicateSepTimes(SST::Event *ev);
     void handleEvent_duplicateSameTime(SST::Event *ev);
+    void handleEvent_broadcastStorm(SST::Event *ev);
     void handleEvent_badMerge(SST::Event *ev);
     void handleEvent_missingLink(SST::Event *ev);
     void handleEvent_wrongLink(SST::Event *ev);
@@ -90,7 +93,7 @@ class Node : public SST::Component
     void handleEvent_directDeadlock(SST::Event *ev);
     void handleEvent_indirectDeadlock(SST::Event *ev);
     void handleEvent_detectWhenComponentBecomesInvalid(SST::Event *ev);
-    void handleEvent_badInvariantBetweenStates(SST::Event *ev);
+    void handleEvent_badInvariantBetweenComponents(SST::Event *ev);
     void handleEvent_componentsLoseParity(SST::Event *ev);
     void handleEvent_divergedModels_A(SST::Event *ev);
     void handleEvent_divergedModels_B(SST::Event *ev);
@@ -101,8 +104,8 @@ class Node : public SST::Component
     void handleEvent_determineWhatNotComplete(SST::Event *ev);
     void handleEvent_findEventHeavyComponent(SST::Event *ev);
     void handleEvent_findSlowProcessingComponent(SST::Event *ev);
-    void handleEvent_findMemIntensiveComponent(SST::Event *ev);
-    void handleEvent_findMemIntensiveEvent(SST::Event *ev);
+    void handleEvent_findMemHeavyComponent(SST::Event *ev);
+    void handleEvent_findMemHeavyEvent(SST::Event *ev);
     void handleEvent_findStarvedComponent(SST::Event *ev);
 
     void setupLinks(int numLinks);

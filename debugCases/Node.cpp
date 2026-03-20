@@ -12,6 +12,7 @@
     X(outOfOrderReceipt)                             \
     X(duplicateSepTimes)                             \
     X(duplicateSameTime)                             \
+    X(broadcastStorm)                                \
     X(badMerge)                                      \
     X(missingLink)                                   \
     X(wrongLink)                                     \
@@ -19,7 +20,7 @@
     X(directDeadlock)                                \
     X(indirectDeadlock)                              \
     X(detectWhenComponentBecomesInvalid)             \
-    X(badInvariantBetweenStates)                     \
+    X(badInvariantBetweenComponents)                 \
     X(componentsLoseParity)                          \
     X(divergedModels_A)                              \
     X(divergedModels_B)                              \
@@ -30,8 +31,8 @@
     X(determineWhatNotComplete)                      \
     X(findEventHeavyComponent)                       \
     X(findSlowProcessingComponent)                   \
-    X(findMemIntensiveComponent)                     \
-    X(findMemIntensiveEvent)                         \
+    X(findMemHeavyComponent)                         \
+    X(findMemHeavyEvent)                             \
     X(findStarvedComponent)                          \
     if (!storyMatched) {                             \
       std::cout << "INVALID STORY" << std::endl;    \
@@ -58,6 +59,7 @@ Node::Node( SST::ComponentId_t id, SST::Params& params )
   name   = params.find<std::string>("name",  "");
   story  = params.find<std::string>("story", "");
   visited = 0;
+  valid = true;
   setupLinks(params.find<int>("numLinks", 0));
 
   registerAsPrimaryComponent();
@@ -116,6 +118,11 @@ void Node::setup_duplicateSameTime() {
   sendMessageIfNode("A");
 }
 
+void Node::setup_broadcastStorm() {
+  std::cout << "Story not implemented" << std::endl;
+  assert(false);
+}
+
 void Node::setup_badMerge() {
   std::cout << "Story not implemented" << std::endl;
   assert(false);
@@ -151,7 +158,7 @@ void Node::setup_detectWhenComponentBecomesInvalid() {
   assert(false);
 }
 
-void Node::setup_badInvariantBetweenStates() {
+void Node::setup_badInvariantBetweenComponents() {
   std::cout << "Story not implemented" << std::endl;
   assert(false);
 }
@@ -206,12 +213,12 @@ void Node::setup_findSlowProcessingComponent() {
   assert(false);
 }
 
-void Node::setup_findMemIntensiveComponent() {
+void Node::setup_findMemHeavyComponent() {
   std::cout << "Story not implemented" << std::endl;
   assert(false);
 }
 
-void Node::setup_findMemIntensiveEvent() {
+void Node::setup_findMemHeavyEvent() {
   std::cout << "Story not implemented" << std::endl;
   assert(false);
 }
@@ -282,6 +289,9 @@ void Node::handleEvent_duplicateSameTime(SST::Event *ev) {
   else if(name == "C") { links[1]->send(ev); }
 }
 
+void Node::handleEvent_broadcastStorm(SST::Event *ev) {
+}
+
 void Node::handleEvent_badMerge(SST::Event *ev) {
 }
 
@@ -303,7 +313,7 @@ void Node::handleEvent_indirectDeadlock(SST::Event *ev) {
 void Node::handleEvent_detectWhenComponentBecomesInvalid(SST::Event *ev) {
 }
 
-void Node::handleEvent_badInvariantBetweenStates(SST::Event *ev) {
+void Node::handleEvent_badInvariantBetweenComponents(SST::Event *ev) {
 }
 
 void Node::handleEvent_componentsLoseParity(SST::Event *ev) {
@@ -336,10 +346,10 @@ void Node::handleEvent_findEventHeavyComponent(SST::Event *ev) {
 void Node::handleEvent_findSlowProcessingComponent(SST::Event *ev) {
 }
 
-void Node::handleEvent_findMemIntensiveComponent(SST::Event *ev) {
+void Node::handleEvent_findMemHeavyComponent(SST::Event *ev) {
 }
 
-void Node::handleEvent_findMemIntensiveEvent(SST::Event *ev) {
+void Node::handleEvent_findMemHeavyEvent(SST::Event *ev) {
 }
 
 void Node::handleEvent_findStarvedComponent(SST::Event *ev) {
@@ -368,6 +378,7 @@ void Node::serialize_order(SST::Core::Serialization::serializer& ser) {
     SST::Component::serialize_order(ser);
     SST_SER(name);
     SST_SER(visited);
+    SST_SER(valid);
 }
 
 #undef DISPATCH_STORY_EVENT_HANDLER
