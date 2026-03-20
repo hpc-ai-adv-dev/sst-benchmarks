@@ -6,7 +6,7 @@ This repository contains a collection of debug use case examples for SST.  These
 
 - All stories are built around a single SST component named `Node` (implemented in `Node.cpp` and `Node.h`).
 - All stories are launched from a single SST simulation configuration script, `runStory.py`, which is passed the name of the particular story to run.
-- Valid story names are [valid story section](#valid-stories).
+- Valid story names are listed in the [valid story section](#valid-stories).
 
 ## Files
 
