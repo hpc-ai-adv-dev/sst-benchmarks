@@ -35,8 +35,6 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 
 ### Event Tracing
 
-<div style="margin-left: 2.53125em;">
-
 - [`wrongPath`](#wrongpath)
 - [`infiniteLoop`](#infiniteloop)
 - [`unexpectedDisappear`](#unexpecteddisappear)
@@ -45,39 +43,23 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 - [`duplicateSepTimes`](#duplicateseptimes)
 - [`duplicateSameTime`](#duplicatesametime)
 
-</div>
-
 ### Event Processing
-
-<div style="margin-left: 2.53125em;">
 
 - [`broadcastStorm`](#broadcaststorm)
 - [`badMerge`](#badmerge)
 
-</div>
-
 ### Incorrect Topology
-
-<div style="margin-left: 2.53125em;">
 
 - [`missingLink`](#missinglink)
 - [`wrongLink`](#wronglink)
 - [`unexpectedDuplicateLink`](#unexpectedduplicatelink)
 
-</div>
-
 ### Deadlock
-
-<div style="margin-left: 2.53125em;">
 
 - [`directDeadlock`](#directdeadlock)
 - [`indirectDeadlock`](#indirectdeadlock)
 
-</div>
-
 ### Fault Detection And Attribution
-
-<div style="margin-left: 2.53125em;">
 
 - [`detectWhenComponentBecomesInvalid`](#detectwhencomponentbecomesinvalid)
 - [`badInvariantBetweenComponents`](#badinvariantbetweencomponents)
@@ -89,11 +71,7 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 - [`findFirstToComplete`](#findfirsttocomplete)
 - [`determineWhatNotComplete`](#determinewhatnotcomplete)
 
-</div>
-
 ### Load Imbalances
-
-<div style="margin-left: 2.53125em;">
 
 - [`findEventHeavyComponent`](#findeventheavycomponent)
 - [`findSlowProcessingComponent`](#findslowprocessingcomponent)
@@ -101,18 +79,15 @@ Where `<storyName>` is any valid story name from the [Valid Stories](#valid-stor
 - [`findMemHeavyEvent`](#findmemheavyevent)
 - [`findStarvedComponent`](#findstarvedcomponent)
 
-</div>
-
 ## Story Details
 
 ### Event Tracing
 
-<div style="margin-left: 2.53125em;">
+<dl> <dd> <dl> <dd> <dl> <dd> <dl> <dd>
 
 #### `wrongPath`
 
 We expect an event to originate at component A, go to component B, then C, but it ends up in D instead.
-
 
 ![wrongPath flowchart](story_flowcharts/wrongPath.png)
 
@@ -158,11 +133,11 @@ Component B expects a single event at a given time step but receives multiple.
 
 ![duplicateSameTime flowchart](story_flowcharts/duplicateSameTime.png)
 
-</div>
+</dd> </dl> </dd> </dl> </dd> </dl> </dd> </dl> 
 
 ### Event Processing
 
-<div style="margin-left: 2.53125em;">
+<dl> <dd> <dl> <dd> <dl> <dd> <dl> <dd>
 
 #### `broadcastStorm`
 
@@ -178,11 +153,11 @@ Component C merges input it gets from A and B, but the merged result coming out 
 
 ![badMerge flowchart](story_flowcharts/badMerge.png)
 
-</div>
+</dd> </dl> </dd> </dl> </dd> </dl> </dd> </dl>
 
 ### Incorrect Topology
 
-<div style="margin-left: 2.53125em;">
+<dl> <dd> <dl> <dd> <dl> <dd> <dl> <dd>
 
 #### `missingLink`
 
@@ -205,11 +180,11 @@ We expect A to link to B one time, but instead it links multiple times.
 
 ![unexpectedDuplicateLink flowchart](story_flowcharts/unexpectedDuplicateLink.png)
 
-</div>
+</dd> </dl> </dd> </dl> </dd> </dl> </dd> </dl>
 
 ### Deadlock
 
-<div style="margin-left: 2.53125em;">
+<dl> <dd> <dl> <dd> <dl> <dd> <dl> <dd>
 
 #### `directDeadlock`
 
@@ -225,11 +200,11 @@ This is the same situation as direct deadlock, but with additional components be
 
 ![indirectDeadlock flowchart](story_flowcharts/indirectDeadlock.png)
 
-</div>
+</dd> </dl> </dd> </dl> </dd> </dl> </dd> </dl>
 
 ### Fault Detection And Attribution
 
-<div style="margin-left: 2.53125em;">
+<dl> <dd> <dl> <dd> <dl> <dd> <dl> <dd>
 
 #### `detectWhenComponentBecomesInvalid`
 
@@ -294,11 +269,11 @@ We want to detect which components are not marked complete when the simulation s
 
 ![determineWhatNotComplete flowchart](story_flowcharts/determineWhatNotComplete.png)
 
-</div>
+</dd> </dl> </dd> </dl> </dd> </dl> </dd> </dl>
 
 ### Load Imbalances
 
-<div style="margin-left: 2.53125em;">
+<dl> <dd> <dl> <dd> <dl> <dd> <dl> <dd>
 
 #### `findEventHeavyComponent`
 
@@ -335,7 +310,7 @@ We expect all components to receive events, but one component never receives any
 
 ![findStarvedComponent flowchart](story_flowcharts/findStarvedComponent.png)
 
-</div>
+</dd> </dl> </dd> </dl> </dd> </dl> </dd> </dl>
 
 ## Adding a New Story
 
