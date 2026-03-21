@@ -1,6 +1,5 @@
-// Declares a component (Node) and event type (UseCaseEvent) used the debug use
-// case stories.  See README.md file in this directory for descriptions of each
-// story.
+// Declares the Node component and UseCaseEvent type used by the debug-use-case
+// stories. See README.md in this directory for descriptions of each story.
 
 #ifndef _node_H
 #define _node_H

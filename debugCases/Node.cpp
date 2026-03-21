@@ -17,7 +17,7 @@
 #define NODE_STORY_LIST(X)               \
   do {                                   \
     bool storyMatched = false;           \
-    X(wrongPath)                         \
+                                         \
     /* --- Event Tracing --- */          \
     X(wrongPath)                         \
     X(infiniteLoop)                      \
@@ -384,14 +384,14 @@ void Node::setup_findEventHeavyComponent() {
 
 bool Node::clockTick_findEventHeavyComponent(SST::Cycle_t currentCycle) {
   int quota;
-  if     (name == "A") quota = 1;
-  else if(name == "B") quota = 2;
-  else if(name == "C") quota = 3;
-  else if(name == "D") quota = 1;
+  if     (name == "A") quota = 3;
+  else if(name == "B") quota = 1;
+  else if(name == "C") quota = 1;
+  else if(name == "D") quota = 2;
   else { assert(false); }
 
   if(value < quota) {
-    links[0]->send(new UseCaseEvent());
+    links[1]->send(new UseCaseEvent());
     value++;
   }
 
@@ -460,59 +460,103 @@ void Node::handleEvent(SST::Event* ev, int fromPort) {
 // --- Event Tracing ---
 void Node::handleEvent_wrongPath(SST::Event *ev, int fromPort) {
   visited++;
+  bool forwarded = false;
+
   if(name == "B") {
     // The artificial bug is here, we intend to send to link[1] (to C) but instead
     // send to link[2] (D)
     links[2]->send(ev);
+    forwarded = true;
   }
+
   if(name == "C") {
     std::cout << "GOAL!" << std::endl;
+  }
+
+  if(!forwarded) {
+    delete ev;
   }
 }
 
 void Node::handleEvent_infiniteLoop(SST::Event *ev, int fromPort) {
   visited++;
-       if(name == "A") { links[0]->send(ev); }
-  else if(name == "B") { links[1]->send(ev); }
-  else if(name == "C") { links[0]->send(ev); }
+  bool forwarded = false;
+
+       if(name == "A") { links[0]->send(ev); forwarded = true; }
+  else if(name == "B") { links[1]->send(ev); forwarded = true; }
+  else if(name == "C") { links[0]->send(ev); forwarded = true; }
   else if(name == "D") {
     std::cout << "GOAL!" << std::endl;
+  }
+
+  if(!forwarded) {
+    delete ev;
   }
 }
 
 void Node::handleEvent_unexpectedDisappear(SST::Event *ev, int fromPort) {
   visited++;
-       if(name == "A") { links[0]->send(ev); }
-  else if(name == "B") { links[1]->send(ev); }
+  bool forwarded = false;
+
+       if(name == "A") { links[0]->send(ev); forwarded = true; }
+  else if(name == "B") { links[1]->send(ev); forwarded = true; }
+
+  if(!forwarded) {
+    delete ev;
+  }
 }
 
 void Node::handleEvent_missedDeadline(SST::Event *ev, int fromPort) {
   visited++;
-       if(name == "A") { links[0]->send(ev); }
-  else if(name == "B") { links[1]->send(ev); }
-  else if(name == "C") { links[1]->send(ev); }
+  bool forwarded = false;
+
+       if(name == "A") { links[0]->send(ev); forwarded = true; }
+  else if(name == "B") { links[1]->send(ev); forwarded = true; }
+  else if(name == "C") { links[1]->send(ev); forwarded = true; }
+
+  if(!forwarded) {
+    delete ev;
+  }
 }
 
 void Node::handleEvent_outOfOrderReceipt(SST::Event *ev, int fromPort) {
   visited++;
-       if(name == "A") { links[0]->send(ev); }
-  else if(name == "B") { links[1]->send(ev); }
-  else if(name == "C") { links[0]->send(ev); }
-  else if(name == "D") { links[1]->send(ev); }
+  bool forwarded = false;
+
+       if(name == "A") { links[0]->send(ev); forwarded = true; }
+  else if(name == "B") { links[1]->send(ev); forwarded = true; }
+  else if(name == "C") { links[0]->send(ev); forwarded = true; }
+  else if(name == "D") { links[1]->send(ev); forwarded = true; }
+
+  if(!forwarded) {
+    delete ev;
+  }
 }
 
 void Node::handleEvent_duplicateSepTimes(SST::Event *ev, int fromPort) {
   visited++;
-       if(name == "A") { links[0]->send(ev); }
-  else if(name == "B") { links[1]->send(ev); }
-  else if(name == "C") { links[1]->send(ev); }
+  bool forwarded = false;
+
+       if(name == "A") { links[0]->send(ev); forwarded = true; }
+  else if(name == "B") { links[1]->send(ev); forwarded = true; }
+  else if(name == "C") { links[1]->send(ev); forwarded = true; }
+
+  if(!forwarded) {
+    delete ev;
+  }
 }
 
 void Node::handleEvent_duplicateSameTime(SST::Event *ev, int fromPort) {
   visited++;
-       if(name == "A") { links[0]->send(ev); }
-  else if(name == "B") { links[1]->send(ev); }
-  else if(name == "C") { links[1]->send(ev); }
+  bool forwarded = false;
+
+       if(name == "A") { links[0]->send(ev); forwarded = true; }
+  else if(name == "B") { links[1]->send(ev); forwarded = true; }
+  else if(name == "C") { links[1]->send(ev); forwarded = true; }
+
+  if(!forwarded) {
+    delete ev;
+  }
 }
 
 // --- Event Processing ---
@@ -574,14 +618,12 @@ void Node::handleEvent_directDeadlock(SST::Event *ev, int fromPort) {
 void Node::handleEvent_indirectDeadlock(SST::Event *ev, int fromPort) {
   visited++;
 
-  auto ucev = dynamic_cast<UseCaseEvent*>(ev);
-  int value = ucev->value;
-
   if(name == "A" || name == "C") {
     // A expects to receive a message from C via B and to send a new message back.
     // and similiarly, C expects to receive a message from A via B and will send a new message back.
-    ucev->value++;
-    links[0]->send(ucev);
+    auto ucev = dynamic_cast<UseCaseEvent*>(ev);
+    links[0]->send(new UseCaseEvent(ucev->value+1));
+    delete ev;
   } else if(name == "B") {
     // B relays A->C and C->A.
     if(fromPort == 0) {
@@ -591,8 +633,6 @@ void Node::handleEvent_indirectDeadlock(SST::Event *ev, int fromPort) {
       links[0]->send(ev);
     }
   }
-
-  delete ev;
 }
 
 // --- Fault Detection And Attribution ---
