@@ -23,7 +23,9 @@ MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 .PHONY: help
 #help:    help:           Print this help statment
 help:
+	@echo ''
 	@grep "^#help\:" ${MKFILE_PATH} | sed 's/\#help\: \?//'
+	@echo ''
 
 .PHONY: import-sort
 #help:    import-sort:    Sort imports using `isort`
@@ -45,5 +47,3 @@ style: import-sort format
 #help:    type-check:     Type check the project using `mypy`
 type-check:
 	@${PY} -m mypy ${SRC_DIRS}
-
-#help:

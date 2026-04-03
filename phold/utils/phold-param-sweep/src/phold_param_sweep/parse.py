@@ -26,10 +26,12 @@ _LAUNCH_METHODS: dict[
 _LOGGER = logging.getLogger(__name__)
 
 try:
+    from phold_param_sweep._core.launch.dragon import NaiveBatchLaunch as _NaiveBatch
     from phold_param_sweep._core.launch.dragon import ProcessGroupLaunch as _PGLaunch
 except _errors.MissingOptionalDependencyError as e:
     _LOGGER.warning(str(e))
 else:
+    _LAUNCH_METHODS["dragon-batch"] = _NaiveBatch
     _LAUNCH_METHODS["dragon-pg"] = _PGLaunch
 
 try:

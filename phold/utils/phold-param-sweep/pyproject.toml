@@ -12,7 +12,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dragon = [
-    "dragonhpc>=0.13.1",
+    "dragonhpc>=0.13.2",
 ]
 smartsim = [
     "smartsim>=0.8.0",

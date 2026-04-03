@@ -288,6 +288,8 @@ class SampleSweepStrategy(SweepStrategy):
             low, high = sorted(values)
             if not (isinstance(low, typ_) and isinstance(high, typ_)):
                 raise TypeError("Expected values be of uniform type")
+            if not isinstance(low, float) or not isinstance(high, float):
+                raise ValueError("Expected bounds to be a subtype of `float`")
             fn = SampleSweepStrategy.from_bounds(low, high)
             setattr(namespace, self.dest, fn)
 
