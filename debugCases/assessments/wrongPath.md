@@ -16,13 +16,13 @@ An event propagates throughout the model. Its intended path is **A** -> **B** ->
 
 ## Summary
 
-This story shows that the SST debugger can identify a misrouted event, but doing so currently requires the user to infer the event's path indirectly from component state. In Approach 1, we step through the simulation manually and inspect `visited` on each component until we discover that the event reaches **D** instead of **C**. In Approach 2, we attach tracepoints to every component up front and then reconstruct the path from the resulting trace buffers. Both approaches successfully diagnose the bug, but both also require advance knowledge of the topology and rely on a manually added side effect (`visited`) rather than direct visibility into the event itself.
+This story shows that the SST debugger can identify a misrouted event, but doing so currently requires the user to infer the event's path indirectly from component state. In Approach 1, we step through the simulation manually and inspect `visited` on each component until we discover that the event reaches **D** instead of **C**. In Approach 2, we attach tracepoints to every component's `visited` parameter up front and then reconstruct the path by examining the resulting trace buffers. Both approaches successfully diagnose the bug, but both also require advance knowledge of the topology and rely on a manually added side effect (`visited`) rather than direct visibility into the event itself.
 
-The wishlist items below all point to the same broader need: the debugger would be more effective if it provided stronger support for event flow, topology discovery, and time-step semantics. Features such as event-centric tracing, neighbor introspection, bulk queries across connected components, and a way to process pending events without advancing time would make this kind of bug much easier to understand and localize.
+The wishlist items below all point to the same broader need: the debugger would be more effective if it provided stronger support for event flow and topology discovery. Features such as event-centric tracing, neighbor introspection, bulk queries across connected components, and a way to process pending events without advancing time would make this kind of bug much easier to understand and localize.
 
 ## Approach 1 -- step by step
 
-In this approach, we manually step through the simulation one nanosecond at a time, checking each component's `visited` counter after each step. We run 2ns initially to ensure the first event is fully processed, then step 1ns at a time, printing the state of **A**, **B**, **C**, and **D** in turn. When **C**'s counter turns out to be 0 but **D**'s is nonzero, we've identified the misrouted hop, so we print **D** instead.
+In this approach, we manually step through the simulation one nanosecond at a time, checking each component's `visited` counter after each step. We run 2ns initially to ensure the first event is fully processed, then step 1ns at a time, printing the state of **A**, **B**, and **C**, in turn. When **C**'s counter turns out to be 0k, we examine **B**'s other neighbor **D**'s and see that it is nonzero, revealing how the event was misrouted.
 
 ```
 print A         # We see the event has been setup

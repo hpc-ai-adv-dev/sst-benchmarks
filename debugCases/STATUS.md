@@ -47,10 +47,12 @@ This table is intended to track which implemented stories have been manually che
 
 This table tracks which stories we have examined with the SST debugger. For each story, we want to document how the debugger can be used to identify or analyze the case, what worked well and what did not, and any wishlist features that would improve the workflow.
 
+In the done column we use 🚧 to indicate 'in progress'.
+
 | Story | Done? | Notes |
 | --- | --- | --- |
 | **Event Tracing** |  |  |
-| [wrongPath](assessments/wrongPath.md) | ✅ | works in debugger but requires advanced topology knowlege and the event to set a side effect on components |
+| [wrongPath](assessments/wrongPath.md) | 🚧 | works in debugger but requires advanced topology knowlege and the event to set a side effect on components |
 | [infiniteLoop](assessments/infiniteLoop.md) | ❌ |  |
 | [unexpectedDisappear](assessments/unexpectedDisappear.md) | ❌ |  |
 | [missedDeadline](assessments/missedDeadline.md) | ❌ |  |
