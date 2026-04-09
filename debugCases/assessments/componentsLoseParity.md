@@ -1,0 +1,17 @@
+# componentsLoseParity
+
+## Situation
+
+A and B are expected to stay in matching state over time, but their scripted values diverge at cycle 40 when they become 5 and 7.
+
+![componentsLoseParity flowchart](../story_flowcharts/componentsLoseParity.png)
+
+## Approach 1 -- step by step
+
+```
+```
+
+## Approach 2 -- set tracepoint on all components
+
+```
+```
