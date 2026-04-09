@@ -49,6 +49,15 @@ VALID_STORIES = [
     "findStarvedComponent",
 ]
 
+HAND_VERIFIED_STORIES = set()
+
+
+def warn_if_story_not_hand_verified(story_name):
+    if story_name not in HAND_VERIFIED_STORIES:
+        print("* * * * * * * * * * * * * * * * * * * * *")
+        print(f"WARNING: story '{story_name}' has not been hand-verified yet.")
+        print("* * * * * * * * * * * * * * * * * * * * *")
+
 
 def parse_story_arg():
     parser = argparse.ArgumentParser(description="Run a debug story")
@@ -492,6 +501,7 @@ def main():
             builder = globals().get(f"story_{valid_story}")
             if builder is None:
                 raise ValueError(f"No builder defined for story: {valid_story}")
+            warn_if_story_not_hand_verified(valid_story)
             builder()
             return
 
