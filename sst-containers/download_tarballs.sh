@@ -13,7 +13,7 @@ SST_VERSION="${1:-$DEFAULT_SST_VERSION}"
 MPICH_VERSION="${2:-$DEFAULT_MPICH_VERSION}"
 
 # Validate SST version (check against known valid versions)
-VALID_SST_VERSIONS=("14.0.0" "14.1.0" "15.0.0")
+VALID_SST_VERSIONS=("14.0.0" "14.1.0" "15.0.0", "15.1.0", "15.1.1", "15.1.2")
 if [[ ! " ${VALID_SST_VERSIONS[@]} " =~ " ${SST_VERSION} " ]]; then
     echo "Warning: SST version ${SST_VERSION} may not be valid."
     echo "Known valid versions: ${VALID_SST_VERSIONS[*]}"
