@@ -6,122 +6,80 @@ This document tracks the status of verifying and assessing the implemented SST d
 
 This table is intended to track which implemented stories have been manually checked end-to-end.
 
-<table>
-	<thead>
-		<tr style="background-color: #1a3a52; color: #ffffff;">
-			<th align="left">Story</th>
-			<th align="left">Hand-verified?</th>
-			<th align="left">Notes</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Event Tracing</strong></th>
-		</tr>
-		<tr><td><code>wrongPath</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>infiniteLoop</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>unexpectedDisappear</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>missedDeadline</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>outOfOrderReceipt</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>duplicateSepTimes</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>duplicateSameTime</code></td><td>❌ Not started</td><td></td></tr>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Event Processing</strong></th>
-		</tr>
-		<tr><td><code>broadcastStorm</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>badMerge</code></td><td>❌ Not started</td><td></td></tr>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Incorrect Topology</strong></th>
-		</tr>
-		<tr><td><code>missingLink</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>wrongLink</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>unexpectedDuplicateLink</code></td><td>❌ Not started</td><td></td></tr>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Deadlock</strong></th>
-		</tr>
-		<tr><td><code>directDeadlock</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>indirectDeadlock</code></td><td>❌ Not started</td><td></td></tr>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Fault Detection And Attribution</strong></th>
-		</tr>
-		<tr><td><code>detectWhenComponentBecomesInvalid</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>badInvariantBetweenComponents</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>componentsLoseParity</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>divergedModels_A</code> / <code>divergedModels_B</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>componentCausesSegfault</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>badInitialState</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>badTerminatingState</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>findFirstToComplete</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>determineWhatNotComplete</code></td><td>❌ Not started</td><td></td></tr>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Load Imbalances</strong></th>
-		</tr>
-		<tr><td><code>findEventHeavyComponent</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>findSlowProcessingComponent</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>findMemHeavyComponent</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>findMemHeavyEvent</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>findStarvedComponent</code></td><td>❌ Not started</td><td></td></tr>
-	</tbody>
-</table>
+| Story | Hand-verified? | Notes |
+| --- | --- | --- |
+| **Event Tracing** |  |  |
+| wrongPath | ❌ Not started |  |
+| infiniteLoop | ❌ Not started |  |
+| unexpectedDisappear | ❌ Not started |  |
+| missedDeadline | ❌ Not started |  |
+| outOfOrderReceipt | ❌ Not started |  |
+| duplicateSepTimes | ❌ Not started |  |
+| duplicateSameTime | ❌ Not started |  |
+| **Event Processing** |  |  |
+| broadcastStorm | ❌ Not started |  |
+| badMerge | ❌ Not started |  |
+| **Incorrect Topology** |  |  |
+| missingLink | ❌ Not started |  |
+| wrongLink | ❌ Not started |  |
+| unexpectedDuplicateLink | ❌ Not started |  |
+| **Deadlock** |  |  |
+| directDeadlock | ❌ Not started |  |
+| indirectDeadlock | ❌ Not started |  |
+| **Fault Detection And Attribution** |  |  |
+| detectWhenComponentBecomesInvalid | ❌ Not started |  |
+| badInvariantBetweenComponents | ❌ Not started |  |
+| componentsLoseParity | ❌ Not started |  |
+| divergedModels_A / divergedModels_B | ❌ Not started |  |
+| componentCausesSegfault | ❌ Not started |  |
+| badInitialState | ❌ Not started |  |
+| badTerminatingState | ❌ Not started |  |
+| findFirstToComplete | ❌ Not started |  |
+| determineWhatNotComplete | ❌ Not started |  |
+| **Load Imbalances** |  |  |
+| findEventHeavyComponent | ❌ Not started |  |
+| findSlowProcessingComponent | ❌ Not started |  |
+| findMemHeavyComponent | ❌ Not started |  |
+| findMemHeavyEvent | ❌ Not started |  |
+| findStarvedComponent | ❌ Not started |  |
 
 ## SST Debugger Assessments
 
 This table tracks which stories we have examined with the SST debugger. For each story, we want to document how the debugger can be used to identify or analyze the case, what worked well and what did not, and any wishlist features that would improve the workflow.
 
-<table>
-	<thead>
-		<tr style="background-color: #1a3a52; color: #ffffff;">
-			<th align="left">Story</th>
-			<th align="left">SST debugger assessment</th>
-			<th align="left">Notes</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Event Tracing</strong></th>
-		</tr>
-		<tr><td><code>wrongPath</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>infiniteLoop</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>unexpectedDisappear</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>missedDeadline</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>outOfOrderReceipt</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>duplicateSepTimes</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>duplicateSameTime</code></td><td>❌ Not started</td><td></td></tr>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Event Processing</strong></th>
-		</tr>
-		<tr><td><code>broadcastStorm</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>badMerge</code></td><td>❌ Not started</td><td></td></tr>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Incorrect Topology</strong></th>
-		</tr>
-		<tr><td><code>missingLink</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>wrongLink</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>unexpectedDuplicateLink</code></td><td>❌ Not started</td><td></td></tr>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Deadlock</strong></th>
-		</tr>
-		<tr><td><code>directDeadlock</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>indirectDeadlock</code></td><td>❌ Not started</td><td></td></tr>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Fault Detection And Attribution</strong></th>
-		</tr>
-		<tr><td><code>detectWhenComponentBecomesInvalid</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>badInvariantBetweenComponents</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>componentsLoseParity</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>divergedModels_A</code> / <code>divergedModels_B</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>componentCausesSegfault</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>badInitialState</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>badTerminatingState</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>findFirstToComplete</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>determineWhatNotComplete</code></td><td>❌ Not started</td><td></td></tr>
-		<tr>
-			<th colspan="3" align="left" style="background-color: #4a7298; color: #ffffff;"><strong>Load Imbalances</strong></th>
-		</tr>
-		<tr><td><code>findEventHeavyComponent</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>findSlowProcessingComponent</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>findMemHeavyComponent</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>findMemHeavyEvent</code></td><td>❌ Not started</td><td></td></tr>
-		<tr><td><code>findStarvedComponent</code></td><td>❌ Not started</td><td></td></tr>
-	</tbody>
-</table>
+| Story | SST debugger assessment | Notes |
+| --- | --- | --- |
+| **Event Tracing** |  |  |
+| [wrongPath](assessments/wrongPath.md) | ❌ Not started |  |
+| [infiniteLoop](assessments/infiniteLoop.md) | ❌ Not started |  |
+| [unexpectedDisappear](assessments/unexpectedDisappear.md) | ❌ Not started |  |
+| [missedDeadline](assessments/missedDeadline.md) | ❌ Not started |  |
+| [outOfOrderReceipt](assessments/outOfOrderReceipt.md) | ❌ Not started |  |
+| [duplicateSepTimes](assessments/duplicateSepTimes.md) | ❌ Not started |  |
+| [duplicateSameTime](assessments/duplicateSameTime.md) | ❌ Not started |  |
+| **Event Processing** |  |  |
+| [broadcastStorm](assessments/broadcastStorm.md) | ❌ Not started |  |
+| [badMerge](assessments/badMerge.md) | ❌ Not started |  |
+| **Incorrect Topology** |  |  |
+| [missingLink](assessments/missingLink.md) | ❌ Not started |  |
+| [wrongLink](assessments/wrongLink.md) | ❌ Not started |  |
+| [unexpectedDuplicateLink](assessments/unexpectedDuplicateLink.md) | ❌ Not started |  |
+| **Deadlock** |  |  |
+| [directDeadlock](assessments/directDeadlock.md) | ❌ Not started |  |
+| [indirectDeadlock](assessments/indirectDeadlock.md) | ❌ Not started |  |
+| **Fault Detection And Attribution** |  |  |
+| [detectWhenComponentBecomesInvalid](assessments/detectWhenComponentBecomesInvalid.md) | ❌ Not started |  |
+| [badInvariantBetweenComponents](assessments/badInvariantBetweenComponents.md) | ❌ Not started |  |
+| [componentsLoseParity](assessments/componentsLoseParity.md) | ❌ Not started |  |
+| [divergedModels_A](assessments/divergedModels_A.md) / [divergedModels_B](assessments/divergedModels_B.md) | ❌ Not started |  |
+| [componentCausesSegfault](assessments/componentCausesSegfault.md) | ❌ Not started |  |
+| [badInitialState](assessments/badInitialState.md) | ❌ Not started |  |
+| [badTerminatingState](assessments/badTerminatingState.md) | ❌ Not started |  |
+| [findFirstToComplete](assessments/findFirstToComplete.md) | ❌ Not started |  |
+| [determineWhatNotComplete](assessments/determineWhatNotComplete.md) | ❌ Not started |  |
+| **Load Imbalances** |  |  |
+| [findEventHeavyComponent](assessments/findEventHeavyComponent.md) | ❌ Not started |  |
+| [findSlowProcessingComponent](assessments/findSlowProcessingComponent.md) | ❌ Not started |  |
+| [findMemHeavyComponent](assessments/findMemHeavyComponent.md) | ❌ Not started |  |
+| [findMemHeavyEvent](assessments/findMemHeavyEvent.md) | ❌ Not started |  |
+| [findStarvedComponent](assessments/findStarvedComponent.md) | ❌ Not started |  |
