@@ -71,7 +71,7 @@ This table tracks which stories we have examined with the SST debugger. For each
 | [detectWhenComponentBecomesInvalid](assessments/detectWhenComponentBecomesInvalid.md) | ❌ Not started |  |
 | [badInvariantBetweenComponents](assessments/badInvariantBetweenComponents.md) | ❌ Not started |  |
 | [componentsLoseParity](assessments/componentsLoseParity.md) | ❌ Not started |  |
-| [divergedModels_A / divergedModels_B](assessments/divergedModels.md) | ❌ Not started |  |
+| [divergedModels](assessments/divergedModels.md) | ❌ Not started |  |
 | [componentCausesSegfault](assessments/componentCausesSegfault.md) | ❌ Not started |  |
 | [badInitialState](assessments/badInitialState.md) | ❌ Not started |  |
 | [badTerminatingState](assessments/badTerminatingState.md) | ❌ Not started |  |
