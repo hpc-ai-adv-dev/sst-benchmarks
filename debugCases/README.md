@@ -232,7 +232,7 @@ A and B are expected to stay in matching state over time, but their scripted val
 
 This pair of stories represent separate models that are intended to retain parity with each other throughout execution, but at timestamp 40, `divergedModels_A` uses value 5 while `divergedModels_B` uses value 7.
 
-![divergedModels_A flowchart](story_flowcharts/divergedModels_A.png)
+![divergedModels flowchart](story_flowcharts/divergedModels.png)
 
 #### `componentCausesSegfault`
 
