@@ -6,12 +6,7 @@ A and B are expected to stay in matching state over time, but their scripted val
 
 ![componentsLoseParity flowchart](../story_flowcharts/componentsLoseParity.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

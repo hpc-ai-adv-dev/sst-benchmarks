@@ -6,12 +6,7 @@ A waits for an event from B while B waits for an event from A, so neither side e
 
 ![directDeadlock flowchart](../story_flowcharts/directDeadlock.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

@@ -6,12 +6,7 @@ E is intended to see `ev1` before `ev2`, but two events launched on different br
 
 ![outOfOrderReceipt flowchart](../story_flowcharts/outOfOrderReceipt.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

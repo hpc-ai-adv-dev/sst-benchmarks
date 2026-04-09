@@ -6,12 +6,7 @@ This story pair compares two models that are intended to retain parity throughou
 
 ![divergedModels flowchart](../story_flowcharts/divergedModels.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

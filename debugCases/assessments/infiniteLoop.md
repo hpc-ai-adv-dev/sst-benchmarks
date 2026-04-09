@@ -6,12 +6,7 @@ An event is supposed to move onward to D, but A, B, and C keep forwarding it in 
 
 ![infiniteLoop flowchart](../story_flowcharts/infiniteLoop.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

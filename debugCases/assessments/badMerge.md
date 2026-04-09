@@ -6,12 +6,7 @@ C receives values from A and B and should merge them correctly, but it multiplie
 
 ![badMerge flowchart](../story_flowcharts/badMerge.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

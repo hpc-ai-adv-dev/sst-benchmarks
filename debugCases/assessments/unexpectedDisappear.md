@@ -6,12 +6,7 @@ The intended path is A -> B -> C -> D, but the event vanishes at C because it is
 
 ![unexpectedDisappear flowchart](../story_flowcharts/unexpectedDisappear.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

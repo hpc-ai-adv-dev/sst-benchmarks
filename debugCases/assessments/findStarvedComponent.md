@@ -6,12 +6,7 @@ The intended pattern is that all components should receive work, but one does no
 
 ![findStarvedComponent flowchart](../story_flowcharts/findStarvedComponent.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

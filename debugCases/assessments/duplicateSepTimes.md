@@ -6,12 +6,7 @@ D is expected to receive a given event once, but A injects it at setup and again
 
 ![duplicateSepTimes flowchart](../story_flowcharts/duplicateSepTimes.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

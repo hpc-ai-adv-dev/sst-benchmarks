@@ -6,12 +6,7 @@ Similar to `badInitialState`, but the issue is that C changes to a different val
 
 ![badTerminatingState flowchart](../story_flowcharts/badTerminatingState.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

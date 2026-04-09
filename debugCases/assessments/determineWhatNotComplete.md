@@ -6,12 +6,7 @@ The goal is to find components that never mark complete when the simulation ough
 
 ![determineWhatNotComplete flowchart](../story_flowcharts/determineWhatNotComplete.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

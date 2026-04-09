@@ -6,12 +6,7 @@ One component should be noticeably slower at processing than the others; all nod
 
 ![findSlowProcessingComponent flowchart](../story_flowcharts/findSlowProcessingComponent.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

@@ -6,12 +6,7 @@ D is expected to receive an event by a target time, but the A -> B -> C -> D pat
 
 ![missedDeadline flowchart](../story_flowcharts/missedDeadline.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

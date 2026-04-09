@@ -6,12 +6,7 @@ A starts valid and then flips its `valid` flag to false on a 40ns clock tick, mo
 
 ![detectWhenComponentBecomesInvalid flowchart](../story_flowcharts/detectWhenComponentBecomesInvalid.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```

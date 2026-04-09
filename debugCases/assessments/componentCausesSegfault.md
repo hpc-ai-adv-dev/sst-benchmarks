@@ -6,12 +6,7 @@ Component C asserts once its clock reaches cycle 50 or later. The goal is to ide
 
 ![componentCausesSegfault flowchart](../story_flowcharts/componentCausesSegfault.png)
 
-## Approach 1 -- step by step
-
-```
-```
-
-## Approach 2 -- set tracepoint on all components
+## Approach 1 --
 
 ```
 ```
