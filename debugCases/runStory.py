@@ -6,54 +6,71 @@
 import argparse
 import sst
 
-VALID_STORIES = [
+# Maps each story name to whether it has been hand-verified.
+# If the user runs a story that has not been hand-verified, they will get a warning message.
+STORIES = {
     # --- Event Tracing ---
-    "wrongPath",
-    "infiniteLoop",
-    "unexpectedDisappear",
-    "missedDeadline",
-    "outOfOrderReceipt",
-    "duplicateSepTimes",
-    "duplicateSameTime",
+    "wrongPath":             True,
+    "infiniteLoop":          False,
+    "unexpectedDisappear":   False,
+    "missedDeadline":        False,
+    "outOfOrderReceipt":     False,
+    "duplicateSepTimes":     False,
+    "duplicateSameTime":     False,
 
     # --- Event Processing ---
-    "broadcastStorm",
-    "badMerge",
+    "broadcastStorm":        False,
+    "badMerge":              False,
 
     # --- Incorrect Topology ---
-    "missingLink",
-    "wrongLink",
-    "unexpectedDuplicateLink",
+    "missingLink":             False,
+    "wrongLink":               False,
+    "unexpectedDuplicateLink": False,
 
     # --- Deadlock ---
-    "directDeadlock",
-    "indirectDeadlock",
+    "directDeadlock":        False,
+    "indirectDeadlock":      False,
 
     # --- Fault Detection And Attribution ---
-    "detectWhenComponentBecomesInvalid",
-    "badInvariantBetweenComponents",
-    "componentsLoseParity",
-    "divergedModels_A",
-    "divergedModels_B",
-    "componentCausesSegfault",
-    "badInitialState",
-    "badTerminatingState",
-    "findFirstToComplete",
-    "determineWhatNotComplete",
+    "detectWhenComponentBecomesInvalid": False,
+    "badInvariantBetweenComponents":     False,
+    "componentsLoseParity":              False,
+    "divergedModels_A":                  False,
+    "divergedModels_B":                  False,
+    "componentCausesSegfault":           False,
+    "badInitialState":                   False,
+    "badTerminatingState":               False,
+    "findFirstToComplete":               False,
+    "determineWhatNotComplete":          False,
 
     # --- Load Imbalances ---
-    "findEventHeavyComponent",
-    "findSlowProcessingComponent",
-    "findMemHeavyComponent",
-    "findMemHeavyEvent",
-    "findStarvedComponent",
-]
+    "findEventHeavyComponent":     False,
+    "findSlowProcessingComponent": False,
+    "findMemHeavyComponent":       False,
+    "findMemHeavyEvent":           False,
+    "findStarvedComponent":        False,
+}
 
-HAND_VERIFIED_STORIES = set()
+VALID_STORIES = list(STORIES.keys())
+
+ASSESSMENT_BASE_URL = "https://github.com/hpc-ai-adv-dev/sst-benchmarks/blob/debugUseCases/debugCases/assessments"
+
+def print_assessment_url(story_name):
+    # The "divergedModels" story has two variants (A and B) (the point is that
+    # we can run each individually through the debugger and compare). We
+    # document the assessment in a single markdown file.
+    if story_name in ("divergedModels_A", "divergedModels_B"):
+        assessment_name = "divergedModels"
+    else:
+        assessment_name = story_name
+
+    print(f"To read an assessment of how this story runs with the SST debugger go to")
+    print(f"  {ASSESSMENT_BASE_URL}/{assessment_name}.md")
+    print()
 
 
 def warn_if_story_not_hand_verified(story_name):
-    if story_name not in HAND_VERIFIED_STORIES:
+    if not STORIES.get(story_name, False):
         print("* * * * * * * * * * * * * * * * * * * * *")
         print(f"WARNING: story '{story_name}' has not been hand-verified yet.")
         print("* * * * * * * * * * * * * * * * * * * * *")
@@ -502,6 +519,7 @@ def main():
             if builder is None:
                 raise ValueError(f"No builder defined for story: {valid_story}")
             warn_if_story_not_hand_verified(valid_story)
+            print_assessment_url(valid_story)
             builder()
             return
 
