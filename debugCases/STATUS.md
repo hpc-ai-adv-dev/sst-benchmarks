@@ -1,85 +1,85 @@
 # SST Debug Story Status
 
-This document tracks the status of verifying and assessing the implemented SST debug stories. We have initial implementations for all stories and are now hand-verifying that each implementation matches the intent of its use case. We also want to assess, for each story, how the SST debugger can be used today to address it.
+This document tracks the status of verifying and assessing the implemented SST debug stories. We have initial implementations for all stories and are now hand-verifying that each implementation matches the intent of its use case. We are also assessing how the SST debugger, as it exists today, can address each story.
 
 ## Hand Verification Status
 
 This table is intended to track which implemented stories have been manually checked end-to-end.
 
-| Story | Hand-verified? | Notes |
+| Story | Done? | Notes |
 | --- | --- | --- |
 | **Event Tracing** |  |  |
-| wrongPath | ❌ Not started |  |
-| infiniteLoop | ❌ Not started |  |
-| unexpectedDisappear | ❌ Not started |  |
-| missedDeadline | ❌ Not started |  |
-| outOfOrderReceipt | ❌ Not started |  |
-| duplicateSepTimes | ❌ Not started |  |
-| duplicateSameTime | ❌ Not started |  |
+| wrongPath | ✅ |  |
+| infiniteLoop | ❌ |  |
+| unexpectedDisappear | ❌ |  |
+| missedDeadline | ❌ |  |
+| outOfOrderReceipt | ❌ |  |
+| duplicateSepTimes | ❌ |  |
+| duplicateSameTime | ❌ |  |
 | **Event Processing** |  |  |
-| broadcastStorm | ❌ Not started |  |
-| badMerge | ❌ Not started |  |
+| broadcastStorm | ❌ |  |
+| badMerge | ❌ |  |
 | **Incorrect Topology** |  |  |
-| missingLink | ❌ Not started |  |
-| wrongLink | ❌ Not started |  |
-| unexpectedDuplicateLink | ❌ Not started |  |
+| missingLink | ❌ |  |
+| wrongLink | ❌ |  |
+| unexpectedDuplicateLink | ❌ |  |
 | **Deadlock** |  |  |
-| directDeadlock | ❌ Not started |  |
-| indirectDeadlock | ❌ Not started |  |
+| directDeadlock | ❌ |  |
+| indirectDeadlock | ❌ |  |
 | **Fault Detection And Attribution** |  |  |
-| detectWhenComponentBecomesInvalid | ❌ Not started |  |
-| badInvariantBetweenComponents | ❌ Not started |  |
-| componentsLoseParity | ❌ Not started |  |
-| divergedModels_A / divergedModels_B | ❌ Not started |  |
-| componentCausesSegfault | ❌ Not started |  |
-| badInitialState | ❌ Not started |  |
-| badTerminatingState | ❌ Not started |  |
-| findFirstToComplete | ❌ Not started |  |
-| determineWhatNotComplete | ❌ Not started |  |
+| detectWhenComponentBecomesInvalid | ❌ |  |
+| badInvariantBetweenComponents | ❌ |  |
+| componentsLoseParity | ❌ |  |
+| divergedModels_A / divergedModels_B | ❌ |  |
+| componentCausesSegfault | ❌ |  |
+| badInitialState | ❌ |  |
+| badTerminatingState | ❌ |  |
+| findFirstToComplete | ❌ |  |
+| determineWhatNotComplete | ❌ |  |
 | **Load Imbalances** |  |  |
-| findEventHeavyComponent | ❌ Not started |  |
-| findSlowProcessingComponent | ❌ Not started |  |
-| findMemHeavyComponent | ❌ Not started |  |
-| findMemHeavyEvent | ❌ Not started |  |
-| findStarvedComponent | ❌ Not started |  |
+| findEventHeavyComponent | ❌ |  |
+| findSlowProcessingComponent | ❌ |  |
+| findMemHeavyComponent | ❌ |  |
+| findMemHeavyEvent | ❌ |  |
+| findStarvedComponent | ❌ |  |
 
 ## SST Debugger Assessments
 
 This table tracks which stories we have examined with the SST debugger. For each story, we want to document how the debugger can be used to identify or analyze the case, what worked well and what did not, and any wishlist features that would improve the workflow.
 
-| Story | SST debugger assessment | Notes |
+| Story | Done? | Notes |
 | --- | --- | --- |
 | **Event Tracing** |  |  |
-| [wrongPath](assessments/wrongPath.md) | ❌ Not started |  |
-| [infiniteLoop](assessments/infiniteLoop.md) | ❌ Not started |  |
-| [unexpectedDisappear](assessments/unexpectedDisappear.md) | ❌ Not started |  |
-| [missedDeadline](assessments/missedDeadline.md) | ❌ Not started |  |
-| [outOfOrderReceipt](assessments/outOfOrderReceipt.md) | ❌ Not started |  |
-| [duplicateSepTimes](assessments/duplicateSepTimes.md) | ❌ Not started |  |
-| [duplicateSameTime](assessments/duplicateSameTime.md) | ❌ Not started |  |
+| [wrongPath](assessments/wrongPath.md) | ✅ | works in debugger but requires advanced topology knowlege and the event to set a side effect on components |
+| [infiniteLoop](assessments/infiniteLoop.md) | ❌ |  |
+| [unexpectedDisappear](assessments/unexpectedDisappear.md) | ❌ |  |
+| [missedDeadline](assessments/missedDeadline.md) | ❌ |  |
+| [outOfOrderReceipt](assessments/outOfOrderReceipt.md) | ❌ |  |
+| [duplicateSepTimes](assessments/duplicateSepTimes.md) | ❌ |  |
+| [duplicateSameTime](assessments/duplicateSameTime.md) | ❌ |  |
 | **Event Processing** |  |  |
-| [broadcastStorm](assessments/broadcastStorm.md) | ❌ Not started |  |
-| [badMerge](assessments/badMerge.md) | ❌ Not started |  |
+| [broadcastStorm](assessments/broadcastStorm.md) | ❌ |  |
+| [badMerge](assessments/badMerge.md) | ❌ |  |
 | **Incorrect Topology** |  |  |
-| [missingLink](assessments/missingLink.md) | ❌ Not started |  |
-| [wrongLink](assessments/wrongLink.md) | ❌ Not started |  |
-| [unexpectedDuplicateLink](assessments/unexpectedDuplicateLink.md) | ❌ Not started |  |
+| [missingLink](assessments/missingLink.md) | ❌ |  |
+| [wrongLink](assessments/wrongLink.md) | ❌ |  |
+| [unexpectedDuplicateLink](assessments/unexpectedDuplicateLink.md) | ❌ |  |
 | **Deadlock** |  |  |
-| [directDeadlock](assessments/directDeadlock.md) | ❌ Not started |  |
-| [indirectDeadlock](assessments/indirectDeadlock.md) | ❌ Not started |  |
+| [directDeadlock](assessments/directDeadlock.md) | ❌ |  |
+| [indirectDeadlock](assessments/indirectDeadlock.md) | ❌ |  |
 | **Fault Detection And Attribution** |  |  |
-| [detectWhenComponentBecomesInvalid](assessments/detectWhenComponentBecomesInvalid.md) | ❌ Not started |  |
-| [badInvariantBetweenComponents](assessments/badInvariantBetweenComponents.md) | ❌ Not started |  |
-| [componentsLoseParity](assessments/componentsLoseParity.md) | ❌ Not started |  |
-| [divergedModels](assessments/divergedModels.md) | ❌ Not started |  |
-| [componentCausesSegfault](assessments/componentCausesSegfault.md) | ❌ Not started |  |
-| [badInitialState](assessments/badInitialState.md) | ❌ Not started |  |
-| [badTerminatingState](assessments/badTerminatingState.md) | ❌ Not started |  |
-| [findFirstToComplete](assessments/findFirstToComplete.md) | ❌ Not started |  |
-| [determineWhatNotComplete](assessments/determineWhatNotComplete.md) | ❌ Not started |  |
+| [detectWhenComponentBecomesInvalid](assessments/detectWhenComponentBecomesInvalid.md) | ❌ |  |
+| [badInvariantBetweenComponents](assessments/badInvariantBetweenComponents.md) | ❌ |  |
+| [componentsLoseParity](assessments/componentsLoseParity.md) | ❌ |  |
+| [divergedModels](assessments/divergedModels.md) | ❌ |  |
+| [componentCausesSegfault](assessments/componentCausesSegfault.md) | ❌ |  |
+| [badInitialState](assessments/badInitialState.md) | ❌ |  |
+| [badTerminatingState](assessments/badTerminatingState.md) | ❌ |  |
+| [findFirstToComplete](assessments/findFirstToComplete.md) | ❌ |  |
+| [determineWhatNotComplete](assessments/determineWhatNotComplete.md) | ❌ |  |
 | **Load Imbalances** |  |  |
-| [findEventHeavyComponent](assessments/findEventHeavyComponent.md) | ❌ Not started |  |
-| [findSlowProcessingComponent](assessments/findSlowProcessingComponent.md) | ❌ Not started |  |
-| [findMemHeavyComponent](assessments/findMemHeavyComponent.md) | ❌ Not started |  |
-| [findMemHeavyEvent](assessments/findMemHeavyEvent.md) | ❌ Not started |  |
-| [findStarvedComponent](assessments/findStarvedComponent.md) | ❌ Not started |  |
+| [findEventHeavyComponent](assessments/findEventHeavyComponent.md) | ❌ |  |
+| [findSlowProcessingComponent](assessments/findSlowProcessingComponent.md) | ❌ |  |
+| [findMemHeavyComponent](assessments/findMemHeavyComponent.md) | ❌ |  |
+| [findMemHeavyEvent](assessments/findMemHeavyEvent.md) | ❌ |  |
+| [findStarvedComponent](assessments/findStarvedComponent.md) | ❌ |  |
