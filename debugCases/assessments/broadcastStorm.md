@@ -9,15 +9,11 @@ An event is broadcast too broadly from A to all six neighbors at startup.
 
 ## To try it out:
 
-'''
-sst --interactive-start broadcastStorm.py
-'''
+`sst --interactive-start broadcastStorm.py`
 
 -or-
 
-'''
-./doit broadcastStorm
-'''
+`./doit broadcastStorm`
 
 ## Approach 1 --
 

@@ -9,15 +9,11 @@ The intended pattern is that all components should receive work, but one does no
 
 ## To try it out:
 
-'''
-sst --interactive-start findStarvedComponent.py
-'''
+`sst --interactive-start findStarvedComponent.py`
 
 -or-
 
-'''
-./doit findStarvedComponent
-'''
+`./doit findStarvedComponent`
 
 ## Approach 1 --
 

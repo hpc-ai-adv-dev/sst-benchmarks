@@ -9,15 +9,11 @@ The goal is to determine which component finishes first; the completion order is
 
 ## To try it out:
 
-'''
-sst --interactive-start findFirstToComplete.py
-'''
+`sst --interactive-start findFirstToComplete.py`
 
 -or-
 
-'''
-./doit findFirstToComplete
-'''
+`./doit findFirstToComplete`
 
 ## Approach 1 --
 

@@ -9,15 +9,11 @@ The goal is to identify which component processes the most events; in this four-
 
 ## To try it out:
 
-'''
-sst --interactive-start findEventHeavyComponent.py
-'''
+`sst --interactive-start findEventHeavyComponent.py`
 
 -or-
 
-'''
-./doit findEventHeavyComponent
-'''
+`./doit findEventHeavyComponent`
 
 ## Approach 1 --
 

@@ -9,15 +9,11 @@ A cross-component invariant is supposed to hold, but C follows a different updat
 
 ## To try it out:
 
-'''
-sst --interactive-start badInvariantBetweenComponents.py
-'''
+`sst --interactive-start badInvariantBetweenComponents.py`
 
 -or-
 
-'''
-./doit badInvariantBetweenComponents
-'''
+`./doit badInvariantBetweenComponents`
 
 ## Approach 1 --
 

@@ -9,15 +9,11 @@ C receives values from A and B and should merge them correctly, but it multiplie
 
 ## To try it out:
 
-'''
-sst --interactive-start badMerge.py
-'''
+`sst --interactive-start badMerge.py`
 
 -or-
 
-'''
-./doit badMerge
-'''
+`./doit badMerge`
 
 ## Approach 1 --
 

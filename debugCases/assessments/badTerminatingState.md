@@ -9,15 +9,11 @@ Similar to `badInitialState`, but the issue is that C changes to a different val
 
 ## To try it out:
 
-'''
-sst --interactive-start badTerminatingState.py
-'''
+`sst --interactive-start badTerminatingState.py`
 
 -or-
 
-'''
-./doit badTerminatingState
-'''
+`./doit badTerminatingState`
 
 ## Approach 1 --
 

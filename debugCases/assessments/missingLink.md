@@ -9,15 +9,11 @@ The intended topology includes a B <-> C connection, but that link is absent.
 
 ## To try it out:
 
-'''
-sst --interactive-start missingLink.py
-'''
+`sst --interactive-start missingLink.py`
 
 -or-
 
-'''
-./doit missingLink
-'''
+`./doit missingLink`
 
 ## Approach 1 --
 

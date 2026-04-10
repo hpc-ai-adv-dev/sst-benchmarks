@@ -9,15 +9,11 @@ E is intended to see `ev1` before `ev2`, but two events launched on different br
 
 ## To try it out:
 
-'''
-sst --interactive-start outOfOrderReceipt.py
-'''
+`sst --interactive-start outOfOrderReceipt.py`
 
 -or-
 
-'''
-./doit outOfOrderReceipt
-'''
+`./doit outOfOrderReceipt`
 
 ## Approach 1 --
 

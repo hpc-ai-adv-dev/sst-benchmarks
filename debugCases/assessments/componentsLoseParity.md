@@ -9,15 +9,11 @@ A and B are expected to stay in matching state over time, but their scripted val
 
 ## To try it out:
 
-'''
-sst --interactive-start componentsLoseParity.py
-'''
+`sst --interactive-start componentsLoseParity.py`
 
 -or-
 
-'''
-./doit componentsLoseParity
-'''
+`./doit componentsLoseParity`
 
 ## Approach 1 --
 

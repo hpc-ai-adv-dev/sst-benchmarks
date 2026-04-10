@@ -9,15 +9,11 @@ The goal is to find components that never mark complete when the simulation ough
 
 ## To try it out:
 
-'''
-sst --interactive-start determineWhatNotComplete.py
-'''
+`sst --interactive-start determineWhatNotComplete.py`
 
 -or-
 
-'''
-./doit determineWhatNotComplete
-'''
+`./doit determineWhatNotComplete`
 
 ## Approach 1 --
 

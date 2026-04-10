@@ -9,15 +9,11 @@ B is expected to receive a given event once, but A injects it twice at setup.
 
 ## To try it out:
 
-'''
-sst --interactive-start duplicateSameTime.py
-'''
+`sst --interactive-start duplicateSameTime.py`
 
 -or-
 
-'''
-./doit duplicateSameTime
-'''
+`./doit duplicateSameTime`
 
 ## Approach 1 --
 

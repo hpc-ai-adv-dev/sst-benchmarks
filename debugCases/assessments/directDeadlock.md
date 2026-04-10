@@ -9,15 +9,11 @@ A waits for an event from B while B waits for an event from A, so neither side e
 
 ## To try it out:
 
-'''
-sst --interactive-start directDeadlock.py
-'''
+`sst --interactive-start directDeadlock.py`
 
 -or-
 
-'''
-./doit directDeadlock
-'''
+`./doit directDeadlock`
 
 ## Approach 1 --
 

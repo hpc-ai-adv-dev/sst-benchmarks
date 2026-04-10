@@ -9,15 +9,11 @@ A and B are linked twice instead of once.
 
 ## To try it out:
 
-'''
-sst --interactive-start unexpectedDuplicateLink.py
-'''
+`sst --interactive-start unexpectedDuplicateLink.py`
 
 -or-
 
-'''
-./doit unexpectedDuplicateLink
-'''
+`./doit unexpectedDuplicateLink`
 
 ## Approach 1 --
 

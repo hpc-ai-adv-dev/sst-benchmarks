@@ -9,15 +9,11 @@ The intended path is A -> B -> C -> D, but the event vanishes at C because it is
 
 ## To try it out:
 
-'''
-sst --interactive-start unexpectedDisappear.py
-'''
+`sst --interactive-start unexpectedDisappear.py`
 
 -or-
 
-'''
-./doit unexpectedDisappear
-'''
+`./doit unexpectedDisappear`
 
 ## Approach 1 --
 

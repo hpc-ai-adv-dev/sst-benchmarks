@@ -9,15 +9,11 @@ D is expected to receive a given event once, but A injects it at setup and again
 
 ## To try it out:
 
-'''
-sst --interactive-start duplicateSepTimes.py
-'''
+`sst --interactive-start duplicateSepTimes.py`
 
 -or-
 
-'''
-./doit duplicateSepTimes
-'''
+`./doit duplicateSepTimes`
 
 ## Approach 1 --
 

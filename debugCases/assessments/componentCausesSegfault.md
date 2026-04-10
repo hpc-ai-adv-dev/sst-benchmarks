@@ -9,15 +9,11 @@ Component C asserts once its clock reaches cycle 50 or later. The goal is to ide
 
 ## To try it out:
 
-'''
-sst --interactive-start componentCausesSegfault.py
-'''
+`sst --interactive-start componentCausesSegfault.py`
 
 -or-
 
-'''
-./doit componentCausesSegfault
-'''
+`./doit componentCausesSegfault`
 
 ## Approach 1 --
 

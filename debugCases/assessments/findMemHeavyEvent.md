@@ -9,15 +9,11 @@ The goal is to spot an unusually large event; each node in a ring sends one righ
 
 ## To try it out:
 
-'''
-sst --interactive-start findMemHeavyEvent.py
-'''
+`sst --interactive-start findMemHeavyEvent.py`
 
 -or-
 
-'''
-./doit findMemHeavyEvent
-'''
+`./doit findMemHeavyEvent`
 
 ## Approach 1 --
 

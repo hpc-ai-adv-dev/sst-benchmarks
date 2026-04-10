@@ -9,15 +9,11 @@ The intended topology is A -> B, but A is connected to C instead.
 
 ## To try it out:
 
-'''
-sst --interactive-start wrongLink.py
-'''
+`sst --interactive-start wrongLink.py`
 
 -or-
 
-'''
-./doit wrongLink
-'''
+`./doit wrongLink`
 
 ## Approach 1 --
 

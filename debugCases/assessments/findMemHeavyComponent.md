@@ -9,15 +9,11 @@ The goal is to spot a component with unusually high memory usage; four unconnect
 
 ## To try it out:
 
-'''
-sst --interactive-start findMemHeavyComponent.py
-'''
+`sst --interactive-start findMemHeavyComponent.py`
 
 -or-
 
-'''
-./doit findMemHeavyComponent
-'''
+`./doit findMemHeavyComponent`
 
 ## Approach 1 --
 

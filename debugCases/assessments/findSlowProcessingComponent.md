@@ -9,15 +9,11 @@ One component should be noticeably slower at processing than the others; all nod
 
 ## To try it out:
 
-'''
-sst --interactive-start findSlowProcessingComponent.py
-'''
+`sst --interactive-start findSlowProcessingComponent.py`
 
 -or-
 
-'''
-./doit findSlowProcessingComponent
-'''
+`./doit findSlowProcessingComponent`
 
 ## Approach 1 --
 

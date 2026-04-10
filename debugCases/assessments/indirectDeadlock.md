@@ -9,15 +9,11 @@ This is the same wait cycle as direct deadlock, but with B sitting between A and
 
 ## To try it out:
 
-'''
-sst --interactive-start indirectDeadlock.py
-'''
+`sst --interactive-start indirectDeadlock.py`
 
 -or-
 
-'''
-./doit indirectDeadlock
-'''
+`./doit indirectDeadlock`
 
 ## Approach 1 --
 
