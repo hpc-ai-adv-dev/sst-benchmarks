@@ -2,7 +2,7 @@
 
 This document tracks the status of verifying and assessing the implemented SST debug stories. We have initial implementations for all stories and are now hand-verifying that each implementation matches the intent of its use case. We are also assessing how the SST debugger, as it exists today, can address each story.
 
-## Hand Verification Status
+## Hand Verification
 
 This table is intended to track which implemented stories have been manually checked end-to-end.
 
@@ -11,39 +11,39 @@ In the done column we use ❓ to indicate that although reading the code, the im
 | Story | Done? | Notes |
 | --- | --- | --- |
 | **Event Tracing** |  |  |
-| wrongPath | ✅ |  |
-| infiniteLoop | ✅ |  |
-| unexpectedDisappear | ✅ |  |
-| missedDeadline | ✅ |  |
-| outOfOrderReceipt | ✅ |  |
-| duplicateSepTimes | ✅ |  |
-| duplicateSameTime | ✅ |  |
+| [wrongPath](assessments/wrongPath.md) | ✅ |  |
+| [infiniteLoop](assessments/infiniteLoop.md) | ✅ |  |
+| [unexpectedDisappear](assessments/unexpectedDisappear.md) | ✅ |  |
+| [missedDeadline](assessments/missedDeadline.md) | ✅ |  |
+| [outOfOrderReceipt](assessments/outOfOrderReceipt.md) | ✅ |  |
+| [duplicateSepTimes](assessments/duplicateSepTimes.md) | ✅ |  |
+| [duplicateSameTime](assessments/duplicateSameTime.md) | ✅ |  |
 | **Event Processing** |  |  |
-| broadcastStorm | ✅ |  |
-| badMerge | ✅ |  |
+| [broadcastStorm](assessments/broadcastStorm.md) | ✅ |  |
+| [badMerge](assessments/badMerge.md) | ✅ |  |
 | **Incorrect Topology** |  |  |
-| missingLink | ✅ |  |
-| wrongLink | ✅ |  |
-| unexpectedDuplicateLink | ✅ |  |
+| [missingLink](assessments/missingLink.md) | ✅ |  |
+| [wrongLink](assessments/wrongLink.md) | ✅ |  |
+| [unexpectedDuplicateLink](assessments/unexpectedDuplicateLink.md) | ✅ |  |
 | **Deadlock** |  |  |
-| directDeadlock | ❓ |  |
-| indirectDeadlock | ❓ |  |
+| [directDeadlock](assessments/directDeadlock.md) | ❓ |  |
+| [indirectDeadlock](assessments/indirectDeadlock.md) | ❓ |  |
 | **Fault Detection And Attribution** |  |  |
-| detectWhenComponentBecomesInvalid | ✅ |  |
-| badInvariantBetweenComponents | ✅ |  |
-| componentsLoseParity | ✅ |  |
-| divergedModels | ✅ |  |
-| componentCausesSegfault | ✅ |  |
-| badInitialState | ✅ |  |
-| badTerminatingState | ✅ |  |
-| findFirstToComplete | ❓ |  |
-| determineWhatNotComplete | ❓ |  |
+| [detectWhenComponentBecomesInvalid](assessments/detectWhenComponentBecomesInvalid.md) | ✅ |  |
+| [badInvariantBetweenComponents](assessments/badInvariantBetweenComponents.md) | ✅ |  |
+| [componentsLoseParity](assessments/componentsLoseParity.md) | ✅ |  |
+| [divergedModels](assessments/divergedModels.md) | ✅ |  |
+| [componentCausesSegfault](assessments/componentCausesSegfault.md) | ✅ |  |
+| [badInitialState](assessments/badInitialState.md) | ✅ |  |
+| [badTerminatingState](assessments/badTerminatingState.md) | ✅ |  |
+| [findFirstToComplete](assessments/findFirstToComplete.md) | ❓ |  |
+| [determineWhatNotComplete](assessments/determineWhatNotComplete.md) | ❓ |  |
 | **Load Imbalances** |  |  |
-| findEventHeavyComponent | ✅ |  |
-| findSlowProcessingComponent | ❓ |  |
-| findMemHeavyComponent | ❓ |  |
-| findMemHeavyEvent | ❓ |  |
-| findStarvedComponent | ✅ |  |
+| [findEventHeavyComponent](assessments/findEventHeavyComponent.md) | ✅ |  |
+| [findSlowProcessingComponent](assessments/findSlowProcessingComponent.md) | ❓ |  |
+| [findMemHeavyComponent](assessments/findMemHeavyComponent.md) | ❓ |  |
+| [findMemHeavyEvent](assessments/findMemHeavyEvent.md) | ❓ |  |
+| [findStarvedComponent](assessments/findStarvedComponent.md) | ✅ |  |
 
 ## SST Debugger Assessments
 
