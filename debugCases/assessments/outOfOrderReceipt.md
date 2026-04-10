@@ -6,6 +6,19 @@ E is intended to see `ev1` before `ev2`, but two events launched on different br
 
 ![outOfOrderReceipt flowchart](../story_flowcharts/outOfOrderReceipt.png)
 
+
+## To try it out:
+
+'''
+sst --interactive-start outOfOrderReceipt.py
+'''
+
+-or-
+
+'''
+./doit outOfOrderReceipt
+'''
+
 ## Approach 1 --
 
 ```

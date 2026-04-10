@@ -6,6 +6,19 @@ The intended path is A -> B -> C -> D, but the event vanishes at C because it is
 
 ![unexpectedDisappear flowchart](../story_flowcharts/unexpectedDisappear.png)
 
+
+## To try it out:
+
+'''
+sst --interactive-start unexpectedDisappear.py
+'''
+
+-or-
+
+'''
+./doit unexpectedDisappear
+'''
+
 ## Approach 1 --
 
 ```

@@ -6,6 +6,19 @@ Component C asserts once its clock reaches cycle 50 or later. The goal is to ide
 
 ![componentCausesSegfault flowchart](../story_flowcharts/componentCausesSegfault.png)
 
+
+## To try it out:
+
+'''
+sst --interactive-start componentCausesSegfault.py
+'''
+
+-or-
+
+'''
+./doit componentCausesSegfault
+'''
+
 ## Approach 1 --
 
 ```

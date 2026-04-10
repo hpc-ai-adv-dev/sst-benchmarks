@@ -6,6 +6,19 @@ The goal is to find components that never mark complete when the simulation ough
 
 ![determineWhatNotComplete flowchart](../story_flowcharts/determineWhatNotComplete.png)
 
+
+## To try it out:
+
+'''
+sst --interactive-start determineWhatNotComplete.py
+'''
+
+-or-
+
+'''
+./doit determineWhatNotComplete
+'''
+
 ## Approach 1 --
 
 ```

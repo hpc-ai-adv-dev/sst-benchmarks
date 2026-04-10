@@ -6,6 +6,19 @@ One component should be noticeably slower at processing than the others; all nod
 
 ![findSlowProcessingComponent flowchart](../story_flowcharts/findSlowProcessingComponent.png)
 
+
+## To try it out:
+
+'''
+sst --interactive-start findSlowProcessingComponent.py
+'''
+
+-or-
+
+'''
+./doit findSlowProcessingComponent
+'''
+
 ## Approach 1 --
 
 ```

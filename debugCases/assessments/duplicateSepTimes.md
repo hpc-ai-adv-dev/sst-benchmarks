@@ -6,6 +6,19 @@ D is expected to receive a given event once, but A injects it at setup and again
 
 ![duplicateSepTimes flowchart](../story_flowcharts/duplicateSepTimes.png)
 
+
+## To try it out:
+
+'''
+sst --interactive-start duplicateSepTimes.py
+'''
+
+-or-
+
+'''
+./doit duplicateSepTimes
+'''
+
 ## Approach 1 --
 
 ```

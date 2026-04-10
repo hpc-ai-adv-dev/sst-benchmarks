@@ -6,6 +6,21 @@ This story pair compares two models that are intended to retain parity throughou
 
 ![divergedModels flowchart](../story_flowcharts/divergedModels.png)
 
+
+## To try it out:
+
+```
+sst --interactive-start divergedModels_A.py
+sst --interactive-start divergedModels_B.py
+```
+
+-or-
+
+```
+./doit divergedModels_A
+./doit divergedModels_B
+```
+
 ## Approach 1 --
 
 ```

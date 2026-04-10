@@ -8,7 +8,7 @@ An event propagates throughout the model. Its intended path is **A** -> **B** ->
 
 ## To try it out:
 
-`sst --interactive-start --stop-at 10ns wrongPath.py`
+`sst --interactive-start wrongPath.py`
 
 -or-
 

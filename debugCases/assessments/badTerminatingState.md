@@ -6,6 +6,19 @@ Similar to `badInitialState`, but the issue is that C changes to a different val
 
 ![badTerminatingState flowchart](../story_flowcharts/badTerminatingState.png)
 
+
+## To try it out:
+
+'''
+sst --interactive-start badTerminatingState.py
+'''
+
+-or-
+
+'''
+./doit badTerminatingState
+'''
+
 ## Approach 1 --
 
 ```
