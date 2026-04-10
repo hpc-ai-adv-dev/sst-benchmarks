@@ -19,3 +19,6 @@ The goal is to spot a component with unusually high memory usage; four unconnect
 
 ```
 ```
+
+TODO:
+- I'm not sure how to approach this with the debugger. One could imagine the object having information that correlates with size that could be printed out.

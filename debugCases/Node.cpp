@@ -678,6 +678,7 @@ void Node::handleEvent_determineWhatNotComplete(SST::Event *ev, int fromPort) {
 
 // --- Load Imbalances ---
 void Node::handleEvent_findEventHeavyComponent(SST::Event *ev, int fromPort) {
+  visited++;
   delete ev;
 }
 
@@ -707,6 +708,7 @@ void Node::handleEvent_findMemHeavyComponent(SST::Event *ev, int fromPort) {
 }
 
 void Node::handleEvent_findMemHeavyEvent(SST::Event *ev, int fromPort) {
+  visited++;
   auto useCaseEvent = dynamic_cast<UseCaseEvent*>(ev);
   if(useCaseEvent && useCaseEvent->payload) {
     free(useCaseEvent->payload);

@@ -39,11 +39,11 @@ In the done column we use ❓ to indicate that although reading the code, the im
 | findFirstToComplete | ❌ |  |
 | determineWhatNotComplete | ❌ |  |
 | **Load Imbalances** |  |  |
-| findEventHeavyComponent | ❌ |  |
-| findSlowProcessingComponent | ❌ |  |
-| findMemHeavyComponent | ❌ |  |
-| findMemHeavyEvent | ❌ |  |
-| findStarvedComponent | ❌ |  |
+| findEventHeavyComponent | ✅ |  |
+| findSlowProcessingComponent | ❓ |  |
+| findMemHeavyComponent | ❓ |  |
+| findMemHeavyEvent | ❓ |  |
+| findStarvedComponent | ✅ |  |
 
 ## SST Debugger Assessments
 
