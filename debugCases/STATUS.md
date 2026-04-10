@@ -6,26 +6,28 @@ This document tracks the status of verifying and assessing the implemented SST d
 
 This table is intended to track which implemented stories have been manually checked end-to-end.
 
+In the done column we use ❓ to indicate that although reading the code, the implementation looks correct it hasn't been hand verified and I'm unsure how we could verify it or at-least it would be difficult to do so.
+
 | Story | Done? | Notes |
 | --- | --- | --- |
 | **Event Tracing** |  |  |
 | wrongPath | ✅ |  |
-| infiniteLoop | ❌ |  |
-| unexpectedDisappear | ❌ |  |
-| missedDeadline | ❌ |  |
-| outOfOrderReceipt | ❌ |  |
-| duplicateSepTimes | ❌ |  |
-| duplicateSameTime | ❌ |  |
+| infiniteLoop | ✅ |  |
+| unexpectedDisappear | ✅ |  |
+| missedDeadline | ✅ |  |
+| outOfOrderReceipt | ✅ |  |
+| duplicateSepTimes | ✅ |  |
+| duplicateSameTime | ✅ |  |
 | **Event Processing** |  |  |
-| broadcastStorm | ❌ |  |
-| badMerge | ❌ |  |
+| broadcastStorm | ✅ |  |
+| badMerge | ✅ |  |
 | **Incorrect Topology** |  |  |
-| missingLink | ❌ |  |
-| wrongLink | ❌ |  |
-| unexpectedDuplicateLink | ❌ |  |
+| missingLink | ✅ |  |
+| wrongLink | ✅ |  |
+| unexpectedDuplicateLink | ✅ |  |
 | **Deadlock** |  |  |
-| directDeadlock | ❌ |  |
-| indirectDeadlock | ❌ |  |
+| directDeadlock | ❓ |  |
+| indirectDeadlock | ❓ |  |
 | **Fault Detection And Attribution** |  |  |
 | detectWhenComponentBecomesInvalid | ❌ |  |
 | badInvariantBetweenComponents | ❌ |  |

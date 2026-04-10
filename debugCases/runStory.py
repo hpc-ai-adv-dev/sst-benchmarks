@@ -262,9 +262,9 @@ def story_missingLink():
     comp_D = sst.Component("D", "debugUseCases.Node")
 
     comp_A.addParams({'story': 'missingLink', 'name': 'A', 'numLinks': 1})
-    comp_B.addParams({'story': 'missingLiink', 'name': 'B', 'numLinks': 2})
-    comp_C.addParams({'story': 'missingLiink', 'name': 'C', 'numLinks': 2})
-    comp_D.addParams({'story': 'missingLiink', 'name': 'D', 'numLinks': 1})
+    comp_B.addParams({'story': 'missingLink', 'name': 'B', 'numLinks': 2})
+    comp_C.addParams({'story': 'missingLink', 'name': 'C', 'numLinks': 2})
+    comp_D.addParams({'story': 'missingLink', 'name': 'D', 'numLinks': 1})
 
     sst.Link('a_b').connect((comp_A, "port0", "1ns"), (comp_B, "port0", "1ns"))
     sst.Link('c_d').connect((comp_C, "port1", "1ns"), (comp_D, "port0", "1ns"))
