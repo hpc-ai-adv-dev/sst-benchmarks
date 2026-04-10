@@ -15,7 +15,14 @@ Component C asserts once its clock reaches cycle 50 or later. The goal is to ide
 
 `./doit componentCausesSegfault`
 
-## Approach 1 --
+## Approach 1 -- run and watch it fail
 
 ```
+Entering interactive mode at time 0
+Interactive start at 0
+> run
+Assertion failed: (false), function clockTick_componentCausesSegfault, file Node.cpp, line 308.
 ```
+
+Notes:
+- You could certainly step through this to figure out what timestep the segfault occurs at but I'm unsure if there's any way you could figure out what component was being processed at the time it faulted.

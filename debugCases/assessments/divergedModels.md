@@ -21,7 +21,127 @@ sst --interactive-start divergedModels_B.py
 ./doit divergedModels_B
 ```
 
-## Approach 1 --
+## Approach 1 -- examining and compare simulations at relevant points
+
+In both simulations run:
 
 ```
+run 11ns
+p A
+run 10ns
+p A
+run 10ns
+p A
+run 10ns
+p A
+```
+
+In the `divergedModels_A` substory this results in:
+
+```
+Entering interactive mode at time 0
+Interactive start at 0
+> run 11ns
+Entering interactive mode at time 11000
+Ran clock for 11000 sim cycles
+> p A
+A (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = A (std::string)
+ valid = 1 (bool)
+ value = 1 (int)
+ visited = 0 (int)
+> run 10ns
+Entering interactive mode at time 21000
+Ran clock for 10000 sim cycles
+> p A
+A (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = A (std::string)
+ valid = 1 (bool)
+ value = 4 (int)
+ visited = 0 (int)
+> run 10ns
+Entering interactive mode at time 31000
+Ran clock for 10000 sim cycles
+> p A
+A (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = A (std::string)
+ valid = 1 (bool)
+ value = 3 (int)
+ visited = 0 (int)
+> run 10ns
+Entering interactive mode at time 41000
+Ran clock for 10000 sim cycles
+> p A
+A (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = A (std::string)
+ valid = 1 (bool)
+ value = 5 (int)
+ visited = 0 (int)
+```
+
+And in the `divergedModels_B` substory this results in:
+
+```
+Entering interactive mode at time 0
+Interactive start at 0
+> run 11ns
+Entering interactive mode at time 11000
+Ran clock for 11000 sim cycles
+> p A
+A (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = A (std::string)
+ valid = 1 (bool)
+ value = 1 (int)
+ visited = 0 (int)
+> run 10ns
+Entering interactive mode at time 21000
+Ran clock for 10000 sim cycles
+> p A
+A (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = A (std::string)
+ valid = 1 (bool)
+ value = 4 (int)
+ visited = 0 (int)
+> run 10ns
+Entering interactive mode at time 31000
+Ran clock for 10000 sim cycles
+> p A
+A (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = A (std::string)
+ valid = 1 (bool)
+ value = 3 (int)
+ visited = 0 (int)
+> run 10ns
+Entering interactive mode at time 41000
+Ran clock for 10000 sim cycles
+> p A
+A (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = A (std::string)
+ valid = 1 (bool)
+ value = 7 (int)
+ visited = 0 (int)
 ```

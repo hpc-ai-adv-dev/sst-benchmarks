@@ -29,15 +29,15 @@ In the done column we use ❓ to indicate that although reading the code, the im
 | directDeadlock | ❓ |  |
 | indirectDeadlock | ❓ |  |
 | **Fault Detection And Attribution** |  |  |
-| detectWhenComponentBecomesInvalid | ❌ |  |
-| badInvariantBetweenComponents | ❌ |  |
-| componentsLoseParity | ❌ |  |
-| divergedModels_A / divergedModels_B | ❌ |  |
-| componentCausesSegfault | ❌ |  |
-| badInitialState | ❌ |  |
-| badTerminatingState | ❌ |  |
-| findFirstToComplete | ❌ |  |
-| determineWhatNotComplete | ❌ |  |
+| detectWhenComponentBecomesInvalid | ✅ |  |
+| badInvariantBetweenComponents | ✅ |  |
+| componentsLoseParity | ✅ |  |
+| divergedModels | ✅ |  |
+| componentCausesSegfault | ✅ |  |
+| badInitialState | ✅ |  |
+| badTerminatingState | ✅ |  |
+| findFirstToComplete | ❓ |  |
+| determineWhatNotComplete | ❓ |  |
 | **Load Imbalances** |  |  |
 | findEventHeavyComponent | ✅ |  |
 | findSlowProcessingComponent | ❓ |  |

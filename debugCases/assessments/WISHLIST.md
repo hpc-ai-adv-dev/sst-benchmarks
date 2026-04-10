@@ -21,3 +21,8 @@ When debugging I often found myself in a situation where I want to go back in ti
 ## Have a way to say run the simulation and break just before completion
 
 It can be useful to observe the final state of a simulation by simply using `run` will cause the debugger to exit upon completion. It would be nice if there was a way to pause and examine the final state before terminating.
+
+## More succinct trace format when I just want to observe when a variable changes
+
+A common use case I have is to trace a single variable when it changes. Could we make the syntax to do this more verbose.
+TODO: Elaborate on this wish some more.

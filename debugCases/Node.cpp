@@ -343,13 +343,13 @@ void Node::setup_findFirstToComplete() {
 }
 
 bool Node::clockTick_findFirstToComplete(SST::Cycle_t currentCycle) {
-  SST::Cycle_t completionTime;
+  SST::Cycle_t completionTime = -1;
   if     (name == "A") { completionTime = 750; }
   else if(name == "B") { completionTime = 300; }
   else if(name == "C") { completionTime = 492; }
   else                 { completionTime = 234; } // D is the fastest!
 
-  if(currentCycle >= completionTime) {
+  if(completionTime != -1 && currentCycle >= completionTime) {
     primaryComponentOKToEndSim();
     return true;
   }
@@ -363,12 +363,12 @@ void Node::setup_determineWhatNotComplete() {
 }
 
 bool Node::clockTick_determineWhatNotComplete(SST::Cycle_t currentCycle) {
-  SST::Cycle_t completionTime;
+  SST::Cycle_t completionTime = -1;
   if     (name == "A") { completionTime = 100; }
   else if(name == "D") { completionTime = 230; }
   else if(name == "E") { completionTime = 340; }
 
-  if(currentCycle >= completionTime) {
+  if(completionTime != -1 && currentCycle >= completionTime) {
     primaryComponentOKToEndSim();
     return true;
   }

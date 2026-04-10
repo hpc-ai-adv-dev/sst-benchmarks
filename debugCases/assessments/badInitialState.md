@@ -19,7 +19,45 @@ sst --interactive-start badInitialState.py
 ./doit badInitialState
 '''
 
-## Approach 1 --
+## Approach 1 -- print component statates on startup
 
 ```
+Entering interactive mode at time 0
+Interactive start at 0
+> p A
+A (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = A (std::string)
+ valid = 1 (bool)
+ value = 1 (int)
+ visited = 0 (int)
+> p B
+B (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = B (std::string)
+ valid = 1 (bool)
+ value = 1 (int)
+ visited = 0 (int)
+> p C
+C (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = C (std::string)
+ valid = 1 (bool)
+ value = 3 (int)
+ visited = 0 (int)
+> p D
+D (SST::Component)
+ component_state_ = 3 (SST::BaseComponent::ComponentState)
+ my_info_ ()
+ my_info_ (SST::ComponentInfo*)
+ name = D (std::string)
+ valid = 1 (bool)
+ value = 1 (int)
+ visited = 0 (int)
 ```

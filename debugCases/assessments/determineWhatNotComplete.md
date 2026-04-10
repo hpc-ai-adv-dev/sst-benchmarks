@@ -19,3 +19,6 @@ The goal is to find components that never mark complete when the simulation ough
 
 ```
 ```
+
+TODO:
+- I'm unsure how to do this with the debugger. I guess just run to when I would expect completion and then have some way to examine what components have flagged themselves complete.
