@@ -15,7 +15,7 @@ A and B are expected to stay in matching state over time, but their scripted val
 
 `./doit componentsLoseParity`
 
-## Approach 1 -- Step and print
+## Approach 1 -- step and print
 
 ```
 run 11ns   # Let's run to where we can observe the state of components after processing events from 10ns

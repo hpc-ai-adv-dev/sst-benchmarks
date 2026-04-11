@@ -15,7 +15,7 @@ The goal is to identify which component processes the most events; in this four-
 
 `./doit findEventHeavyComponent`
 
-## Approach 1 -- Run to termination and print
+## Approach 1 -- run to termination and print
 
 ```
 run 100ns   # Run the simulation to termination

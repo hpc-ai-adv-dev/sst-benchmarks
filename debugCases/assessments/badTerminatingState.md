@@ -15,7 +15,7 @@ Similar to `badInitialState`, but the issue is that C changes to a different val
 
 `./doit badTerminatingState`
 
-## Approach 1 -- Print prior to termination
+## Approach 1 -- print prior to termination
 
 We'll run the simulation to completion and then observe the state of all components:
 

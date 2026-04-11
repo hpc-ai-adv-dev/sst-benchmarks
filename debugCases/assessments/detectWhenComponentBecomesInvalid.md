@@ -15,7 +15,7 @@ A starts valid and then flips its `valid` flag to false on a 40ns clock tick, mo
 
 `./doit detectWhenComponentBecomesInvalid`
 
-## Approach 1 -- Watchpoint
+## Approach 1 -- watchpoint
 
 ```
 # Let's watch A.valid and see when it becomes invalid

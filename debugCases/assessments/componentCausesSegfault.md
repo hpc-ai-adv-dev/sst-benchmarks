@@ -15,7 +15,7 @@ Component C asserts once its clock reaches cycle 50 or later. The goal is to ide
 
 `./doit componentCausesSegfault`
 
-## Approach 1 -- Run and fail
+## Approach 1 -- run and fail
 
 For this lets simply `run` the simulation and watch it fail:
 
