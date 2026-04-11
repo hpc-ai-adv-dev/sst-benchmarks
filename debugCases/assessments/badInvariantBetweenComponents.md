@@ -15,7 +15,7 @@ A cross-component invariant is supposed to hold, but C follows a different updat
 
 `./doit badInvariantBetweenComponents`
 
-## Approach 1 -- examine before and after state at relevent timesteps
+## Approach 1 -- Print before and after invalidity
 
 ```
 run 10ns   # We advance to just before the invariant is violated

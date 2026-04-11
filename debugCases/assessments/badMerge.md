@@ -15,7 +15,7 @@ C receives values from A and B and should merge them correctly, but it multiplie
 
 `./doit badMerge`
 
-## Approach 1 -- inspect component after merge
+## Approach 1 -- run to merge and print
 
 ```
 p A         # At startup we see A has an event

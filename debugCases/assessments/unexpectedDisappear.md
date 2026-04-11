@@ -15,7 +15,7 @@ The intended path is A -> B -> C -> D, but the event vanishes at C because it is
 
 `./doit unexpectedDisappear`
 
-## Approach 1 -- run step by step and print
+## Approach 1 -- step and print
 
 ```
 p A         # We see the event has been setup

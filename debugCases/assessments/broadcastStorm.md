@@ -15,7 +15,7 @@ An event is broadcast too broadly from A to all six neighbors at startup.
 
 `./doit broadcastStorm`
 
-## Approach 1 -- print values of neighbors
+## Approach 1 -- step and print neighbors
 
 ```
 > run 2ns # Let's move forward long enough for all events to be pushed and processed

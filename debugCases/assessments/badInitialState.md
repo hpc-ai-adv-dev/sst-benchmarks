@@ -19,7 +19,7 @@ sst --interactive-start badInitialState.py
 ./doit badInitialState
 ```
 
-## Approach 1 -- print component statates on startup
+## Approach 1 -- Print on startup
 
 It's pretty easy to just start things up and print the state of every componnet
 

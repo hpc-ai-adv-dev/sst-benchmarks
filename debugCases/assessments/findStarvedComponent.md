@@ -15,7 +15,7 @@ The intended pattern is that all components should receive work, but one does no
 
 `./doit findStarvedComponent`
 
-## Approach 1 -- Run to completion, examine visited counts
+## Approach 1 -- Run to termination and print
 
 ```
 run 100ns  # Run to completion

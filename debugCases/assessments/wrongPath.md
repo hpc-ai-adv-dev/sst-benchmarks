@@ -20,7 +20,7 @@ This story shows how to use the SST debugger to identify a misrouted event.  Sin
 
 The wishlist items below all point to the same broader need: the debugger would be more effective if it provided stronger support for event flow and topology discovery. Features such as event-centric tracing, neighbor introspection, bulk queries across connected components, and a way to process pending events without advancing time would make this kind of bug much easier to understand and localize.
 
-## Approach 1 -- run step by step and print
+## Approach 1 -- step and print
 
 In this approach, we manually step through the simulation one nanosecond at a time, checking each component's `visited` counter after each step. We run 2ns initially to ensure the first event is fully processed, then step 1ns at a time, printing the state of **A**, **B**, and **C**, in turn. When **C**'s counter turns out to be 0k, we examine **B**'s other neighbor **D**'s and see that it is nonzero, revealing how the event was misrouted.
 
@@ -106,7 +106,7 @@ D (SST::Component)
 
 And indeed, we see `D.visited = 1`, showing where the event was misrouted.
 
-## Approach 2 -- tracepoints on all components
+## Approach 2 -- tracepoints
 
 Rather than stepping manually, we set a tracepoint on the `visited` field of every component before the simulation runs. After running the full simulation, we print each trace to see exactly when this field was modified, revealing that **D** was visited instead of **C**.
 

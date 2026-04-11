@@ -15,7 +15,7 @@ D is expected to receive a given event once, but A injects it at setup and again
 
 `./doit duplicateSepTimes`
 
-## Approach 1 --
+## Approach 1 -- step and print
 
 ```
 # First lets run the simulation to completion and then see how many times D has been visited:

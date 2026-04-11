@@ -15,7 +15,7 @@ B is expected to receive a given event once, but A injects it twice at setup.
 
 `./doit duplicateSameTime`
 
-## Approach 1 --
+## Approach 1 -- trace sink and print source
 
 ```
 # Let's watch how D.visited increments when we run the simulation to completion.

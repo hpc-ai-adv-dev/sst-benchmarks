@@ -15,7 +15,7 @@ D is expected to receive an event by a target time, but the A -> B -> C -> D pat
 
 `./doit missedDeadline`
 
-## Approach 1 -- run step by step and print
+## Approach 1 -- step and print
 
 ```
 p A         # We see the event has been setup
