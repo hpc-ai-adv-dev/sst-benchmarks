@@ -18,6 +18,17 @@ C receives values from A and B and should merge them correctly, but it multiplie
 ## Approach 1 -- inspect component after merge
 
 ```
+p A         # At startup we see A has an event
+p B         # As does B
+run 2ns     # We advance 2ns so C will receive and have processed the events
+p C         # We see that 2 events have been processed but the result is unexpected
+run 1ns     # If we advance again we can see what value gets to D
+p D         # And it's still the bad merged value
+```
+
+Let's now run this and observe the output from the SST debugger:
+
+```
 Entering interactive mode at time 0
 Interactive start at 0
 > p A
@@ -66,4 +77,5 @@ D (SST::Component)
 
 NOTES:
 - Ideally for this we would want to be able to examine the contents of incoming messages so we knew their values.
+    - I should set value on startup on nodes A and B to show what they'll assign to the event. 
 - We expect to see 10 + 2 instead of 10 * 2.

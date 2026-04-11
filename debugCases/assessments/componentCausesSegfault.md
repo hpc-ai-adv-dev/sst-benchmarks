@@ -17,6 +17,8 @@ Component C asserts once its clock reaches cycle 50 or later. The goal is to ide
 
 ## Approach 1 -- run and watch it fail
 
+For this lets simply `run` the simulation and watch it fail:
+
 ```
 Entering interactive mode at time 0
 Interactive start at 0

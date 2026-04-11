@@ -18,6 +18,23 @@ A and B are expected to stay in matching state over time, but their scripted val
 ## Approach 1 -- examining before and after point where parity changes
 
 ```
+run 11ns   # Let's run to where we can observe the state of components after processing events from 10ns
+p A        # A.value is 1
+p B        # As is B.value
+run 10ns   # Advance some more
+p A        # A.value is 4
+p B        # As is B.value
+run 10ns   # Advance some more
+p A        # A.value is 3
+p B        # As is B.Value
+run 10ns   # Advance some more
+p A        # A.value is 5
+p B        # But B.value mismatches as 7!
+```
+
+Let's now run this and observe the output from the SST debugger:
+
+```
 Entering interactive mode at time 0
 Interactive start at 0
 > run 11ns

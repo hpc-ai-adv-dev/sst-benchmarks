@@ -15,7 +15,7 @@ In the done column we use ❓ to indicate that although reading the code, the im
 | [infiniteLoop](assessments/infiniteLoop.md) | ✅ |  |
 | [unexpectedDisappear](assessments/unexpectedDisappear.md) | ✅ |  |
 | [missedDeadline](assessments/missedDeadline.md) | ✅ |  |
-| [outOfOrderReceipt](assessments/outOfOrderReceipt.md) | ✅ |  |
+| [outOfOrderReceipt](assessments/outOfOrderReceipt.md) | ❌ |  |
 | [duplicateSepTimes](assessments/duplicateSepTimes.md) | ✅ |  |
 | [duplicateSameTime](assessments/duplicateSameTime.md) | ✅ |  |
 | **Event Processing** |  |  |

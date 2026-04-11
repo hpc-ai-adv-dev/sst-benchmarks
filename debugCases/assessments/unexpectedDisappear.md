@@ -18,6 +18,18 @@ The intended path is A -> B -> C -> D, but the event vanishes at C because it is
 ## Approach 1 -- run step by step and print
 
 ```
+p A         # We see the event has been setup
+run 2ns     # We need to wait 2ns before we can observe that component B has received it
+p B         # Component B has received it
+run 1ns     # We take the next step
+p C         # Component C has received it
+run 1ns     # We take the next step
+p D         # We expect D to have received it, but it has not!
+```
+
+Let's now run this and observe the output from the SST debugger:
+
+```
 Entering interactive mode at time 0
 Interactive start at 0
 > p A

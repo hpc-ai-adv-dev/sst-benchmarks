@@ -18,6 +18,19 @@ A cross-component invariant is supposed to hold, but C follows a different updat
 ## Approach 1 -- examine before and after state at relevent timesteps
 
 ```
+run 10ns   # We advance to just before the invariant is violated
+p A        # A.value is 9
+p B        # B.value is 19
+p C        # And C.value is the sum, 28
+run 1ns    # We advance to the next timestep
+p A        # A.value is 10
+p B        # B.value is 20
+p C        # But C.value is now incorrectly set to 50!
+```
+
+Let's now run this and observe the output from the SST debugger:
+
+```
 Entering interactive mode at time 0
 Interactive start at 0
 > run 10ns

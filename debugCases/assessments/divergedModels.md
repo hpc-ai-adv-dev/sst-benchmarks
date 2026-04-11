@@ -26,6 +26,7 @@ sst --interactive-start divergedModels_B.py
 In both simulations run:
 
 ```
+# Let's look at the state of A at various points in the simulation
 run 11ns
 p A
 run 10ns

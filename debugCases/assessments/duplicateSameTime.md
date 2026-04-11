@@ -18,6 +18,22 @@ B is expected to receive a given event once, but A injects it twice at setup.
 ## Approach 1 --
 
 ```
+# Let's watch how D.visited increments when we run the simulation to completion.
+# We'll see that it has been updated twice on the same time step.
+cd D
+trace visited changed : 5 5 : visited : printTrace
+run 10ns
+printTrace 0
+
+# - RESTART THE SIMULATION AND DEBUGGER -
+
+# If we observe A at the start of simulation we can see it starts with two events setup
+p A
+```
+
+Let's now run this and observe the output from the SST debugger:
+
+```
 Entering interactive mode at time 0
 Interactive start at 0
 > cd D

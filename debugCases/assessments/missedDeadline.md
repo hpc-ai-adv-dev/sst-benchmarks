@@ -18,6 +18,21 @@ D is expected to receive an event by a target time, but the A -> B -> C -> D pat
 ## Approach 1 -- run step by step and print
 
 ```
+p A         # We see the event has been setup
+run 11ns    # We expect a 10ns latency for an event to get to B. We add another ns so we can observe it
+p B         # Yes, B has received the event
+run 10ns    # We expect another 10ns for the message to get to C
+p C         # But wait. It's not there!
+run 10ns    # Let's wait some more to see if it arrives
+p C         # And it has!
+
+# From here we may want to continue to debug to narrow down specifically what timestep the message did arrive.
+# Ideally, this would clue us in that link latency might be off.
+```
+
+Let's now run this and observe the output from the SST debugger:
+
+```
 Entering interactive mode at time 0
 Interactive start at 0
 > p A

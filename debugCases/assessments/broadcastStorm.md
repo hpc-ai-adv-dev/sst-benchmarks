@@ -18,6 +18,20 @@ An event is broadcast too broadly from A to all six neighbors at startup.
 ## Approach 1 -- print values of neighbors
 
 ```
+> run 2ns # Let's move forward long enough for all events to be pushed and processed
+
+# We now observe all of A's neighboring components to see that they have received an event
+> p B
+> p C
+> p D
+> p E
+> p F
+> p G
+```
+
+Let's now run this and observe the output from the SST debugger:
+
+```
 Entering interactive mode at time 0
 Interactive start at 0
 > run 2ns

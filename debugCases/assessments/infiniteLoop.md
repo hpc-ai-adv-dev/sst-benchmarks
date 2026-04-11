@@ -18,17 +18,17 @@ An event is supposed to move onward to D, but A, B, and C keep forwarding it in 
 ## Approach 1 -- run step by step and print
 
 ```
-> p A           # We see the event has been setup
-> run 2ns       # We need to wait 2ns before we can observe that component B has received it
-> p B           # Yep, we can see component B has received it
-> run 1ns       # Allow the event to continue to propagate
-> p C           # We can see that C has now received it
-> run 1ns       # Allow the event to continue to propagate
-> p D           # We expect D to receive it, but it has not
-> p A           # Instead we see A has the event1
-> run 3ns       # Let's continue three steps to see if the event will cycle again
-> p A           # We see that A has no received the event multiple times (it's cycle back)
-> p D           # And D still has not been visited
+p A           # We see the event has been setup
+run 2ns       # We need to wait 2ns before we can observe that component B has received it
+p B           # Yep, we can see component B has received it
+run 1ns       # Allow the event to continue to propagate
+p C           # We can see that C has now received it
+run 1ns       # Allow the event to continue to propagate
+p D           # We expect D to receive it, but it has not
+p A           # Instead we see A has the event
+run 3ns       # Let's continue three steps to see if the event will cycle again
+p A           # We see that A has no received the event multiple times (it's cycle back)
+p D           # And D still has not been visited
 ```
 
 Let's now run this and observe the output from the SST debugger:

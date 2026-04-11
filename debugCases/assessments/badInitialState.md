@@ -21,6 +21,18 @@ sst --interactive-start badInitialState.py
 
 ## Approach 1 -- print component statates on startup
 
+It's pretty easy to just start things up and print the state of every componnet
+
+```
+# Print state of all components in the simulation:
+p A
+p B
+p C     # x.value is not what we expect!
+p D
+```
+
+Let's now run this and observe the output from the SST debugger:
+
 ```
 Entering interactive mode at time 0
 Interactive start at 0

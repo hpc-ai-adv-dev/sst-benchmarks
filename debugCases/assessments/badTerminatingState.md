@@ -17,6 +17,18 @@ Similar to `badInitialState`, but the issue is that C changes to a different val
 
 ## Approach 1 --
 
+We'll run the simulation to completion and then observe the state of all components:
+
+```
+run 1000ns
+p A
+p B
+p C     # x.value is 3 when we expect it to be 1!
+p D
+```
+
+Let's now run this and observe the output from the SST debugger:
+
 ```
 Entering interactive mode at time 0
 Interactive start at 0

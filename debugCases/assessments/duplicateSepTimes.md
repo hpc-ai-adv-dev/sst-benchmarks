@@ -17,6 +17,19 @@ D is expected to receive a given event once, but A injects it at setup and again
 
 ## Approach 1 --
 
+```
+# First lets run the simulation to completion and then see how many times D has been visited:
+run 10ns
+p D
+
+# - RESTART THE SIMULATION AND DEBUGGER -
+
+# From here let's observe the events originate at A
+p A         # We can see A starts with an event
+run 2ns     # Step 2ns so A can process an event from the next timestep
+p A         # And we can see A has made a duplicate event
+```
+
 I can run to completion and observe that **D** has received multiple events.
 
 ```
@@ -50,21 +63,9 @@ A (SST::Component)
  valid = 1 (bool)
  value = 0 (int)
  visited = 1 (int)
-> run 1ns
-Entering interactive mode at time 1000
-Ran clock for 1000 sim cycles
-> p A
-A (SST::Component)
- component_state_ = 3 (SST::BaseComponent::ComponentState)
- my_info_ ()
- my_info_ (SST::ComponentInfo*)
- name = A (std::string)
- valid = 1 (bool)
- value = 0 (int)
- visited = 1 (int)
-> run 1ns
+> run 2ns
 Entering interactive mode at time 2000
-Ran clock for 1000 sim cycles
+Ran clock for 2000 sim cycles
 > p A
 A (SST::Component)
  component_state_ = 3 (SST::BaseComponent::ComponentState)
