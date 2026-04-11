@@ -24,6 +24,8 @@ sst --output-dot=missingLink.dot ./runStory.py -- unexpectedDuplicateLink
 dot -Tpng unexpectedDuplicateLink.dot > unexpectedDuplicateLink.png
 ```
 
+![unexpectedDuplicateLink topology visualization](./images/unexpectedDuplicateLink.png)
+
 In a real use case the situation there would likely be some other bug (like a misrouted message) that would lead the user to suspect there could be a topology issue.
 
 ## Thoughts and wishlist items

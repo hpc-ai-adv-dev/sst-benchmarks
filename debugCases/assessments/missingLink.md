@@ -26,6 +26,8 @@ dot -Tpng missingLink.dot > missingLink.png
 
 In a real use case the situation there would likely be some other bug (like a misrouted message) that would lead the user to suspect there could be a topology issue.
 
+![missingLink topology visualization](./images/missingLink.png)
+
 ## Thoughts and wishlist items
 
 ### Discovery of neighbors
