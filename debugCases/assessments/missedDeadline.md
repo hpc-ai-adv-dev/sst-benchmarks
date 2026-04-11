@@ -81,3 +81,13 @@ C (SST::Component)
  value = 0 (int)
  visited = 1 (int)
 ```
+
+## Approach 2 -- run to termination and bisect path
+
+This would depend on knowing the expected path of the event.
+
+## Thoughts and wishlist items
+
+### Many points overlap with the wrongPath use case
+
+Especially the "Event-centric debugging" item. Being able to put a tracepoint on the event to track its lifetime would be useful in this case.  If such traces were possible perhaps it would be nice if it were possible to break upon the events deletion.

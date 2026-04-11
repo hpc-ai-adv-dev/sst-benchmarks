@@ -381,3 +381,7 @@ buf[117] AC @59000 (+) B/value=7
 
 Notes:
 - This approach is showing me more information than I want. Is there a way to only post to the tracepoint buffer when there is a change?
+
+## Thoughts and wishlist items
+
+### Set an watch when two components diverge

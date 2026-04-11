@@ -17,6 +17,8 @@ The intended path is A -> B -> C -> D, but the event vanishes at C because it is
 
 ## Approach 1 -- step and print
 
+This approach depends on knowing when and what node originates the event.
+
 ```
 p A         # We see the event has been setup
 run 2ns     # We need to wait 2ns before we can observe that component B has received it
@@ -78,3 +80,13 @@ D (SST::Component)
  value = 0 (int)
  visited = 0 (int)
 ```
+
+## Approach 2 -- run to termination and bisect path
+
+This would depend on knowing the expected path of the event.
+
+## Thoughts and wishlist items
+
+### Many points overlap with the wrongPath use case
+
+Especially the "Event-centric debugging" item. Being able to put a tracepoint on the event to track its lifetime would be useful in this case.  If such traces were possible perhaps it would be nice if it were possible to break upon the events deletion.

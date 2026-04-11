@@ -65,3 +65,11 @@ A (SST::Component)
  value = 0 (int)
  visited = 2 (int)
 ```
+
+## Thoughts and wishlist items
+
+### Many points overlap with the wrongPath use case
+
+### Breaking on a component receiving on sending a number of messages
+
+It would be nice if we could break if A sends > 1 message or if B receives more than 1.

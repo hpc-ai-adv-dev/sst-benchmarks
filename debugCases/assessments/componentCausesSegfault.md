@@ -28,3 +28,7 @@ Assertion failed: (false), function clockTick_componentCausesSegfault, file Node
 
 Notes:
 - You could certainly step through this to figure out what timestep the segfault occurs at but I'm unsure if there's any way you could figure out what component was being processed at the time it faulted.
+
+## Thoughts and wishlist items
+
+### Print component and event being processed upon failure

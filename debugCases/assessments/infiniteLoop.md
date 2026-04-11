@@ -112,3 +112,15 @@ D (SST::Component)
  value = 0 (int)
  visited = 0 (int)
 ```
+
+## Approach 1 -- tracepoints
+
+A question: should the debugger run until just before or just after events are processed?
+
+## Thoughts and wishlist items
+
+### Many points overlap with the wrongPath use case
+
+### Being able to assess event lifetime would be useful
+
+For an event caught in a loop it might be useful to track how long it's existed.  This might be done in terms of when the event originated or how many components have processed it.  But either way being able to detect that an events lifetime exceeds what is expected might aid with detecting cases where an event is stuck in an infinite loop.

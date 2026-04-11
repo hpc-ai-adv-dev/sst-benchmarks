@@ -146,3 +146,10 @@ A (SST::Component)
  value = 7 (int)
  visited = 0 (int)
 ```
+
+## Thoughts and wishlist items
+
+### A metadebugger to establish invariants between models
+
+- In practice the separate model might not even be a matching SST model but could be another representation of the model.
+- Similiarly we may want the invariants to accept some level of fuzziness and only break if results differ beyond some epsilon.

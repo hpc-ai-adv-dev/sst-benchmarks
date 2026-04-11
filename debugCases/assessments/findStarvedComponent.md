@@ -75,3 +75,11 @@ TODO:
 - Update illustrating to show ring topology
 - Ideally we could run the simulation until end
 - Would be annoying to have to query every component indivually. I really want some sort of query like "show me all components where visited == 0".
+
+## Thoughts and wishlist items
+
+### Keep counters of events processed
+
+### Have a way to query if any component has not processed events
+
+### Have a way to query the component(s) that have processed the least (or most) events

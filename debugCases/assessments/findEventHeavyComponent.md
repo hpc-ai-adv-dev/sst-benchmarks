@@ -73,3 +73,7 @@ D (SST::Component)
 
 TODO:
 - The implementation arranges the nodes into a ring. Update the graphic to reflect this.
+
+## Thoughts and wishlist items
+
+### Keep counters of events processed

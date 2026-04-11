@@ -25,3 +25,11 @@ dot -Tpng wrongLink.dot > wrongLink.png
 ```
 
 In a real use case the situation there would likely be some other bug (like a misrouted message) that would lead the user to suspect there could be a topology issue.
+
+## Thoughts and wishlist items
+
+### Discovery of neighbors
+
+This point was also mentioned in the wrongPath case.
+
+### Emit the topology from within the debugger

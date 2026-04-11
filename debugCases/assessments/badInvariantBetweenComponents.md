@@ -99,3 +99,7 @@ When the simulation starts we have A.value =0, B.value = 10, and C.value = 10.
 Every timestep we increment A and B by 1 and C by 2 but at some point this doesn't happen. How do we detect when?
 Ideally I'd be able to set a kind of conditional watchpoint that references the values of other components.
 Absent that I could take a bisecting strategy to narrow down at what time this happens.
+
+## Thoughts and wishlist items
+
+### Specify an invariant, break when invalid

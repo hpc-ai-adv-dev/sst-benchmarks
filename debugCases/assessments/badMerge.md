@@ -15,7 +15,7 @@ C receives values from A and B and should merge them correctly, but it multiplie
 
 `./doit badMerge`
 
-## Approach 1 -- run to merge and print
+## Approach 1 -- run and print
 
 ```
 p A         # At startup we see A has an event
@@ -74,6 +74,15 @@ D (SST::Component)
  value = 20 (int)
  visited = 1 (int)
 ```
+
+## Thoughts and wishlist items
+
+### Stepping through individual events being processed
+
+In this case, events are processed in a certain order on the same time step and result in a bad merge and being able to step through the processing of the individual events would be useful.
+
+
+# TODOS AND NOTES 
 
 NOTES:
 - Ideally for this we would want to be able to examine the contents of incoming messages so we knew their values.

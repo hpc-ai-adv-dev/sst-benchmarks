@@ -92,3 +92,11 @@ G (SST::Component)
  value = 0 (int)
  visited = 1 (int)
 ```
+
+### Breaking on a component receiving on sending a number of messages
+
+This point was also seen in the duplicateSameTime use case.
+
+### Keeping a log of when events were sent from a component over time would be useful
+
+When examining network traffic we might want to get an overall picture of when messages sent peak or slow down. Having a way for the debugger to chart that out would be useful. 

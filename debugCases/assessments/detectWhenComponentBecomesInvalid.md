@@ -36,3 +36,7 @@ Added watchpoint #0
 Entering interactive mode at time 40000
   WP0: AC : A/valid ...
 ```
+
+## Thoughts and wishlist items
+
+### Printing the validity state of all components would be useful
