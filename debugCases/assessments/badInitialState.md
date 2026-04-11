@@ -9,15 +9,15 @@ Four unconnected components are intended to initialize to the same state, but C 
 
 ## To try it out:
 
-'''
+```
 sst --interactive-start badInitialState.py
-'''
+```
 
 -or-
 
-'''
+```
 ./doit badInitialState
-'''
+```
 
 ## Approach 1 -- print component statates on startup
 

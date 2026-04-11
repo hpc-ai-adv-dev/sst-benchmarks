@@ -15,7 +15,7 @@ A and B are linked twice instead of once.
 
 `./doit unexpectedDuplicateLink`
 
-## Approach 1 --
+## Approach 1 -- Use SST's dot output
 
 I don't know of any real way to detect this using the SST debugger. You can, however, visualize the topology using SST directly:
 

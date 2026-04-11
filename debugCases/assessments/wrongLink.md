@@ -15,7 +15,7 @@ The intended topology is A -> B, but A is connected to C instead.
 
 `./doit wrongLink`
 
-## Approach 1 --
+## Approach 1 -- Output DOT
 
 I don't know of any real way to detect this using the SST debugger. You can, however, visualize the topology using SST directly:
 

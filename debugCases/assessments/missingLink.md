@@ -15,7 +15,7 @@ The intended topology includes a B <-> C connection, but that link is absent.
 
 `./doit missingLink`
 
-## Approach 1 -- Use SST's dot output
+## Approach 1 -- Output DOT
 
 I don't know of any real way to detect this using the SST debugger. You can, however, visualize the topology using SST directly:
 
