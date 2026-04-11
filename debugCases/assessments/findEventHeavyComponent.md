@@ -18,6 +18,16 @@ The goal is to identify which component processes the most events; in this four-
 ## Approach 1 --
 
 ```
+run 100ns   # Run the simulation to termination
+p A         # A.visited = 2
+p B         # B.visited = 3, the most!
+p C         # C.visited = 1
+p D         # D.visited = 1
+```
+
+Let's now run this and observe the output from the SST debugger:
+
+```
 Entering interactive mode at time 0
 Interactive start at 0
 > run 100ns

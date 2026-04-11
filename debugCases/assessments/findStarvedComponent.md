@@ -18,6 +18,16 @@ The intended pattern is that all components should receive work, but one does no
 ## Approach 1 -- Run to completion, examine visited counts
 
 ```
+run 100ns  # Run to completion
+p A        # A.visited = 2
+p B        # B.visited = 3
+p C        # C.visited = 0, starving!
+p D        # D.visited = 2
+```
+
+Let's now run this and observe the output from the SST debugger:
+
+```
 Entering interactive mode at time 0
 Interactive start at 0
 > run 100ns
