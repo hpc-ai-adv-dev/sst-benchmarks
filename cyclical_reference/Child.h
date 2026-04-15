@@ -43,6 +43,8 @@ public:
     virtual std::string compute( std::string comp ) =0;
     virtual void handleEvent(SST::Event* ev) =0;
     virtual void sendEvent(SST::Event* ev) =0;
+
+    virtual void finish() =0;
     // Serialization
     basicSubComponentAPI() {};
     ImplementVirtualSerializable(SST::cyclical::basicSubComponentAPI);
@@ -75,6 +77,8 @@ public:
     std::string compute( std::string comp ) override;
     void handleEvent(SST::Event* ev) override;
     void sendEvent(SST::Event* ev) override;
+
+    virtual void finish() override;
     // serialization
     basicSubComponentIncrement() : basicSubComponentAPI() {};
     void serialize_order(SST::Core::Serialization::serializer& ser) override;

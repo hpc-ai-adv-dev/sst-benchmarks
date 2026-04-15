@@ -46,12 +46,13 @@ basicSubComponentIncrement::~basicSubComponentIncrement() { }
 
 int basicSubComponentIncrement::compute( int num )
 {
-    return num + amount;
+    return num + amount++;
+
 }
 
 std::string basicSubComponentIncrement::compute ( std::string comp )
 {
-    return "(" + comp + ")" + " + " + std::to_string(amount);
+    return "(" + comp + ")" + " + " + std::to_string(amount++);
 }
 
 void basicSubComponentIncrement::serialize_order(SST::Core::Serialization::serializer& ser) {
@@ -65,10 +66,16 @@ void basicSubComponentIncrement::handleEvent(SST::Event* ev) {
         dynamic_cast<SST::Interfaces::StringEvent*>(ev);
 
     int received_value = std::stoi(payloadEv->getString());
+    
     std::cout << "Received event with value " << received_value << " on link " << link_name << std::endl;
-    parent->out->output("SubComponent %s received event with received_value %d. Remaining: %d\n", getName().c_str(), received_value, this->parent->value);
+    parent->out->output("%s SubComponent of %s received event with value %d. Remaining on parent: %d. Subcomponent amount: %d\n", link_name.c_str(), getName().c_str(), received_value, this->parent->value, amount);
    
-    parent->continuePassing(ev);
+    int new_value = compute(received_value); // this will change this component's state
+
+    
+    SST::Interfaces::StringEvent* new_ev = new SST::Interfaces::StringEvent(std::to_string(new_value));
+    delete ev;
+    parent->continuePassing(new_ev);
     
 }
 
@@ -76,4 +83,8 @@ void basicSubComponentIncrement::sendEvent(SST::Event* ev) {
     std::cout << "Sending event with value " << dynamic_cast<SST::Interfaces::StringEvent*>(ev)->getString() << " on link " << link_name << std::endl;
     link->send(ev);
     std::cout << "Event sent with value " << dynamic_cast<SST::Interfaces::StringEvent*>(ev)->getString() << " on link " << link_name << std::endl;
+}
+
+void basicSubComponentIncrement::finish() {
+    parent->out->output("%s SubComponent of %s is finishing. Final amount: %d\n", link_name.c_str(), getName().c_str(), amount);
 }

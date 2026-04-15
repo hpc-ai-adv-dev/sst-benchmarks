@@ -87,6 +87,12 @@ void basicSubComponent_Component::setup()
     leftChild->sendEvent(event);
 }
 
+void basicSubComponent_Component::finish() {
+    out->output("Component %s is finishing. Final value: %d\n", getName().c_str(), this->value);
+    leftChild->finish();
+    rightChild->finish();
+}
+
 /*
  * Event handling
  * If we get the event we sent, print the result and tell SST that we're OK if the simulation ends
@@ -99,8 +105,12 @@ void basicSubComponent_Component::handleEvent(SST::Event* ev)
 }
 
 void basicSubComponent_Component::continuePassing(SST::Event* ev) {
-    std::cout << "Component " << getName() << " is passing the event along. Remaining value: " << this->value << std::endl;
-    this->value -= 1;
+    int event_value = std::stoi(dynamic_cast<SST::Interfaces::StringEvent*>(ev)->getString());
+
+    out->output("Component %s is continuing to pass the event. Remaining value: %d. Event value: %d\n", getName().c_str(), this->value, event_value);
+
+    this->value -= event_value;
+
     if (this->value <= 0) {
         registerReady();
     }

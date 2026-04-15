@@ -100,6 +100,8 @@ public:
     // We will use the 'setup' function from the simulation lifecycle to send our event
     virtual void setup() override;
 
+    virtual void finish() override;
+    
     // Event handler, called when an event is received on either link
     void handleEvent(SST::Event* ev);
 

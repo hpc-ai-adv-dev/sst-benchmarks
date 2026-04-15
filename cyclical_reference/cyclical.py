@@ -1,6 +1,9 @@
 import sst
 
+import random
 num_components = 10 
+
+random.seed(42) # Set the seed for reproducibility
 
 links = [] # List of link handlers
 for x in range(num_components):
@@ -12,8 +15,8 @@ for x in range(num_components):
 for x in range(num_components):
     component = sst.Component("component_" + str(x), "cyclical.basicSubComponent_comp")
 
-    # Have all components start with some number between 0 and 5
-    component.addParam("value", (x + 1) % 6)
+    # Have all components start with a large number
+    component.addParam("value", random.randint(1000, 10000))
 
     # Connect the components to each other in a ring
     component.addLink(links[x-1], "left", "10ns")
