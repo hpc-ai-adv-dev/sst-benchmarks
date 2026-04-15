@@ -16,7 +16,7 @@ for x in range(num_components):
     component = sst.Component("component_" + str(x), "cyclical.basicSubComponent_comp")
 
     # Have all components start with a large number
-    component.addParam("value", random.randint(1000, 10000))
+    component.addParam("value", random.randint(100, 1000))
 
     # Connect the components to each other in a ring
     component.addLink(links[x-1], "left", "10ns")

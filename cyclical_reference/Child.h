@@ -48,6 +48,8 @@ public:
     // Serialization
     basicSubComponentAPI() {};
     ImplementVirtualSerializable(SST::cyclical::basicSubComponentAPI);
+
+    basicSubComponent_Component* parent;
 };
 
 /*****************************************************************************************************/
@@ -80,7 +82,7 @@ public:
 
     virtual void finish() override;
     // serialization
-    basicSubComponentIncrement() : basicSubComponentAPI() {};
+    basicSubComponentIncrement() : basicSubComponentAPI(), amount(0), parent(nullptr), link_name(""), link(nullptr) {};
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
     ImplementSerializable(SST::cyclical::basicSubComponentIncrement);
 
@@ -89,6 +91,7 @@ private:
     basicSubComponent_Component * parent;
     std::string link_name;
     Link * link;
+
 };
 
 

@@ -107,6 +107,8 @@ void basicSubComponent_Component::handleEvent(SST::Event* ev)
 void basicSubComponent_Component::continuePassing(SST::Event* ev) {
     int event_value = std::stoi(dynamic_cast<SST::Interfaces::StringEvent*>(ev)->getString());
 
+    std::cout << "In continuePassing, out pointer is: " << out << std::endl;
+
     out->output("Component %s is continuing to pass the event. Remaining value: %d. Event value: %d\n", getName().c_str(), this->value, event_value);
 
     this->value -= event_value;
@@ -135,9 +137,6 @@ void basicSubComponent_Component::serialize_order(SST::Core::Serialization::seri
 
     SST_SER(out);
     SST_SER(value);
-
-    SST_SER(leftLink);
-    SST_SER(rightLink);
 
     SST_SER(leftChild);
     SST_SER(rightChild);

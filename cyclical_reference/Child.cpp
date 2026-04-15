@@ -59,6 +59,9 @@ void basicSubComponentIncrement::serialize_order(SST::Core::Serialization::seria
     SubComponent::serialize_order(ser);
 
     SST_SER(amount);
+    SST_SER(link_name);
+    SST_SER(parent);
+    SST_SER(link);
 }
 
 void basicSubComponentIncrement::handleEvent(SST::Event* ev) {
@@ -68,13 +71,22 @@ void basicSubComponentIncrement::handleEvent(SST::Event* ev) {
     int received_value = std::stoi(payloadEv->getString());
     
     std::cout << "Received event with value " << received_value << " on link " << link_name << std::endl;
-    parent->out->output("%s SubComponent of %s received event with value %d. Remaining on parent: %d. Subcomponent amount: %d\n", link_name.c_str(), getName().c_str(), received_value, this->parent->value, amount);
+    std::cout << "Computing new value with amount " << amount << std::endl;
+    std::cout << "Accessing parent: " << this->parent->value << std::endl;
+    std::cout << "ACcessing link name: " << link_name << std::endl;
+    std::cout << "Calling getName(): " << getName() << std::endl;
+    std::cout << "Using paret->out" << std::endl;
+    getSimulationOutput().output("string");
+    std::cout << "used parent->out";
+    getSimulationOutput().output("%s SubComponent of %s received event with value %d. Remaining on parent: %d. Subcomponent amount: %d\n", link_name.c_str(), getName().c_str(), received_value, this->parent->value, amount);
    
     int new_value = compute(received_value); // this will change this component's state
 
     
     SST::Interfaces::StringEvent* new_ev = new SST::Interfaces::StringEvent(std::to_string(new_value));
     delete ev;
+    // print the address of the parent pointer
+    std::cout << "Parent pointer address: " << parent << std::endl;
     parent->continuePassing(new_ev);
     
 }
@@ -86,5 +98,5 @@ void basicSubComponentIncrement::sendEvent(SST::Event* ev) {
 }
 
 void basicSubComponentIncrement::finish() {
-    parent->out->output("%s SubComponent of %s is finishing. Final amount: %d\n", link_name.c_str(), getName().c_str(), amount);
+    getSimulationOutput().output("%s SubComponent of %s is finishing. Final amount: %d\n", link_name.c_str(), getName().c_str(), amount);
 }

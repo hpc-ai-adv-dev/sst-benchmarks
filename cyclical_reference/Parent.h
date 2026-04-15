@@ -101,7 +101,7 @@ public:
     virtual void setup() override;
 
     virtual void finish() override;
-    
+
     // Event handler, called when an event is received on either link
     void handleEvent(SST::Event* ev);
 
@@ -119,10 +119,6 @@ public:
 
     // Input parameter: the value this component will send in its event
     int value;
-
-    // Links
-    SST::Link* leftLink;
-    SST::Link* rightLink;
 
     // SubComponent: Our compute unit
     SST::cyclical::basicSubComponentAPI* leftChild;
