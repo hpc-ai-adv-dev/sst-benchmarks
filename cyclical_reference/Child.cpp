@@ -19,7 +19,9 @@
 #include <sst/core/sst_config.h>
 
 #include "Child.h"
+#include "Parent.h"
 
+#include <sst/core/interfaces/stringEvent.h>
 
 using namespace SST;
 using namespace SST::cyclical;
@@ -35,6 +37,9 @@ basicSubComponentIncrement::basicSubComponentIncrement(ComponentId_t id, Params&
     : basicSubComponentAPI(id, params, parent, link_name), parent(parent), link_name(link_name)
 {
     amount = params.find<int>("amount",  1);
+    link = configureLink(link_name, new Event::Handler2<basicSubComponentIncrement, &basicSubComponentIncrement::handleEvent>(this));
+        sst_assert(link, CALL_INFO, -1,
+                "Error: SubComponent %s has an incorrectly configured link on port '%s'\n", getName().c_str(), link_name.c_str());
 }
 
 basicSubComponentIncrement::~basicSubComponentIncrement() { }
@@ -53,4 +58,22 @@ void basicSubComponentIncrement::serialize_order(SST::Core::Serialization::seria
     SubComponent::serialize_order(ser);
 
     SST_SER(amount);
+}
+
+void basicSubComponentIncrement::handleEvent(SST::Event* ev) {
+    SST::Interfaces::StringEvent* payloadEv = 
+        dynamic_cast<SST::Interfaces::StringEvent*>(ev);
+
+    int received_value = std::stoi(payloadEv->getString());
+    std::cout << "Received event with value " << received_value << " on link " << link_name << std::endl;
+    parent->out->output("SubComponent %s received event with received_value %d. Remaining: %d\n", getName().c_str(), received_value, this->parent->value);
+   
+    parent->continuePassing(ev);
+    
+}
+
+void basicSubComponentIncrement::sendEvent(SST::Event* ev) {
+    std::cout << "Sending event with value " << dynamic_cast<SST::Interfaces::StringEvent*>(ev)->getString() << " on link " << link_name << std::endl;
+    link->send(ev);
+    std::cout << "Event sent with value " << dynamic_cast<SST::Interfaces::StringEvent*>(ev)->getString() << " on link " << link_name << std::endl;
 }

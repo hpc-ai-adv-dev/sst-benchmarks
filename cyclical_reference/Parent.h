@@ -85,7 +85,10 @@ public:
     // Parameter 2: Description of the purpose/use/etc. of the slot
     // Parameter 3: The API the subcomponent slot will use
     SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
-            { "children",
+            { "left_slot",
+            "The compute unit that this component will use to operate on events",
+            "SST::cyclical::basicSubComponentAPI" },
+            { "right_slot",
             "The compute unit that this component will use to operate on events",
             "SST::cyclical::basicSubComponentAPI" }
             )
@@ -100,13 +103,15 @@ public:
     // Event handler, called when an event is received on either link
     void handleEvent(SST::Event* ev);
 
+    void registerReady();
+    void continuePassing(SST::Event* ev);
+
 // Serialization
     basicSubComponent_Component();
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
     ImplementSerializable(SST::cyclical::basicSubComponent_Component)
 
-private:
-
+public:
     // SST Output object, for printing, error messages, etc.
     SST::Output* out;
 

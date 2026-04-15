@@ -1,18 +1,3 @@
-// Copyright 2009-2025 NTESS. Under the terms
-// of Contract DE-NA0003525 with NTESS, the U.S.
-// Government retains certain rights in this software.
-//
-// Copyright (c) 2009-2025, NTESS
-// All rights reserved.
-//
-// Portions are copyright of other developers:
-// See the file CONTRIBUTORS.TXT in the top level directory
-// of the distribution for more information.
-//
-// This file is part of the SST software package. For license
-// information, see the LICENSE file in the top level directory of the
-// distribution.
-
 #ifndef _BASIC_SUBCOMPONENT_SUBCOMPONENT_H
 #define _BASIC_SUBCOMPONENT_SUBCOMPONENT_H
 
@@ -55,8 +40,9 @@ public:
 
     // These are the two functions described in the comment above
     virtual int compute( int num ) =0;
-    virtual std::string compute( std::string comp) =0;
-
+    virtual std::string compute( std::string comp ) =0;
+    virtual void handleEvent(SST::Event* ev) =0;
+    virtual void sendEvent(SST::Event* ev) =0;
     // Serialization
     basicSubComponentAPI() {};
     ImplementVirtualSerializable(SST::cyclical::basicSubComponentAPI);
@@ -87,7 +73,8 @@ public:
 
     int compute( int num) override;
     std::string compute( std::string comp ) override;
-
+    void handleEvent(SST::Event* ev) override;
+    void sendEvent(SST::Event* ev) override;
     // serialization
     basicSubComponentIncrement() : basicSubComponentAPI() {};
     void serialize_order(SST::Core::Serialization::serializer& ser) override;

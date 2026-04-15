@@ -37,25 +37,20 @@ basicSubComponent_Component::basicSubComponent_Component(ComponentId_t id, Param
     value = params.find<int>("value", 0, found);
     sst_assert(found, CALL_INFO, -1,
             "Error: The parameter 'value' is a required parameter and was not found in the input configuration\n");
-
+    
     // Configure our links to call our event handler when an event arrives
-    leftLink = configureLink("left", new Event::Handler2<basicSubComponent_Component, &basicSubComponent_Component::handleEvent>(this));
-    rightLink = configureLink("right", new Event::Handler2<basicSubComponent_Component, &basicSubComponent_Component::handleEvent>(this));
+    //leftLink = configureLink("left", new Event::Handler2<basicSubComponent_Component, &basicSubComponent_Component::handleEvent>(this));
+    //rightLink = configureLink("right", new Event::Handler2<basicSubComponent_Component, &basicSubComponent_Component::handleEvent>(this));
 
-    // Check that the links were configured correctly
-    sst_assert(leftLink, CALL_INFO, -1,
-            "Error: Component %s has an incorrectly configured link on port 'left'\n", getName().c_str());
-    sst_assert(rightLink, CALL_INFO, -1,
-            "Error: Component %s has an incorrectly configured link on port 'right'\n", getName().c_str());
 
     /****** Load a SubComponent in two steps ******/
-
+    std::cout << "Loading subcomponents for component " << getName() << std::endl;
     // 1. Check with the input configuration to see if the user put a subcomponent in our subcomponent slot
     leftChild = loadAnonymousSubComponent<basicSubComponentAPI>("cyclical.basicSubComponentIncrement",
-                "children", 0, ComponentInfo::SHARE_NONE, params, this, "left");
+                "left_slot", 0, ComponentInfo::SHARE_PORTS, params, this, "left");
     rightChild = loadAnonymousSubComponent<basicSubComponentAPI>("cyclical.basicSubComponentIncrement",
-                "children", 1, ComponentInfo::SHARE_NONE, params, this, "right");
-
+                "right_slot", 0, ComponentInfo::SHARE_PORTS, params, this, "right");
+    std::cout << "Finished loading subcomponents for component " << getName() << std::endl;
     /****** SubComponent loaded, almost done with construction ******/
 
     // Tell the simulation not to end until we're ready
@@ -89,7 +84,7 @@ void basicSubComponent_Component::setup()
     SST::Event* event = new SST::Interfaces::StringEvent("0");
 
     // Send our event
-    leftLink->send(event);
+    leftChild->sendEvent(event);
 }
 
 /*
@@ -100,19 +95,21 @@ void basicSubComponent_Component::setup()
 
 void basicSubComponent_Component::handleEvent(SST::Event* ev)
 {
-    SST::Interfaces::StringEvent* payloadEv = 
-        dynamic_cast<SST::Interfaces::StringEvent*>(ev);
+   out->output("Component %s received an event\n", getName().c_str());
+}
 
-    int received_value = std::stoi(payloadEv->getString());
-    out->output("Component %s received event with received_value %d. Remaining: %d\n", getName().c_str(), received_value, this->value);
-    leftLink->send(ev);
+void basicSubComponent_Component::continuePassing(SST::Event* ev) {
+    std::cout << "Component " << getName() << " is passing the event along. Remaining value: " << this->value << std::endl;
     this->value -= 1;
     if (this->value <= 0) {
-        out->output("Component %s is ready to end simulation\n", getName().c_str());
-        primaryComponentOKToEndSim();
+        registerReady();
     }
+    leftChild->sendEvent(ev);
+}
 
-    
+void basicSubComponent_Component::registerReady() {
+    out->output("Component %s is ready to end simulation\n", getName().c_str());
+    primaryComponentOKToEndSim();
 }
 
 /*
