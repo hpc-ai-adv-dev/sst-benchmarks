@@ -51,8 +51,10 @@ basicSubComponent_Component::basicSubComponent_Component(ComponentId_t id, Param
     /****** Load a SubComponent in two steps ******/
 
     // 1. Check with the input configuration to see if the user put a subcomponent in our subcomponent slot
-    computeUnit = loadAnonymousSubComponent<basicSubComponentAPI>("cyclical.basicSubComponentIncrement",
-                "computeUnit", 0, ComponentInfo::SHARE_NONE, params);
+    leftChild = loadAnonymousSubComponent<basicSubComponentAPI>("cyclical.basicSubComponentIncrement",
+                "children", 0, ComponentInfo::SHARE_NONE, params, this, "left");
+    rightChild = loadAnonymousSubComponent<basicSubComponentAPI>("cyclical.basicSubComponentIncrement",
+                "children", 1, ComponentInfo::SHARE_NONE, params, this, "right");
 
     /****** SubComponent loaded, almost done with construction ******/
 
@@ -130,5 +132,6 @@ void basicSubComponent_Component::serialize_order(SST::Core::Serialization::seri
     SST_SER(leftLink);
     SST_SER(rightLink);
 
-    SST_SER(computeUnit);
+    SST_SER(leftChild);
+    SST_SER(rightChild);
 }

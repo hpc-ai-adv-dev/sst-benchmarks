@@ -31,8 +31,8 @@ using namespace SST::cyclical;
 
 // basicSubComponentIncrement
 
-basicSubComponentIncrement::basicSubComponentIncrement(ComponentId_t id, Params& params) :
-    basicSubComponentAPI(id, params)
+basicSubComponentIncrement::basicSubComponentIncrement(ComponentId_t id, Params& params, basicSubComponent_Component* parent, std::string link_name) 
+    : basicSubComponentAPI(id, params, parent, link_name), parent(parent), link_name(link_name)
 {
     amount = params.find<int>("amount",  1);
 }

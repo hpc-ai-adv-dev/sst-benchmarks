@@ -39,11 +39,8 @@ namespace cyclical {
 
 /*****************************************************************************************************/
 
-// SubComponent API for a SubComponent that has two functions:
-// 1) It does a specific computation on a number
-//      Ex. Given 5, if the computation is 'x4', the subcomponent should return 20
-// 2) Given a formula string, it will update the formula with the computation it does
-//      Ex. Given '3+2', if the computation is 'x4', the subcomponent should return '(3+2)x4'
+class basicSubComponent_Component;
+
 
 class basicSubComponentAPI : public SST::SubComponent
 {
@@ -51,9 +48,9 @@ public:
     /*
      * Register this API with SST so that SST can match subcomponent slots to subcomponents
      */
-    SST_ELI_REGISTER_SUBCOMPONENT_API(SST::cyclical::basicSubComponentAPI)
+    SST_ELI_REGISTER_SUBCOMPONENT_API(SST::cyclical::basicSubComponentAPI, basicSubComponent_Component*, std::string)
 
-    basicSubComponentAPI(ComponentId_t id, Params& params) : SubComponent(id) { }
+    basicSubComponentAPI(ComponentId_t id, Params& params, basicSubComponent_Component* parent, std::string link_name) : SubComponent(id) { }
     virtual ~basicSubComponentAPI() { }
 
     // These are the two functions described in the comment above
@@ -85,7 +82,7 @@ public:
     // Other ELI macros as needed for parameters, ports, statistics, and subcomponent slots
     SST_ELI_DOCUMENT_PARAMS( { "amount", "Amount to increment by", "1" } )
 
-    basicSubComponentIncrement(ComponentId_t id, Params& params);
+    basicSubComponentIncrement(ComponentId_t id, Params& params, basicSubComponent_Component* parent, std::string link_name);
     ~basicSubComponentIncrement();
 
     int compute( int num) override;
@@ -98,6 +95,9 @@ public:
 
 private:
     int amount;
+    basicSubComponent_Component * parent;
+    std::string link_name;
+    Link * link;
 };
 
 

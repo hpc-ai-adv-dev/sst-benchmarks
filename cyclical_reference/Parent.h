@@ -85,7 +85,7 @@ public:
     // Parameter 2: Description of the purpose/use/etc. of the slot
     // Parameter 3: The API the subcomponent slot will use
     SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
-            { "compute_unit",
+            { "children",
             "The compute unit that this component will use to operate on events",
             "SST::cyclical::basicSubComponentAPI" }
             )
@@ -118,7 +118,8 @@ private:
     SST::Link* rightLink;
 
     // SubComponent: Our compute unit
-    SST::cyclical::basicSubComponentAPI* computeUnit;
+    SST::cyclical::basicSubComponentAPI* leftChild;
+    SST::cyclical::basicSubComponentAPI* rightChild;
 
 };
 
