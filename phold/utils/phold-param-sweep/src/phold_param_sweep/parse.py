@@ -10,6 +10,7 @@ import typing as t
 
 from phold_param_sweep import errors as _errors
 from phold_param_sweep._core.launch.dry_run import DryRunLaunch as _DryRunLaunch
+from phold_param_sweep._core.launch.flux import FluxBulkSubmit as _FluxBulkSubmit
 from phold_param_sweep._core.parse import strategies as _strats
 from phold_param_sweep._core.parse.builder import (
     ParamSweepParserBuilder as _ParamSweepParserBuilder,
@@ -21,7 +22,7 @@ if t.TYPE_CHECKING:
 
 _LAUNCH_METHODS: dict[
     str, c_abc.Callable[[pathlib.Path, pathlib.Path], LaunchContext]
-] = {"dry-run": _DryRunLaunch}
+] = {"dry-run": _DryRunLaunch, "flux-bulksubmit": _FluxBulkSubmit}
 
 _LOGGER = logging.getLogger(__name__)
 
