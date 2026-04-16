@@ -1,30 +1,13 @@
 #ifndef _BASIC_SUBCOMPONENT_SUBCOMPONENT_H
 #define _BASIC_SUBCOMPONENT_SUBCOMPONENT_H
 
-/*
- * This is an example of a simple subcomponent that can take a number and do a computation on it.
- * This file happens to have multiple classes declaring both the SubComponentAPI
- * as well as a few subcomponents that implement the API.
- *
- *  Classes:
- *      basicSubComponentAPI - inherits from SST::SubComponent. Defines the API for the compute units.
- *      basicSubComponentIncrement - inherits from basicSubComponentAPI. A compute unit that increments the input.
- *      basicSubComponentDecrement - inherits from basicSubComponentAPI. A compute unit that decrements the input.
- *      basicSubComponentMultiply - inherits from basicSubComponentAPI. A compute unit that multiplies the input.
- *      basicSubComponentDivide - inherits from basicSubComponentAPI. A compute unit that divides the input.
- *
- * See 'basicSubComponent_component.h' for more information on how the example simulation works
- */
-
 #include <sst/core/subcomponent.h>
 #include <sst/core/sst_config.h>
 
 namespace SST {
 namespace cyclical {
 
-/*****************************************************************************************************/
-
-class basicSubComponent_Component;
+class ParentComponent;
 
 
 class basicSubComponentAPI : public SST::SubComponent
@@ -33,69 +16,55 @@ public:
     /*
      * Register this API with SST so that SST can match subcomponent slots to subcomponents
      */
-    SST_ELI_REGISTER_SUBCOMPONENT_API(SST::cyclical::basicSubComponentAPI, basicSubComponent_Component*, std::string)
+    SST_ELI_REGISTER_SUBCOMPONENT_API(SST::cyclical::basicSubComponentAPI, ParentComponent*, std::string)
 
-    basicSubComponentAPI(ComponentId_t id, Params& params, basicSubComponent_Component* parent, std::string link_name) : SubComponent(id) { }
+    basicSubComponentAPI(ComponentId_t id, Params& params, ParentComponent* parent, std::string link_name) : SubComponent(id) { }
     virtual ~basicSubComponentAPI() { }
 
-    // These are the two functions described in the comment above
-    virtual int compute( int num ) =0;
-    virtual std::string compute( std::string comp ) =0;
     virtual void handleEvent(SST::Event* ev) =0;
     virtual void sendEvent(SST::Event* ev) =0;
-
     virtual void finish() =0;
+
     // Serialization
     basicSubComponentAPI() {};
     ImplementVirtualSerializable(SST::cyclical::basicSubComponentAPI);
-
-    basicSubComponent_Component* parent;
 };
 
-/*****************************************************************************************************/
-
-/* SubComponent that does an 'increment' computation */
-class basicSubComponentIncrement : public basicSubComponentAPI {
+class basicSubComponent : public basicSubComponentAPI {
 public:
 
     // Register this subcomponent with SST and tell SST that it implements the 'basicSubComponentAPI' API
     SST_ELI_REGISTER_SUBCOMPONENT(
-            basicSubComponentIncrement,     // Class name
+            basicSubComponent,     // Class name
             "cyclical",         // Library name, the 'lib' in SST's lib.name format
-            "basicSubComponentIncrement",   // Name used to refer to this subcomponent, the 'name' in SST's lib.name format
+            "basicSubComponent",   // Name used to refer to this subcomponent, the 'name' in SST's lib.name format
             SST_ELI_ELEMENT_VERSION(1,0,0), // A version number
             "SubComponent that increments a value", // Description
             SST::cyclical::basicSubComponentAPI // Fully qualified name of the API this subcomponent implements
-                                                            // A subcomponent can implment an API from any library
             )
 
     // Other ELI macros as needed for parameters, ports, statistics, and subcomponent slots
     SST_ELI_DOCUMENT_PARAMS( { "amount", "Amount to increment by", "1" } )
 
-    basicSubComponentIncrement(ComponentId_t id, Params& params, basicSubComponent_Component* parent, std::string link_name);
-    ~basicSubComponentIncrement();
+    basicSubComponent(ComponentId_t id, Params& params, ParentComponent* parent, std::string link_name);
+    ~basicSubComponent();
 
-    int compute( int num) override;
-    std::string compute( std::string comp ) override;
     void handleEvent(SST::Event* ev) override;
     void sendEvent(SST::Event* ev) override;
-
     virtual void finish() override;
+
     // serialization
-    basicSubComponentIncrement() : basicSubComponentAPI(), amount(0), parent(nullptr), link_name(""), link(nullptr) {};
+    basicSubComponent() : basicSubComponentAPI(), amount(0), parent(nullptr), link_name(""), link(nullptr) {};
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
-    ImplementSerializable(SST::cyclical::basicSubComponentIncrement);
+    ImplementSerializable(SST::cyclical::basicSubComponent);
 
 private:
     int amount;
-    basicSubComponent_Component * parent;
+    ParentComponent * parent;
     std::string link_name;
     Link * link;
 
 };
-
-
-/*****************************************************************************************************/
 
 } } /* Namspaces */
 

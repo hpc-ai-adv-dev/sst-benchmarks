@@ -13,8 +13,8 @@
 // information, see the LICENSE file in the top level directory of the
 // distribution.
 
-#ifndef _BASICSUBCOMPONENT_COMPONENT_H
-#define _BASICSUBCOMPONENT_COMPONENT_H
+#ifndef _ParentComponent_H
+#define _ParentComponent_H
 
 /*
  * This example demonstrates the use of subcomponents.
@@ -49,19 +49,12 @@ namespace SST {
 namespace cyclical {
 
 
-class basicSubComponent_Component : public SST::Component
+class ParentComponent : public SST::Component
 {
 public:
 
-/*
- *  SST Registration macros register Components with the SST Core and
- *  document their parameters, ports, etc.
- *  SST_ELI_REGISTER_COMPONENT is required, the documentation macros
- *  are only required if relevant
- */
-    // REGISTER THIS COMPONENT INTO THE ELEMENT LIBRARY
     SST_ELI_REGISTER_COMPONENT(
-        basicSubComponent_Component,        // Component class
+        ParentComponent,        // Component class
         "cyclical",             // Component library (for Python/library lookup)
         "basicSubComponent_comp",           // Component name (for Python/library lookup)
         SST_ELI_ELEMENT_VERSION(1,0,0),     // Version of the component (not related to SST version)
@@ -70,7 +63,7 @@ public:
     )
 
     SST_ELI_DOCUMENT_PARAMS(
-        { "value",      "Integer starting value for this component", NULL }
+        { "value",      "Integer starting value for this component. Counts down throughout the simulation.", NULL }
     )
 
     SST_ELI_DOCUMENT_PORTS(
@@ -93,34 +86,30 @@ public:
             "SST::cyclical::basicSubComponentAPI" }
             )
 
-    // Constructor & destructor
-    basicSubComponent_Component(SST::ComponentId_t id, SST::Params& params);
-    ~basicSubComponent_Component();
+    ParentComponent(SST::ComponentId_t id, SST::Params& params);
+    ~ParentComponent();
 
-    // We will use the 'setup' function from the simulation lifecycle to send our event
     virtual void setup() override;
 
     virtual void finish() override;
 
-    // Event handler, called when an event is received on either link
-    void handleEvent(SST::Event* ev);
+    /*
+        Decreases our counter field by the value of the event and passes 
+        the event along to the next component. Importantly, this does not 
+        call send itself. It passes that on to one of the components.
+    */
+    void computeAndSend(SST::Event* ev);
 
-    void registerReady();
-    void continuePassing(SST::Event* ev);
 
-// Serialization
-    basicSubComponent_Component();
+    ParentComponent();
     void serialize_order(SST::Core::Serialization::serializer& ser) override;
-    ImplementSerializable(SST::cyclical::basicSubComponent_Component)
+    ImplementSerializable(SST::cyclical::ParentComponent)
 
 public:
-    // SST Output object, for printing, error messages, etc.
     SST::Output* out;
 
-    // Input parameter: the value this component will send in its event
     int value;
 
-    // SubComponent: Our compute unit
     SST::cyclical::basicSubComponentAPI* leftChild;
     SST::cyclical::basicSubComponentAPI* rightChild;
 
@@ -129,4 +118,4 @@ public:
 } // namespace cyclical
 } // namespace SST
 
-#endif /* _BASICSUBCOMPONENT_COMPONENT_H */
+#endif /* _ParentComponent_H */

@@ -24,115 +24,67 @@
 using namespace SST;
 using namespace SST::cyclical;
 
-/*
- * During construction this components parses its parameter, configures its links, and loads its compute unit subcomponent
- */
-basicSubComponent_Component::basicSubComponent_Component(ComponentId_t id, Params& params) : Component(id) {
+ParentComponent::ParentComponent(ComponentId_t id, Params& params) : Component(id) {
 
-    // SST Output Object
     out = new Output("", 1, 0, Output::STDOUT);
 
-    // Get the parameter, check if it was found or not and if not, return an error
     bool found;
     value = params.find<int>("value", 0, found);
     sst_assert(found, CALL_INFO, -1,
-            "Error: The parameter 'value' is a required parameter and was not found in the input configuration\n");
+            "Error: The parameter 'value' is a required parameter and was not found "
+            "in the input configuration\n");
     
-    // Configure our links to call our event handler when an event arrives
-    //leftLink = configureLink("left", new Event::Handler2<basicSubComponent_Component, &basicSubComponent_Component::handleEvent>(this));
-    //rightLink = configureLink("right", new Event::Handler2<basicSubComponent_Component, &basicSubComponent_Component::handleEvent>(this));
-
-
-    /****** Load a SubComponent in two steps ******/
-    std::cout << "Loading subcomponents for component " << getName() << std::endl;
-    // 1. Check with the input configuration to see if the user put a subcomponent in our subcomponent slot
-    leftChild = loadAnonymousSubComponent<basicSubComponentAPI>("cyclical.basicSubComponentIncrement",
+    leftChild = loadAnonymousSubComponent<basicSubComponentAPI>("cyclical.basicSubComponent",
                 "left_slot", 0, ComponentInfo::SHARE_PORTS, params, this, "left");
-    rightChild = loadAnonymousSubComponent<basicSubComponentAPI>("cyclical.basicSubComponentIncrement",
+    rightChild = loadAnonymousSubComponent<basicSubComponentAPI>("cyclical.basicSubComponent",
                 "right_slot", 0, ComponentInfo::SHARE_PORTS, params, this, "right");
-    std::cout << "Finished loading subcomponents for component " << getName() << std::endl;
-    /****** SubComponent loaded, almost done with construction ******/
 
-    // Tell the simulation not to end until we're ready
     registerAsPrimaryComponent();
     primaryComponentDoNotEndSim();
 }
 
 
-/*
- * Destructor, clean up our output
- * We should not clean up our subcomponent - SST will do that
- */
-basicSubComponent_Component::~basicSubComponent_Component()
+ParentComponent::~ParentComponent()
 {
     delete out;
 }
 
-
-/*
- * Setup function to send our event in preparation for simulation
- * Because the simulation has no clocks and SST will exit if no clocks and no events exist in the system,
- * we need to begin the simulation with an event.
- *
- * This function is called by SST on each component just prior to simulation start
- * It is *not* called on subcomponents automatically so we should manually call it on subcomponents that need it
- * Ours don't so we'll skip that step
- */
-void basicSubComponent_Component::setup()
+void ParentComponent::setup()
 { 
     // Create the event we'll send
     SST::Event* event = new SST::Interfaces::StringEvent("0");
 
-    // Send our event
+    // Send our event through the left child.
     leftChild->sendEvent(event);
 }
 
-void basicSubComponent_Component::finish() {
-    out->output("Component %s is finishing. Final value: %d\n", getName().c_str(), this->value);
+void ParentComponent::finish() {
+    out->output("Component %s is finishing. Final value: %d\n",
+         getName().c_str(), this->value);
     leftChild->finish();
     rightChild->finish();
 }
 
-/*
- * Event handling
- * If we get the event we sent, print the result and tell SST that we're OK if the simulation ends
- * If we get an event from someone else, pass it to our compute unit, update the event, and forward it to the left
- */
-
-void basicSubComponent_Component::handleEvent(SST::Event* ev)
-{
-   out->output("Component %s received an event\n", getName().c_str());
-}
-
-void basicSubComponent_Component::continuePassing(SST::Event* ev) {
+void ParentComponent::computeAndSend(SST::Event* ev) {
     int event_value = std::stoi(dynamic_cast<SST::Interfaces::StringEvent*>(ev)->getString());
 
-    std::cout << "In continuePassing, out pointer is: " << out << std::endl;
-
-    out->output("Component %s is continuing to pass the event. Remaining value: %d. Event value: %d\n", getName().c_str(), this->value, event_value);
+    out->output("Component %s is continuing to pass the event."
+        "Remaining value: %d. Event value: %d\n", getName().c_str(), 
+        this->value, event_value);
 
     this->value -= event_value;
 
     if (this->value <= 0) {
-        registerReady();
+        out->output("Component %s is ready to end simulation\n", getName().c_str());
+        primaryComponentOKToEndSim();
     }
     leftChild->sendEvent(ev);
 }
 
-void basicSubComponent_Component::registerReady() {
-    out->output("Component %s is ready to end simulation\n", getName().c_str());
-    primaryComponentOKToEndSim();
-}
+ParentComponent::ParentComponent() : Component() {}
 
-/*
- * Default constructor
-*/
-basicSubComponent_Component::basicSubComponent_Component() : Component() {}
 
-/*
- * Serialization function
-*/
-void basicSubComponent_Component::serialize_order(SST::Core::Serialization::serializer& ser) {
+void ParentComponent::serialize_order(SST::Core::Serialization::serializer& ser) {
     Component::serialize_order(ser);
 
     SST_SER(out);
