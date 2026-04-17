@@ -247,6 +247,7 @@ void Node::serialize_order(SST::Core::Serialization::serializer& ser)
     SST_SER(largeEventFraction);
     SST_SER(additionalData);
     SST_SER(recvCount);
+    SST_SER(componentComputeCount);
 
     // SST RNG has built-in serialization support
     SST_SER(rng);
