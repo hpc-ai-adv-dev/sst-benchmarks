@@ -109,7 +109,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=0,
         help=(
-            "Amount of additional computation to do as part of event handling, "
+            "Amount of additional artificial computation to do as part of event handling, "
             "as a count of random numbers to generate and assign to a volatile variable."
         ),
     )

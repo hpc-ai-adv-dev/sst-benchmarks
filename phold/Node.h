@@ -10,6 +10,14 @@
 #include <sst/dbg/SSTDebug.h>
 #endif
 
+#if defined(__clang__)
+    #define NO_UNROLL _Pragma("clang loop unroll(disable)")
+#elif defined(__GNUC__) && (__GNUC__ >= 8)
+    #define NO_UNROLL _Pragma("GCC unroll 1")
+#else
+    #define NO_UNROLL
+#endif
+
 class Node : public SST::Component {
 public:
     Node(SST::ComponentId_t id, SST::Params& params);

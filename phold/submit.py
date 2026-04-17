@@ -299,8 +299,9 @@ def generate_phold_args(node_counts=[1], thread_counts=[1], rank_counts=[1],
           Default is None (deterministic Cartesian product).
           
   Returns:
-      list[tuple[str, str, str]]: List of tuples, one per benchmark run, containing:
+      list[tuple[str, str, str, str]]: List of tuples, one per benchmark run, containing:
           - srun_args (str): srun command-line arguments (--nodes, --cpus-per-task, --ntasks-per-node)
+          - sst_args (str): sst command-line arguments (primarily thread count)
           - phold_args (str): PHOLD executable arguments (height, width, event density, etc.)
           - run_name (str): Unique identifier for the run based on all parameters
   """
@@ -313,14 +314,15 @@ def generate_phold_args(node_counts=[1], thread_counts=[1], rank_counts=[1],
   
   parameter_tuples = generate_parameter_list(args)
   
-  arg_tuples = [] # The triples that contain the srun arguments, phold script arguments, and the run name
+  arg_tuples = [] # The quadruples that contain the srun arguments, sst arguments, phold script arguments, and the run name
   for ((width, height, node_count, rank_count, thread_count), 
        (event_density, ring_size, time_to_run, small_payload, large_payload, 
         large_event_fraction, imbalance_factor, component_size, component_computation)) in parameter_tuples:
     srun_args = f"--nodes={node_count} --cpus-per-task={thread_count} --ntasks-per-node={rank_count}"
+    sst_args = f"--threads={thread_count}"
     phold_args = f"--height {height} --width {width} --eventDensity {event_density} --timeToRun {time_to_run}ns --numRings {ring_size} --smallPayload {small_payload} --largePayload {large_payload} --largeEventFraction {large_event_fraction} --imbalance-factor {imbalance_factor} --componentSize {component_size} --componentComputation {component_computation}"
     run_name = f"{name}_{node_count}_{rank_count}_{thread_count}_{width}_{height}_{event_density}_{ring_size}_{time_to_run}_{small_payload}_{large_payload}_{large_event_fraction}_{imbalance_factor}_{component_size}_{component_computation}"
-    arg_tuples.append((srun_args, phold_args, run_name))
+    arg_tuples.append((srun_args, sst_args, phold_args, run_name))
   return arg_tuples
 
 if __name__ == "__main__":
@@ -333,7 +335,8 @@ if __name__ == "__main__":
   parameters = generate_parameter_list(args)
 
   print("parameters: ", parameters)
-  for ((width, height, node_count, rank_count, thread_count), (event_density, ring_size, time_to_run, small_payload, large_payload, large_event_fraction, imbalance_factor, component_size, component_computation)) in parameters:
+  for ((width, height, node_count, rank_count, thread_count), 
+       (event_density, ring_size, time_to_run, small_payload, large_payload, large_event_fraction, imbalance_factor, component_size, component_computation)) in parameters:
     output_file = f"{args.name}_{node_count}_{rank_count}_{thread_count}_{width}_{height}_{event_density}_{ring_size}_{time_to_run}_{small_payload}_{large_payload}_{large_event_fraction}_{imbalance_factor}_{component_size}_{component_computation}"
     sbatch_portion = f"sbatch -N {node_count} -o {output_file}.out"
     command = f"{sbatch_portion} {script_dir}/dispatch.sh {node_count} {rank_count} {thread_count} {width} {height} {event_density} {ring_size} {time_to_run} {small_payload} {large_payload} {large_event_fraction} {imbalance_factor} {component_size} {component_computation} {output_file}"

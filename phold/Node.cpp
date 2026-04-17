@@ -144,6 +144,7 @@ SST::Interfaces::StringEvent* Node::createEvent()
 }
 
 void Node::componentCompute() {
+    #pragma NO_UNROLL
     for (int i = 0; i < componentComputeCount; i++) {
         computeSink = rng->generateNextUInt32();
     }
