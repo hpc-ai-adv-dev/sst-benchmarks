@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -x -e
+
+make clean
+if make; then
+  sst --output-dot=$1.dot --interactive-start ./runStory.py -- "$1"
+  dot -Tpng $1.dot > $1.png
+fi
