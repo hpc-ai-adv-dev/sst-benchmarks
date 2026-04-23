@@ -10,6 +10,8 @@
 #include <sst/dbg/SSTDebug.h>
 #endif
 
+// Used to disable compiler optimizations on artificial work 
+// loops used to simulation component computation.
 #if defined(__clang__)
     #define NO_UNROLL _Pragma("clang loop unroll(disable)")
 #elif defined(__GNUC__) && (__GNUC__ >= 8)
