@@ -16,7 +16,8 @@ largePayload=${10}
 largeEventFraction=${11}
 imbalanceFactor=${12}
 componentSize=${13}
-prefix=${14}
+componentComputation=${14}
+prefix=${15}
 
 tmpFile=${prefix}.tmp
 timeFile=${prefix}.time
@@ -24,9 +25,9 @@ outFile=${prefix}.err
 outDir=${prefix}_dir
 
 
-simFlags="--height $height --width $width --eventDensity $eventDensity --timeToRun ${timeToRun}ns --numRings $ringSize --smallPayload $smallPayload --largePayload $largePayload --largeEventFraction $largeEventFraction --imbalance-factor $imbalanceFactor --componentSize $componentSize"
+simFlags="--height $height --width $width --eventDensity $eventDensity --timeToRun ${timeToRun}ns --numRings $ringSize --smallPayload $smallPayload --largePayload $largePayload --largeEventFraction $largeEventFraction --imbalance-factor $imbalanceFactor --componentSize $componentSize --componentComputation $componentComputation"
 
-sstFlags="--num-threads $threadCount --print-timing-info=3 --parallel-load=SINGLE ${scriptDir}/phold_dist.py"
+sstFlags="--num-threads $threadCount --print-timing-info --parallel-load=SINGLE ${scriptDir}/phold_dist.py"
 
 srunPortion="srun --verbose --oom-kill-step=1 -N $nodeCount --cpus-per-task=$threadCount --ntasks-per-node=$ranksPerNode"
 
