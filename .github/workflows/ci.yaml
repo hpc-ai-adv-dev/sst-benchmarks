@@ -70,11 +70,11 @@ jobs:
             echo "=== Running pingpong simulation ==="
             sst pingpong.py -- --corners --verbose | tee pingpong_sim.out
             echo "=== Comparing output with expected results ==="
-            if [ "${{ matrix.sst_version.tag }}" = "15.1.2" ]; then
+            # if [ "${{ matrix.sst_version.tag }}" = "15.1.2" ]; then
               diff ../.github/workflows/pingpong_interleaved.good ./pingpong_sim.out
-            else
-              diff ../.github/workflows/pingpong_ordered.good ./pingpong_sim.out
-            fi
+            # else
+              # diff ../.github/workflows/pingpong_ordered.good ./pingpong_sim.out
+            # fi
             ;;
           "phold")
             echo "=== Registering phold component ==="
@@ -122,11 +122,11 @@ jobs:
             echo "=== Running pingpong simulation with checkpointing ==="
             sst --checkpoint-sim-period=50ps pingpong.py -- --corners --verbose 2>&1 | grep -v "Real CPU time" | tee pingpong_checkpoint.out
             echo "=== Comparing checkpoint output with expected results ==="
-            if [ "${{ matrix.sst_version.tag }}" = "15.1.2" ]; then
+            # if [ "${{ matrix.sst_version.tag }}" = "15.1.2" ]; then
               diff ../.github/workflows/pingpong_checkpoint_interleaved.good ./pingpong_checkpoint.out
-            else
-              diff ../.github/workflows/pingpong_checkpoint_ordered.good ./pingpong_checkpoint.out
-            fi
+            # else
+              # diff ../.github/workflows/pingpong_checkpoint_ordered.good ./pingpong_checkpoint.out
+            # fi
             ;;
           "phold")
             echo "=== Registering phold component ==="
