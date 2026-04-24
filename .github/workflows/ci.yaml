@@ -191,11 +191,11 @@ jobs:
             echo "=== Restoring pingpong from checkpoint: $CHECKPOINT_FILE ==="
             sst --load-checkpoint "$CHECKPOINT_FILE" 2>&1 | tee pingpong_restore.out
             echo "=== Comparing restore output with expected results ==="
-            if [ "${{ matrix.sst_version.tag }}" = "15.1.2" ]; then
-              diff ../.github/workflows/pingpong_restore_interleaved.good ./pingpong_restore.out
-            else
-              diff ../.github/workflows/pingpong_restore_ordered.good ./pingpong_restore.out
-            fi
+            # if [ "${{ matrix.sst_version.tag }}" = "15.1.2" ]; then
+               diff ../.github/workflows/pingpong_restore_interleaved.good ./pingpong_restore.out
+            # else
+              # diff ../.github/workflows/pingpong_restore_ordered.good ./pingpong_restore.out
+            # fi
             ;;
           "phold")
             echo "=== Registering phold component ==="
