@@ -22,6 +22,7 @@ OnDemandCell::OnDemandCell( SST::ComponentId_t id, SST::Params& params )
   clockHandler = new SST::Clock::Handler2<OnDemandCell, &OnDemandCell::clockTick>(this);
   clockTc = registerClock("2s",   clockHandler);
 
+  // TODO: With SST 17 this should renamed to Handler instead of Handler2
   nwPort = configureLink("nwPort", new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
   nPort  = configureLink("nPort",  new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
   nePort = configureLink("nePort", new SST::Event::Handler2<OnDemandCell, &OnDemandCell::handleEvent>(this));
@@ -46,11 +47,6 @@ void OnDemandCell::setup() {
 void OnDemandCell::handleEvent(SST::Event *ev) {
  if(!clockOn) {
     clockOn = true;
-    // TODO: reregisterClock changes in SST 15.0 to use a different signature
-    //       that doesn't exist in SST 14.0, so we need to check the version
-    //       and use the appropriate function, e.g.:
-    // reregisterClock(*clockTc, clockHandler); // SST 15.0
-    // reregisterClock(clockTc, clockHandler); // SST 14.0
     reregisterClock(clockTc, clockHandler);
   }
   aliveNeighbors += 1;
@@ -93,11 +89,6 @@ bool OnDemandCell::clockTick(SST::Cycle_t currentCycle) {
   update();
   if(!isAlive && clockOn) {
     clockOn = false;
-    // TODO: unregisterClock changes in SST 15.0 to use a different signature
-    //       that doesn't exist in SST 14.0, so we need to check the version
-    //       and use the appropriate function, e.g.:
-    // unregisterClock(*clockTc, clockHandler); // SST 15.0
-    // unregisterClock(clockTc, clockHandler); // SST 14.0
     unregisterClock(clockTc, clockHandler);
   }
   report();
