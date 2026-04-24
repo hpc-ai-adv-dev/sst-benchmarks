@@ -56,7 +56,7 @@ class OnDemandCell : public SST::Component {
     bool isAlive, clockOn;
     int aliveNeighbors;
     SST::Link *nwPort, *nPort, *nePort, *wPort, *ePort, *swPort, *sPort, *sePort;
-    SST::TimeConverter *clockTc;
+    SST::TimeConverter clockTc;
     SST::Clock::Handler2<OnDemandCell, &OnDemandCell::clockTick> *clockHandler;
 };
 
