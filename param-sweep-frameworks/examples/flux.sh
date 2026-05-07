@@ -6,7 +6,7 @@ HERE="$(dirname $(realpath -L ${0}))"
 PKG_ROOT="$(dirname ${HERE})"
 REPO_ROOT="$(dirname ${PKG_ROOT})"
 
-dragon src/phold_param_sweep/_core/entrypoints/sweep.py \
+sweep                                                   \
     --launch-method flux-py-api                         \
     --simulation "${REPO_ROOT}/phold/phold_dist.py"     \
     product                                             \
