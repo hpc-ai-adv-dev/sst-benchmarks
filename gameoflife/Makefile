@@ -18,4 +18,4 @@ install:
 clean:
 	rm -rf libgol.so
 	sst-register -u libgol
-	rm *.json *.tmp *.time *.out
+	rm -f *.json *.tmp *.time *.out
