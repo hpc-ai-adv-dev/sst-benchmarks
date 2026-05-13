@@ -113,13 +113,11 @@ D (SST::Component)
  visited = 0 (int)
 ```
 
-## Approach 1 -- tracepoints
+## Approach 2 -- tracepoints
 
-A question: should the debugger run until just before or just after events are processed?
+[TODO]
 
 ## Thoughts and wishlist items
-
-### Many points overlap with the wrongPath use case
 
 ### Being able to assess event lifetime would be useful
 

@@ -22,7 +22,9 @@ At the end of this document we present a number of "wishlist" items suggesting p
 
 ## Approach 1 -- step and print
 
-In this approach, we manually step through the simulation one nanosecond at a time, checking each component's `visited` counter after each step. We run 2ns initially to ensure the first event is fully processed, then step 1ns at a time, printing the state of **A**, **B**, and **C**, in turn. When **C**'s counter turns out to be 0k, we examine **B**'s other neighbor **D**'s and see that it is nonzero, revealing how the event was misrouted.
+In this approach, we manually step through the simulation one nanosecond at a time, checking each component's `visited` counter after each step. We run 2ns initially to ensure the first event is fully processed, then step 1ns at a time, printing the state of **A**, **B**, and **C**, in turn. When **C**'s counter turns out to be zero, we examine **B**'s other neighbor **D**, and see that its visited counter is nonzero, revealing how the event was misrouted.
+
+Here's a script that illustrates this. We'll go through step, line-by-line observing the output:
 
 ```
 print A         # We see the event has been setup
@@ -54,7 +56,7 @@ A (SST::Component)
  visited = 1 (int)
 ```
 
-Next, we'll advance the simulation by 2ns and observe the state of **A**'s neighbor, **B**. This is necessary because although the event will be received by the next component on the next simulated nanosecond, the debugger stops before the event is processed. So we advance a second nanosecond before observing **B**:
+Next, we'll advance the simulation by 2ns and observe the state of **A**'s neighbor, **B**. Advancing by two, rather than one, nanosecond is is necessary because although the event will be received by **B** on timestep 1ns, the debugger stops before the event is processed. So we advance an additional nanosecond so we can observe the impact.
 
 ```
 > run 2ns
@@ -185,7 +187,7 @@ buf[0] BE @1000 (-) B/visited=0
 buf[1] AE @1000 (!) B/visited=1
 ```
 
-Trace 2 corresponds to component **C**, and again there are no samples. This is the key unexpected result: if the event had followed the intended path, we would expect to see `C.visited` change here.
+Trace 2 corresponds to component **C**, and again there are no samples. This is the key unexpected result: if the event had followed the intended path, we would expect to see `C.visited` changed here.
 
 ```
 > printTrace 2
@@ -203,7 +205,7 @@ buf[1] AE @2000 (!) D/visited=1
 
 ## Thoughts and wishlist items
 
-### A question: should the debugger run until just before or just after events are processed?
+### A question: should the debugger break before or after events are processed?
 
 In Approach 1, I observe that after SST's setup phase, component **A** has already been visited, which in this implementation is a side effect of creating the event. After a component receives the event, it increments its `visited` property to 1. However, although the link latency between components **A** and **B** is 1ns, I have to run the simulation for 2ns in order to observe that component **B** has received the event.
 

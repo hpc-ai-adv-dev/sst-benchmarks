@@ -23,3 +23,7 @@ One component should be noticeably slower at processing than the others; all nod
 TODO:
 - Update the image to show the ring topology.
 - I'm unsure how to verify this. I'm not sure the debugger as it exists today can help with this.
+
+## Thoughts and wishlist items
+
+[TODO]

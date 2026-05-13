@@ -384,4 +384,6 @@ Notes:
 
 ## Thoughts and wishlist items
 
-### Set an watch when two components diverge
+### Set a watch for when two components diverge
+
+[TODO]

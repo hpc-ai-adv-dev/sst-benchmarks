@@ -77,12 +77,14 @@ A (SST::Component)
  visited = 2 (int)
 ```
 
-## Approach 1 -- tracepoints
+## Approach 2 -- tracepoints
+
+[TODO]
 
 It would probably be good to use tracepoints to see when events get built at A and received by D.
 
 ## Thoughts and wishlist items
 
-### Many points overlap with the wrongPath use case
-
 ### Being able to break on receipt of an event would be useful
+
+[TODO]

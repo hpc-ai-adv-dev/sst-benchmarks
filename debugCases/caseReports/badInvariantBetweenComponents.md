@@ -103,3 +103,5 @@ Absent that I could take a bisecting strategy to narrow down at what time this h
 ## Thoughts and wishlist items
 
 ### Specify an invariant, break when invalid
+
+[TODO]

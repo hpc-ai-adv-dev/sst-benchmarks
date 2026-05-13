@@ -79,12 +79,12 @@ D (SST::Component)
 
 ### Stepping through individual events being processed
 
+[TODO]
+
 In this case, events are processed in a certain order on the same time step and result in a bad merge and being able to step through the processing of the individual events would be useful.
 
+### TODOS AND NOTES 
 
-# TODOS AND NOTES 
-
-NOTES:
 - Ideally for this we would want to be able to examine the contents of incoming messages so we knew their values.
     - I should set value on startup on nodes A and B to show what they'll assign to the event. 
 - We expect to see 10 + 2 instead of 10 * 2.

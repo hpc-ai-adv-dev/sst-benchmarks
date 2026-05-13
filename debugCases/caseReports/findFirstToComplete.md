@@ -20,5 +20,11 @@ The goal is to determine which component finishes first; the completion order is
 ```
 ```
 
-TODO:
-- I'm unsure how to do this with the debugger. Ideally there would be a kind of "stop upon completion of this component" watchpoint. We could have completion tied to some side-effect that we could set up a watch point on.
+
+## Thoughts and wishlist items
+
+### Stop upon completion of a given (or any) component
+
+[TODO]
+
+I'm unsure how to do this with the debugger. Ideally there would be a kind of "stop upon completion of this component" watchpoint. We could have completion tied to some side-effect that we could set up a watch point on.

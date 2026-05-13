@@ -17,5 +17,11 @@ This is the same wait cycle as direct deadlock, but with B sitting between A and
 
 ## Approach 1 --
 
+[TODO]
+
 ```
 ```
+
+## Thoughts and wishlist items
+
+[TODO]

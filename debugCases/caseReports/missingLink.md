@@ -32,6 +32,9 @@ In a real use case the situation there would likely be some other bug (like a mi
 
 ### Discovery of neighbors
 
+[TODO]
 This point was also mentioned in the wrongPath case.
 
-### Emit the topology from within the debugger
+### Print the topology from within the debugger
+
+[TODO]

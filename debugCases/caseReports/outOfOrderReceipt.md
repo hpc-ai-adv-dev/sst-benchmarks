@@ -17,5 +17,10 @@ E is intended to see `ev1` before `ev2`, but two events launched on different br
 
 ## Approach 1 -- tracepoint
 
-TODO: I'd like to modify this test to set the value on E when it receives an event so I can tell which event it receives.
-Then I want to watch it change.
+[TODO]
+
+Notes: I'd like to modify this test to set the value on E when it receives an event so I can tell which event it receives.  Then I want to watch it change.
+
+## Thoughts and wishlist items
+
+[TODO]

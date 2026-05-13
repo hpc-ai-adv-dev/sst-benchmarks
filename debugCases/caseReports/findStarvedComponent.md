@@ -80,6 +80,12 @@ TODO:
 
 ### Keep counters of events processed
 
+[TODO]
+
 ### Have a way to query if any component has not processed events
 
+[TODO]
+
 ### Have a way to query the component(s) that have processed the least (or most) events
+
+[TODO]

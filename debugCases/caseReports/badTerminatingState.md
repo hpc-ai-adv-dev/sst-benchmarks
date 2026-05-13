@@ -75,5 +75,12 @@ D (SST::Component)
 Simulation is complete, simulated time: 1 us
 ```
 
+[TODO]
 - I don't think there's anyway to do this precisely (at termination) you can only do it at the clock cycle before.
 - I think we should update the image to show that c is the component with the bad state not B.
+
+## Thoughts and wishlist items
+
+### Add a "run until termination without quitting" option
+
+[TODO]

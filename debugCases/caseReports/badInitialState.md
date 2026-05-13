@@ -73,3 +73,11 @@ D (SST::Component)
  value = 1 (int)
  visited = 0 (int)
 ```
+
+## Thoughts and wishlist items
+
+### Apply validation function to all components
+
+[TODO]
+
+Maybe a more ambitious ask. But it would nice if I could supply some kind of validation function and then ask to apply it to some set of components.
