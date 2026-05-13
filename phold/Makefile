@@ -21,5 +21,5 @@ dataclean:
 clean:
 	rm -rf tests/graphs libphold.so
 	sst-register -u phold
-	rm -r *.json *.tmp *.time *.out
+	rm -rf *.json *.tmp *.time *.out
 
