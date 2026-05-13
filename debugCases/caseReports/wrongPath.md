@@ -16,9 +16,9 @@ An event propagates throughout the model. Its intended path is **A** -> **B** ->
 
 ## Summary
 
-This story shows how to use the SST debugger to identify a misrouted event.  Since the debugger currently has no way to directly observe events, it requires the user to infer an event's path by indirectly observing component state.  In this example, we illustrate this by having events incrementing a `visited` parameter stored on each component.  We present two approaches to examine how components' `visited` parameters mutate throughout the simulation.  In Approach 1, we methodically step through simulated time printing out state as we go whereas in Approach 2 we use tracepoints.  Both approaches successfully diagnose the bug, but as aforementioned, require indirect observation of the event flow and require advance knowlege of the topology.
+This story shows how to use the SST debugger to identify a misrouted event.  Since the debugger currently has no way to directly observe events, it requires the user to infer an event's path by indirectly observing component state.  In this example, we illustrate this by having events increment a `visited` parameter stored on each component.  We present two approaches to examine how components' `visited` parameters mutate throughout the simulation.  In Approach 1, we methodically step through simulated time printing out state as we go whereas in Approach 2 we set tracepoints to gather information and print out the routed path once at the end.
 
-The wishlist items below all point to the same broader need: the debugger would be more effective if it provided stronger support for event flow and topology discovery. Features such as event-centric tracing, neighbor introspection, bulk queries across connected components, and a way to process pending events without advancing time would make this kind of bug much easier to understand and localize.
+At the end of this document we present a number of "wishlist" items suggesting possibilities to make the debugger more effective. In particular these items suggest features to support tracing event flow and topology discovery.
 
 ## Approach 1 -- step and print
 

@@ -1,6 +1,6 @@
 # SST Debug Stories
 
-This repository contains a collection of debug use case examples for SST.  These are small, artificial examples illustrating situations that might occur in an SST simulation where a debugger could be used to detect or analyze behavior.  They are simple SST models with small topologies.  Some examples demonstrate debugger features available today, but other cases might serve to inspire possible new debugger capabilities or companion tools.
+This repository contains a collection of debug use case examples for SST.  These are small, artificial examples illustrating situations that might occur in an SST simulation where a debugger could be used to detect or analyze behavior.  They are simple SST models with small topologies.  Some examples demonstrate debugger features available today, but other cases might serve to inspire possible new debugger features or companion tools.
 
 ## Overview
 
