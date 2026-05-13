@@ -10,6 +10,16 @@
 #include <sst/dbg/SSTDebug.h>
 #endif
 
+// Used to disable compiler optimizations on artificial work 
+// loops used to simulation component computation.
+#if defined(__clang__)
+    #define NO_UNROLL _Pragma("clang loop unroll(disable)")
+#elif defined(__GNUC__) && (__GNUC__ >= 8)
+    #define NO_UNROLL _Pragma("GCC unroll 1")
+#else
+    #define NO_UNROLL
+#endif
+
 class Node : public SST::Component {
 public:
     Node(SST::ComponentId_t id, SST::Params& params);
@@ -20,6 +30,7 @@ public:
 
     bool tick(SST::Cycle_t currentCycle);
 
+    void componentCompute();
     void handleEvent(SST::Event* ev);
 
     SST::Interfaces::StringEvent* createEvent();
@@ -71,6 +82,9 @@ public:
          "0"},
         {"componentSize",
          "Additional size of components in bytes",
+         "0"},
+        {"componentComputation",
+         "How much additional computation to do as part of event handling, as a count of random numbers to generate and assign",
          "0"})
 
     SST_ELI_DOCUMENT_PORTS({{"port%d", "Ports to others", {}}})
@@ -101,6 +115,9 @@ public:
     int smallPayload, largePayload;
     float largeEventFraction;
     char* additionalData;
+    int componentComputeCount;
+    volatile int computeSink;
+    
 
     int recvCount;
 
