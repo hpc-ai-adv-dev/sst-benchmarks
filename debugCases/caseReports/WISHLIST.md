@@ -1,6 +1,8 @@
-# wishlist
+# Wish List
 
 This document contains some general wishlist features I encountered while using the SST debugger but didn't seem tied to any specific story or class or stories.
+
+It also includes a [catalog of wishlist seen within the use case reports](#items-from-use-case-reports).
 
 ## Allow inline comments in replay scripts
 
@@ -26,3 +28,32 @@ It can be useful to observe the final state of a simulation by simply using `run
 
 A common use case I have is to trace a single variable when it changes. Could we make the syntax to do this more verbose.
 TODO: Elaborate on this wish some more.
+
+# Items from use case reports
+
+- Apply validation function to all components ([badInitialState](badInitialState.md#thoughts-and-wishlist-items))
+- Specify an invariant, break when invalid ([badInvariantBetweenComponents](badInvariantBetweenComponents.md#thoughts-and-wishlist-items))
+- Stepping through individual events being processed ([badMerge](badMerge.md#thoughts-and-wishlist-items))
+- Add a "run until termination without quitting" option ([badTerminatingState](badTerminatingState.md#thoughts-and-wishlist-items))
+- Breaking on a component receiving on sending a number of messages ([broadcastStorm](broadcastStorm.md#thoughts-and-wishlist-items), [duplicateSameTime](duplicateSameTime.md#thoughts-and-wishlist-items))
+- Keeping a log of when events were sent from a component over time would be useful ([broadcastStorm](broadcastStorm.md#thoughts-and-wishlist-items))
+- Print component and event being processed upon failure ([componentCausesSegfault](componentCausesSegfault.md#thoughts-and-wishlist-items))
+- Set a watch for when two components diverge ([componentsLoseParity](componentsLoseParity.md#thoughts-and-wishlist-items))
+- Printing the validity state of all components would be useful ([detectWhenComponentBecomesInvalid](detectWhenComponentBecomesInvalid.md#thoughts-and-wishlist-items))
+- Print completion state of a component ([determineWhatNotComplete](determineWhatNotComplete.md#thoughts-and-wishlist-items))
+- A metadebugger to establish invariants between models ([divergedModels](divergedModels.md#thoughts-and-wishlist-items))
+- Being able to break on receipt of an event would be useful ([duplicateSepTimes](duplicateSepTimes.md#thoughts-and-wishlist-items))
+- Keep counters of events processed ([findEventHeavyComponent](findEventHeavyComponent.md#thoughts-and-wishlist-items), [findStarvedComponent](findStarvedComponent.md#thoughts-and-wishlist-items))
+- Stop upon completion of a given (or any) component ([findFirstToComplete](findFirstToComplete.md#thoughts-and-wishlist-items))
+- Have a way to query if any component has not processed events ([findStarvedComponent](findStarvedComponent.md#thoughts-and-wishlist-items))
+- Have a way to query the component(s) that have processed the least (or most) events ([findStarvedComponent](findStarvedComponent.md#thoughts-and-wishlist-items))
+- Being able to assess event lifetime would be useful ([infiniteLoop](infiniteLoop.md#thoughts-and-wishlist-items))
+- Discovery of neighbors ([missingLink](missingLink.md#thoughts-and-wishlist-items), [unexpectedDuplicateLink](unexpectedDuplicateLink.md#thoughts-and-wishlist-items), [wrongLink](wrongLink.md#thoughts-and-wishlist-items), [wrongPath](wrongPath.md#thoughts-and-wishlist-items))
+- Print the topology from within the debugger ([missingLink](missingLink.md#thoughts-and-wishlist-items))
+- Break when event is deleted ([unexpectedDisappear](unexpectedDisappear.md#thoughts-and-wishlist-items))
+- Emit the topology from within the debugger ([unexpectedDuplicateLink](unexpectedDuplicateLink.md#thoughts-and-wishlist-items), [wrongLink](wrongLink.md#thoughts-and-wishlist-items))
+- A question: should the debugger break before or after events are processed? ([wrongPath](wrongPath.md#thoughts-and-wishlist-items))
+- Pending event queue inspection ([wrongPath](wrongPath.md#thoughts-and-wishlist-items))
+- Bulk queries across neighbors ([wrongPath](wrongPath.md#thoughts-and-wishlist-items))
+- Bulk queries across tracepoints ([wrongPath](wrongPath.md#thoughts-and-wishlist-items))
+- Event-centric debugging ([wrongPath](wrongPath.md#thoughts-and-wishlist-items))

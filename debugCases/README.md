@@ -2,6 +2,8 @@
 
 This repository contains a collection of debug use case examples for SST.  These are small, artificial examples illustrating situations that might occur in an SST simulation where a debugger could be used to detect or analyze behavior.  They are simple SST models with small topologies.  Some examples demonstrate debugger features available today, but other cases might serve to inspire possible new debugger features or companion tools.
 
+For each debug story we include a "use case report": a short write-up that explains the scenario, what behavior to observe, and how the SST debugger can be used to investigate it. Many reports also include thoughts and wishlist items for debugger improvements. The stories and links to their reports are in the [story status table](#story-status). For cross-cutting debugger ideas that come up across multiple stories, see the [wish list document](caseReports/WISHLIST.md).  This document also includes a catalog of wishlist items mentioned in individual stories.  
+
 ## Overview
 
 - All stories are launched from a single SST simulation configuration script, `runStory.py`, which is passed the name of the particular story to run.  Valid story names that can be passed to this are listed in the first column of the [story status table](#story-status).
@@ -28,13 +30,13 @@ Where `<storyName>` is any valid story name from the [story descriptions](#story
 
 This table lists the use case stories included in this repository and overviews their status.  To see a short description of each story see the [story descriptions](#story-descriptions) section.
 
-All stories have been implemented, so we're now focused on ensuring that they have been implemented as properly and writing "case reports" for each.
+All stories have been implemented, so we're now focused on ensuring that they have been implemented properly and writing "use case reports" for each.
 
 In the "Verified?" column, we indicate whether it has been hand-verified (indicated with ✅, ❌, or ❓; ❌ indicates that something is wrong and ❓ indicates that although I've manually read the code and believe it to be correct I don't know of an easy way to verify that it's working as intended today).
 
-In the "case report" column I use ♦ symbols to indicate how "mature" I believe the report is.  You can view one diamond as indicating that the report includes an example script of how to use the sst debugger to address the case but I haven't yet thought deeply about how effective it is.  Two diamonds has more content and some thoughts on wishlist items for the SST debugger.  Three diamonds indicates that I view the content as being "complete".
+In the "use case report" column I use ♦ symbols to indicate how "mature" I believe the report is.  You can view one diamond as indicating that the report includes an example script of how to use the sst debugger to address the case but I haven't yet thought deeply about how effective it is.  Two diamonds has more content and some thoughts on wishlist items for the SST debugger.  Three diamonds indicates that I view the content as being "complete".
 
-| Story | Verified? | Case Report | Notes |
+| Story | Verified? | Use Case Report | Notes |
 | --- | --- | --- | --- |
 | **Event Tracing** |  |  |  |
 | [wrongPath](caseReports/wrongPath.md) | ✅ | ♦♦ | works in debugger but requires advanced topology knowledge and the event to set a side effect on components |
