@@ -1,0 +1,470 @@
+# SST Debug Stories
+
+This repository contains a collection of debug use case examples for SST.  These are small, artificial examples illustrating situations that might occur in an SST simulation where a debugger could be used to detect or analyze behavior.  They are simple SST models with small topologies.  Some examples demonstrate debugger features available today, but other cases might serve to inspire possible new debugger features or companion tools.
+
+For each debug story we include a "use case report": a short write-up that explains the scenario, what behavior to observe, and how the SST debugger can be used to investigate it. Many reports also include thoughts and wishlist items for debugger improvements. The stories and links to their reports are in the [story status table](#story-status). For cross-cutting debugger ideas that come up across multiple stories, see the [wish list document](caseReports/WISHLIST.md).  This document also includes a catalog of wishlist items mentioned in individual stories.  
+
+## Overview
+
+- All stories are launched from a single SST simulation configuration script, `runStory.py`, which is passed the name of the particular story to run.  Valid story names that can be passed to this are listed in the first column of the [story status table](#story-status).
+- This repository is still a work in progress. All of the use cases listed below are implemented, and our current effort is focused on hand-verifying each case and evaluating how it could currently be addressed using the SST debugger.
+- All stories are built around a single SST component named `Node` (implemented in `Node.cpp` and `Node.h`) and use a unified simulation configuration file, `runStory.py`.
+
+## How to Run
+
+From this directory:
+
+1. Build and run in one step:
+
+	 `./doit <storyName>`
+
+2. Or run manually:
+
+	 `make clean && make`
+
+	 `sst --interactive-stop ./runStory.py <storyName>`
+
+Where `<storyName>` is any valid story name from the [story descriptions](#story-descriptions) section.
+
+## Story Status
+
+This table lists the use case stories included in this repository and overviews their status.  To see a short description of each story see the [story descriptions](#story-descriptions) section.
+
+All stories have been implemented, so we're now focused on ensuring that they have been implemented properly and writing "use case reports" for each.
+
+In the "Verified?" column, we indicate whether it has been hand-verified (indicated with ✅, ❌, or ❓; ❌ indicates that something is wrong and ❓ indicates that although I've manually read the code and believe it to be correct I don't know of an easy way to verify that it's working as intended today).
+
+In the "use case report" column I use ♦ symbols to indicate how "mature" I believe the report is.  You can view one diamond as indicating that the report includes an example script of how to use the sst debugger to address the case but I haven't yet thought deeply about how effective it is.  Two diamonds has more content and some thoughts on wishlist items for the SST debugger.  Three diamonds indicates that I view the content as being "complete".
+
+| Story | Verified? | Use Case Report | Notes |
+| --- | --- | --- | --- |
+| **Event Tracing** |  |  |  |
+| [wrongPath](caseReports/wrongPath.md) | ✅ | ♦♦ | works in debugger but requires advanced topology knowledge and the event to set a side effect on components |
+| [infiniteLoop](caseReports/infiniteLoop.md) | ✅ | ♦ |  |
+| [unexpectedDisappear](caseReports/unexpectedDisappear.md) | ✅ | ♦ |  |
+| [missedDeadline](caseReports/missedDeadline.md) | ✅ | ♦ |  |
+| [outOfOrderReceipt](caseReports/outOfOrderReceipt.md) | ✅ | ♦ |  |
+| [duplicateSepTimes](caseReports/duplicateSepTimes.md) | ✅ | ♦ |  |
+| [duplicateSameTime](caseReports/duplicateSameTime.md) | ✅ | ♦ |  |
+| **Event Processing** |  |  |  |
+| [broadcastStorm](caseReports/broadcastStorm.md) | ✅ | ♦ |  |
+| [badMerge](caseReports/badMerge.md) | ✅ | ♦ |  |
+| **Incorrect Topology** |  |  |  |
+| [missingLink](caseReports/missingLink.md) | ✅ | ♦ |  |
+| [wrongLink](caseReports/wrongLink.md) | ✅ | ♦ |  |
+| [unexpectedDuplicateLink](caseReports/unexpectedDuplicateLink.md) | ✅ | ♦ |  |
+| **Deadlock** |  |  |  |
+| [directDeadlock](caseReports/directDeadlock.md) | ❓ | ♦ |  |
+| [indirectDeadlock](caseReports/indirectDeadlock.md) | ❓ | ♦ |  |
+| **Fault Detection And Attribution** |  |  |  |
+| [detectWhenComponentBecomesInvalid](caseReports/detectWhenComponentBecomesInvalid.md) | ✅ | ♦ |  |
+| [badInvariantBetweenComponents](caseReports/badInvariantBetweenComponents.md) | ✅ | ♦ |  |
+| [componentsLoseParity](caseReports/componentsLoseParity.md) | ✅ | ♦ |  |
+| [divergedModels](caseReports/divergedModels.md) | ✅ | ♦ |  |
+| [componentCausesSegfault](caseReports/componentCausesSegfault.md) | ✅ | ♦ |  |
+| [badInitialState](caseReports/badInitialState.md) | ✅ | ♦ |  |
+| [badTerminatingState](caseReports/badTerminatingState.md) | ✅ | ♦ |  |
+| [findFirstToComplete](caseReports/findFirstToComplete.md) | ❓ | ♦ |  |
+| [determineWhatNotComplete](caseReports/determineWhatNotComplete.md) | ❓ | ♦ |  |
+| **Load Imbalances** |  |  |  |
+| [findEventHeavyComponent](caseReports/findEventHeavyComponent.md) | ✅ | ♦ |  |
+| [findSlowProcessingComponent](caseReports/findSlowProcessingComponent.md) | ❓ | ♦ |  |
+| [findMemHeavyComponent](caseReports/findMemHeavyComponent.md) | ❓ | ♦ |  |
+| [findMemHeavyEvent](caseReports/findMemHeavyEvent.md) | ❓ | ♦ |  |
+| [findStarvedComponent](caseReports/findStarvedComponent.md) | ✅ | ♦ |  |
+
+## Story Descriptions
+
+| Category | Stories |
+| --- | --- |
+| Event Tracing | [`wrongPath`](#wrongpath), [`infiniteLoop`](#infiniteloop), [`unexpectedDisappear`](#unexpecteddisappear), [`missedDeadline`](#misseddeadline), [`outOfOrderReceipt`](#outoforderreceipt), [`duplicateSepTimes`](#duplicateseptimes), [`duplicateSameTime`](#duplicatesametime) |
+| Event Processing | [`broadcastStorm`](#broadcaststorm), [`badMerge`](#badmerge) |
+| Incorrect Topology | [`missingLink`](#missinglink), [`wrongLink`](#wronglink), [`unexpectedDuplicateLink`](#unexpectedduplicatelink) |
+| Deadlock | [`directDeadlock`](#directdeadlock), [`indirectDeadlock`](#indirectdeadlock) |
+| Fault Detection And Attribution | [`detectWhenComponentBecomesInvalid`](#detectwhencomponentbecomesinvalid), [`badInvariantBetweenComponents`](#badinvariantbetweencomponents), [`componentsLoseParity`](#componentsloseparity), [diverged models: `divergedModels_A` and `divergedModels_B`](#divergedmodels-divergedmodels_a-and-divergedmodels_b-substories), [`componentCausesSegfault`](#componentcausessegfault), [`badInitialState`](#badinitialstate), [`badTerminatingState`](#badterminatingstate), [`findFirstToComplete`](#findfirsttocomplete), [`determineWhatNotComplete`](#determinewhatnotcomplete) |
+| Load Imbalances | [`findEventHeavyComponent`](#findeventheavycomponent), [`findSlowProcessingComponent`](#findslowprocessingcomponent), [`findMemHeavyComponent`](#findmemheavycomponent), [`findMemHeavyEvent`](#findmemheavyevent), [`findStarvedComponent`](#findstarvedcomponent) |
+
+### Event Tracing
+
+<dl> <dd> <dl> <dd>
+
+#### `wrongPath`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+An event propagates throughout the model, its intended path is A -> B -> C, but B misroutes the event to D instead.
+
+![wrongPath flowchart](story_flowcharts/wrongPath.png)
+
+</dd></dl></dd></dl>
+
+#### `infiniteLoop`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+An event is supposed to move onward to D, but A, B, and C keep forwarding it in a cycle, creating an infinite loop.
+
+![infiniteLoop flowchart](story_flowcharts/infiniteLoop.png)
+
+</dd></dl></dd></dl>
+
+#### `unexpectedDisappear`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+The intended path is A -> B -> C -> D, but the event vanishes at C because it is never forwarded onward.
+
+![unexpectedDisappear flowchart](story_flowcharts/unexpectedDisappear.png)
+
+</dd></dl></dd></dl>
+
+#### `missedDeadline`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+D is expected to receive an event by a target time, but the A -> B -> C -> D path uses enough link latency that arrival is late; the goal is to locate which link is causing the slowdown.
+
+![missedDeadline flowchart](story_flowcharts/missedDeadline.png)
+
+</dd></dl></dd></dl>
+
+#### `outOfOrderReceipt`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+E is intended to see `ev1` before `ev2`, but two events launched on different branches arrive in the opposite order because C starts at `3ns` while A starts at `5ns` (with all links at `1ns`).
+
+![outOfOrderReceipt flowchart](story_flowcharts/outOfOrderReceipt.png)
+
+</dd></dl></dd></dl>
+
+#### `duplicateSepTimes`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+D is expected to receive a given event once, but A injects it at setup and again on later ticks, so repeated deliveries occur at different times.
+
+![duplicateSepTimes flowchart](story_flowcharts/duplicateSepTimes.png)
+
+</dd></dl></dd></dl>
+
+#### `duplicateSameTime`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+B is expected to receive a given event once, but A injects it twice at setup.
+
+![duplicateSameTime flowchart](story_flowcharts/duplicateSameTime.png)
+
+</dd></dl></dd></dl>
+
+</dd> </dl> </dd> </dl>
+
+### Event Processing
+
+<dl> <dd> <dl> <dd>
+
+#### `broadcastStorm`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+An event is broadcast too broadly from A to all six neighbors at startup.
+
+![broadcastStorm flowchart](story_flowcharts/broadcastStorm.png)
+
+</dd></dl></dd></dl>
+
+#### `badMerge`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+C receives values from A and B and should merge them correctly, but it multiplies `10 * 2` instead of performing the intended add-style merge before sending the result to D.
+
+![badMerge flowchart](story_flowcharts/badMerge.png)
+
+</dd></dl></dd></dl>
+
+</dd> </dl> </dd> </dl>
+
+### Incorrect Topology
+
+<dl> <dd> <dl> <dd>
+
+#### `missingLink`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+The intended topology includes a B <-> C connection, but that link is absent.
+
+![missingLink flowchart](story_flowcharts/missingLink.png)
+</dd></dl></dd></dl>
+
+#### `wrongLink`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+The intended topology is A -> B, but A is connected to C instead.
+
+![wrongLink flowchart](story_flowcharts/wrongLink.png)
+
+</dd></dl></dd></dl>
+
+#### `unexpectedDuplicateLink`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+A and B are linked twice instead of once.
+
+![unexpectedDuplicateLink flowchart](story_flowcharts/unexpectedDuplicateLink.png)
+
+</dd></dl></dd></dl>
+
+</dd> </dl> </dd> </dl>
+
+### Deadlock
+
+<dl> <dd> <dl> <dd>
+
+#### `directDeadlock`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+A waits for an event from B while B waits for an event from A, so neither side ever makes progress.
+
+![directDeadlock flowchart](story_flowcharts/directDeadlock.png)
+
+</dd></dl></dd></dl>
+
+#### `indirectDeadlock`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+This is the same wait cycle as direct deadlock, but with B sitting between A and C as a relay, so the blocked endpoints are separated by an intermediate component.
+
+![indirectDeadlock flowchart](story_flowcharts/indirectDeadlock.png)
+
+</dd></dl></dd></dl>
+
+</dd> </dl> </dd> </dl>
+
+### Fault Detection And Attribution
+
+<dl> <dd> <dl> <dd>
+
+#### `detectWhenComponentBecomesInvalid`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+A starts valid and then flips its `valid` flag to false on a 40ns clock tick, modeling a component whose state becomes invalid during execution.
+
+![detectWhenComponentBecomesInvalid flowchart](story_flowcharts/detectWhenComponentBecomesInvalid.png)
+
+</dd></dl></dd></dl>
+
+#### `badInvariantBetweenComponents`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+A cross-component invariant is supposed to hold, but C follows a different update rule when it receives certain values, breaking the invariant.
+
+![badInvariantBetweenComponents flowchart](story_flowcharts/badInvariantBetweenComponents.png)
+
+</dd></dl></dd></dl>
+
+#### `componentsLoseParity`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+A and B are expected to stay in matching state over time, but their scripted values diverge at cycle 40 when they become 5 and 7.
+
+![componentsLoseParity flowchart](story_flowcharts/componentsLoseParity.png)
+
+</dd></dl></dd></dl>
+
+#### `divergedModels` (`divergedModels_A` and `divergedModels_B` substories)
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+This pair of stories represent separate models that are intended to retain parity with each other throughout execution, but at timestamp 40, `divergedModels_A` uses value 5 while `divergedModels_B` uses value 7.
+
+![divergedModels flowchart](story_flowcharts/divergedModels.png)
+
+</dd></dl></dd></dl>
+
+#### `componentCausesSegfault`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+Component C asserts once its clock reaches cycle 50 or later. The goal is to identify which component is responsible for the segfault and at what point in time the segfault occurs.
+
+![componentCausesSegfault flowchart](story_flowcharts/componentCausesSegfault.png)
+
+</dd></dl></dd></dl>
+
+#### `badInitialState`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+Four unconnected components are intended to initialize to the same state, but C starts with a different value than the others.
+
+![badInitialState flowchart](story_flowcharts/badInitialState.png)
+
+</dd></dl></dd></dl>
+
+#### `badTerminatingState`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+Similar to `badInitialState`, but the issue is that C changes to a different value before the simulation terminates. The goal is to identify which component has the bad value just prior to termination.
+
+![badTerminatingState flowchart](story_flowcharts/badTerminatingState.png)
+
+</dd></dl></dd></dl>
+
+#### `findFirstToComplete`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+The goal is to determine which component finishes first; the completion order is D first, then B, then C, then A.
+
+![findFirstToComplete flowchart](story_flowcharts/findFirstToComplete.png)
+
+</dd></dl></dd></dl>
+
+#### `determineWhatNotComplete`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+The goal is to find components that never mark complete when the simulation ought to be done; here A, D, and E finish, while B and C never do.
+
+![determineWhatNotComplete flowchart](story_flowcharts/determineWhatNotComplete.png)
+
+</dd></dl></dd></dl>
+
+</dd> </dl> </dd> </dl>
+
+### Load Imbalances
+
+<dl> <dd> <dl> <dd>
+
+#### `findEventHeavyComponent`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+The goal is to identify which component processes the most events; in this four-node ring each component sends to its neighbor to the right.
+
+![findEventHeavyComponent flowchart](story_flowcharts/findEventHeavyComponent.png)
+
+</dd></dl></dd></dl>
+
+#### `findSlowProcessingComponent`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+One component should be noticeably slower at processing than the others; all nodes send one event at startup to their right neighbor, but the event received by B takes much longer to process.
+
+![findSlowProcessingComponent flowchart](story_flowcharts/findSlowProcessingComponent.png)
+
+</dd></dl></dd></dl>
+
+#### `findMemHeavyComponent`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+The goal is to spot a component with unusually high memory usage; four unconnected components allocate different local buffer sizes, with B holding by far the largest payload.
+
+![findMemHeavyComponent flowchart](story_flowcharts/findMemHeavyComponent.png)
+
+</dd></dl></dd></dl>
+
+#### `findMemHeavyEvent`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+The goal is to spot an unusually large event; each node in a ring sends one rightward event with a payload buffer, and one of those messages is much larger than the others.
+
+![findMemHeavyEvent flowchart](story_flowcharts/findMemHeavyEvent.png)
+
+</dd></dl></dd></dl>
+
+#### `findStarvedComponent`
+
+<dl><dd><dl><dd>
+
+[(back to table)](#story-descriptions)
+
+The intended pattern is that all components should receive work, but one does not; in the current ring with uneven send quotas, C receives no events while the others do.
+
+![findStarvedComponent flowchart](story_flowcharts/findStarvedComponent.png)
+
+</dd></dl></dd></dl>
+
+</dd> </dl> </dd> </dl>
+
+## Adding a New Story
+
+1. Add the story name to `NODE_STORY_LIST` in `Node.cpp`.
+2. Add `setup_<story>` and `handleEvent_<story>` in `Node.h` and `Node.cpp`.
+3. Add the story string to `VALID_STORIES` in `runStory.py`.
+4. Add a `story_<story>()` function in `runStory.py`.
+
+## Legacy Cases
+
+Older standalone cases are stored in:
+
+- `old/infiniteLoopTest/`
+- `old/loadImbalance/`
