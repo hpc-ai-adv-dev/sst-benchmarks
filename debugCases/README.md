@@ -43,7 +43,7 @@ In the "use case report" column I use ♦ symbols to indicate how "mature" I bel
 | [infiniteLoop](caseReports/infiniteLoop.md) | ✅ | ♦ |  |
 | [unexpectedDisappear](caseReports/unexpectedDisappear.md) | ✅ | ♦ |  |
 | [missedDeadline](caseReports/missedDeadline.md) | ✅ | ♦ |  |
-| [outOfOrderReceipt](caseReports/outOfOrderReceipt.md) | ❌ | ♦ |  |
+| [outOfOrderReceipt](caseReports/outOfOrderReceipt.md) | ✅ | ♦ |  |
 | [duplicateSepTimes](caseReports/duplicateSepTimes.md) | ✅ | ♦ |  |
 | [duplicateSameTime](caseReports/duplicateSameTime.md) | ✅ | ♦ |  |
 | **Event Processing** |  |  |  |

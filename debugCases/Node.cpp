@@ -146,10 +146,18 @@ void Node::setup_outOfOrderReceipt() {
 }
 
 bool Node::clockTick_outOfOrderReceipt(SST::Cycle_t currentCycle) {
-  if((name == "A" && currentCycle >= 5) ||
-     (name == "C" && currentCycle >= 3)) {
-    visited++;
-    links[0]->send(new UseCaseEvent());
+  // Inject one tagged event from C at 3ns, we'll call this event 1.
+  // Inject one tagged event from A at 5ns, we'll call this event 2.
+  // The story is that we expect to receive event 1 first but we don't, the
+  // goal is to figure out why (turns out that we created it later here.).
+  
+  if(name == "A" && currentCycle == 5) {
+    links[0]->send(new UseCaseEvent(1));
+    return true;
+  }
+  if(name == "C" && currentCycle == 3) {
+    links[0]->send(new UseCaseEvent(2));
+    return true;
   }
 
   return false;
@@ -523,11 +531,15 @@ void Node::handleEvent_outOfOrderReceipt(SST::Event *ev, int fromPort) {
   visited++;
   bool forwarded = false;
 
+  // Overwrite value on each arrival to that of the last event received
+  auto useCaseEvent = dynamic_cast<UseCaseEvent*>(ev);
+  assert(useCaseEvent != nullptr);
+  value = useCaseEvent->value;
+
        if(name == "A") { links[0]->send(ev); forwarded = true; }
   else if(name == "B") { links[1]->send(ev); forwarded = true; }
   else if(name == "C") { links[0]->send(ev); forwarded = true; }
   else if(name == "D") { links[1]->send(ev); forwarded = true; }
-
   if(!forwarded) {
     delete ev;
   }
