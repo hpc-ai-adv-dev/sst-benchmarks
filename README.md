@@ -24,3 +24,8 @@ container.
 The `memoryModel` directory includes a Jupyter notebook with a script that can
 be used to estimate SST core's memory usage and experiment with ideas on how to
 reduce its memory footprint.
+
+### Parameter Sweeps
+The `param-sweep-frameworks` directory includes a python package with different
+implementations of performing a parameter sweep over the
+[phold\_dist.py](phold/phold_dist.py) script using various workflow tools.
