@@ -53,19 +53,19 @@ STORIES = {
 
 VALID_STORIES = list(STORIES.keys())
 
-ASSESSMENT_BASE_URL = "https://github.com/hpc-ai-adv-dev/sst-benchmarks/blob/debugUseCases/debugCases/assessments"
+CASE_REPORT_BASE_URL = "https://github.com/hpc-ai-adv-dev/sst-benchmarks/blob/debugUseCases/debugCases/caseReports"
 
-def print_assessment_url(story_name):
+def print_case_report_url(story_name):
     # The "divergedModels" story has two variants (A and B) (the point is that
     # we can run each individually through the debugger and compare). We
-    # document the assessment in a single markdown file.
+    # document the case report in a single markdown file.
     if story_name in ("divergedModels_A", "divergedModels_B"):
-        assessment_name = "divergedModels"
+        case_report_name = "divergedModels"
     else:
-        assessment_name = story_name
+        case_report_name = story_name
 
-    print(f"To read an assessment of how this story runs with the SST debugger go to")
-    print(f"  {ASSESSMENT_BASE_URL}/{assessment_name}.md")
+    print(f"To read a case report of how this story runs with the SST debugger go to")
+    print(f"  {CASE_REPORT_BASE_URL}/{case_report_name}.md")
     print()
 
 
@@ -519,7 +519,7 @@ def main():
             if builder is None:
                 raise ValueError(f"No builder defined for story: {valid_story}")
             warn_if_story_not_hand_verified(valid_story)
-            print_assessment_url(valid_story)
+            print_case_report_url(valid_story)
             builder()
             return
 
