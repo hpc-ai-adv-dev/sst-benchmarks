@@ -15,11 +15,8 @@ install:
 	sst-register phold phold_LIBDIR=$(CURDIR)
 
 dataclean:
-	 rm -rf *_dir *.out
 	 rm -rf rank_*_thread_*
 
 clean:
-	rm -rf tests/graphs libphold.so
+	rm -f libphold.so
 	sst-register -u phold
-	rm -rf *.json *.tmp *.time *.out
-

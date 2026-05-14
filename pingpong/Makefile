@@ -17,6 +17,5 @@ install:
 	sst-register pingpong pingpong_LIBDIR=$(CURDIR)
 
 clean:
-	rm -rf tests/graphs libpingpong.so
+	rm -f libpingpong.so
 	sst-register -u pingpong
-	rm -f *.json *.tmp *.time *.out
