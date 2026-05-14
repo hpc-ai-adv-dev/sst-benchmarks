@@ -8,6 +8,7 @@ Currently, it includes:
 - Benchmarks
 - [Containers](sst-containers/README.md)
 - A memory model
+- [Debug Use Cases](debugCases/README.md)
 
 ### The benchmarks (found in their respective directories):
 - [pingpong](pingpong/README.md) - simulates messages bouncing back-and-forth in one or two dimensions.
@@ -24,3 +25,10 @@ container.
 The `memoryModel` directory includes a Jupyter notebook with a script that can
 be used to estimate SST core's memory usage and experiment with ideas on how to
 reduce its memory footprint.
+
+### Debug Use Cases
+The `debugCases` directory contains small, focused scenarios (called use case
+stories) that demonstrate situations where a debugger may be desirable. We use
+these stories to examine the capabilities of SST's debugger and use them to
+motivate "wishlist" features that could be added to future versions. See the
+[README](debugCases/README.md) for details.
