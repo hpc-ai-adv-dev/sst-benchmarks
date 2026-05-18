@@ -16,6 +16,5 @@ install:
 	sst-register gol gol_LIBDIR=$(CURDIR)
 
 clean:
-	rm -rf libgol.so
+	rm -f libgol.so
 	sst-register -u libgol
-	rm -f *.json *.tmp *.time *.out
