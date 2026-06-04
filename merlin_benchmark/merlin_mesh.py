@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     realistic_benchmarks._params["flit_size"] = "8B"
     realistic_benchmarks._params["link_bw"] = "4GB/s"
-    realistic_benchmarks._params["link_lat"] = "20ns"
+    realistic_benchmarks._params["link_lat"] = "1ns"
     realistic_benchmarks._params["xbar_bw"] = "4GB/s"
     realistic_benchmarks._params["input_latency"] = "20ns"
     realistic_benchmarks._params["output_latency"] = "20ns"
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     mesh_topo.prepParams()
     endPoint.prepParams()
     mesh_topo.setEndPoint(endPoint)
-    mesh_topo.build_take2()
+    mesh_topo.build()
 
 
 

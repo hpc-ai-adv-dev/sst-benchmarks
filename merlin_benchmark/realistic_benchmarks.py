@@ -181,72 +181,7 @@ class topoMesh(Topo):
                 for remaining_indices in itertools.product(*[range(x) for x in self.dims[1:]]):
                     yield ([row] + list(remaining_indices), True)
 
-    def build_take4(self):
-
-        num_routers = _params["num_peers"] // _params["mesh.local_ports"]
-        links = dict()
-        def getLink(leftName, rightName, num):
-            name = "link_%s_%s_%d"%(leftName, rightName, num)
-            if name not in links:
-                links[name] = sst.Link(name)
-            return links[name]
-
-        swap_keys = [("mesh.shape","shape"),("mesh.width","width"),("mesh.local_ports","local_ports")]
-
-        _topo_params = _params.subsetWithRename(swap_keys);
-
-        for i in range(num_routers):
-            # set up 'mydims'
-            mydims = self._idToLoc(i)
-            mylocstr = self._formatShape(mydims)
-
-            rtr = self._instanceRouter(i,"merlin.hr_router")
-            #rtr = sst.Component("rtr.%s"%mylocstr, "merlin.hr_router")
-            rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
-            rtr.addParam("id", i)
-            rtr.setRank(0)
-            topology = rtr.setSubComponent("topology","merlin.mesh")
-            topology.addParams(_topo_params)
-
-            port = 0
-            for dim in range(self.nd):
-                theirdims = mydims[:]
-
-                # Positive direction
-                if mydims[dim]+1 < self.dims[dim]:
-                    theirdims[dim] = (mydims[dim] +1 ) % self.dims[dim]
-                    theirlocstr = self._formatShape(theirdims)
-                    for num in range(self.dimwidths[dim]):
-                        rtr.addLink(getLink(mylocstr, theirlocstr, num), "port%d"%port, _params["link_lat"])
-                        
-                        port = port+1
-
-                else:
-                    port += self.dimwidths[dim]
-
-                # Negative direction
-                if mydims[dim] > 0:
-                    theirdims[dim] = ((mydims[dim] -1) +self.dims[dim]) % self.dims[dim]
-                    theirlocstr = self._formatShape(theirdims)
-                    for num in range(self.dimwidths[dim]):
-                        rtr.addLink(getLink(theirlocstr, mylocstr, num), "port%d"%port, _params["link_lat"])
-                        
-                        port = port+1
-                else:
-                    port += self.dimwidths[dim]
-
-            for n in range(_params["mesh.local_ports"]):
-                nodeID = int(_params["mesh.local_ports"]) * i + n
-                ep = self._getEndPoint(nodeID).build(nodeID, {})
-                if ep:
-                    nicLink = sst.Link("nic_%d_%d"%(i, n))
-                    if self.bundleEndpoints:
-                       nicLink.setNoCut()
-                    nicLink.connect(ep, (rtr, "port%d"%port, _params["link_lat"]))
-                port = port+1
-            rtr.setRank(self._router_loc_to_rank(mydims))
-        
-    def build_take3(self):
+    def build(self):
         links=dict()
         def get_link_name(leftName, rightName, num):
             return "link_%s_%s_%d"%(leftName, rightName, num)
@@ -255,118 +190,36 @@ class topoMesh(Topo):
             if name not in links:
                 links[name] = sst.Link(name)
             return links[name]
+        
+        def at_least_one_local(loc1, loc2):
+            return self._router_loc_to_rank(loc1) == _params['my_rank'] or \
+                   self._router_loc_to_rank(loc2) == _params['']
+        
         swap_keys = [("mesh.shape","shape"),("mesh.width","width"),("mesh.local_ports","local_ports")]
         _topo_params = _params.subsetWithRename(swap_keys);
     
         # First, create all the router components, including ghost routers
         for (rtr_loc, is_ghost) in self.local_router_indices(include_ghosts=True):
             rtr_global_id = self._locToId(rtr_loc)
-            rtr_loc_str = self._formatShape(rtr_loc)
-            
-            log(0, "%s router %d at %s"%( "Ghost" if is_ghost else "Local", rtr_global_id, self._formatShape(rtr_loc)))
-            log(0, 'rtr_loc: %s, rtr_loc_str: %s'%(rtr_loc, rtr_loc_str))
-            
             rtr = self._instanceRouter(rtr_global_id, "merlin.hr_router")
             assert(rtr is not None)
-            rtr.setRank(self._router_loc_to_rank(rtr_loc))
-            log(0, f'{rtr.getFullName()} lives on rank {self._router_loc_to_rank(rtr_loc)}')
 
             # Verify we can search it
             found_rtr_by_loc = self.findRouterByLocation(rtr_loc)
             if found_rtr_by_loc is None:
                 log(0, f'ERROR: failed to find router by location {rtr_loc}')
-
             found_rtr_by_id = self.findRouterById(rtr_global_id)
             if found_rtr_by_id is None:
                 log(0, f'ERROR: failed to find router by id {rtr_global_id}')
-
-            if found_rtr_by_loc.getFullName() != found_rtr_by_id.getFullName():
-                log(0, f'ERROR: found_rtr != found_rtr_by_id: {found_rtr_by_loc.getFullName()} != {found_rtr_by_id.getFullName()}')
-
-            
-            if not is_ghost:
-                rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
-                rtr.addParam("id", rtr_global_id)
-
-                topology = rtr.setSubComponent("topology","merlin.mesh")
-                topology.addParams(_topo_params)
-
-        port_idx_starts_by_dim = [sum(2 * self.dimwidths[d] for d in range(dim)) for dim in range(self.nd)]
-        
-        # Second, connect routers to their neighbors. We use link.connect
-        for (rtr_loc, is_ghost) in self.local_router_indices(include_ghosts=True):
-            rtr_global_id = self._locToId(rtr_loc)
-            my_loc_str = self._formatShape(rtr_loc)
-
-            log(0, f'Connecting router {rtr_global_id} at {my_loc_str} ({"ghost" if is_ghost else "local"})')
-
-            rtr = self.findRouterByLocation(rtr_loc)
-            assert(rtr is not None)
-
-            for dim in range(self.nd):
-                # Only process dimensions where there is a neighbor in the positive direction
-                if rtr_loc[dim]+1 == self.dims[dim]:
-                    continue
-
-                their_loc = rtr_loc[:]
-                their_loc[dim] = (rtr_loc[dim] + 1)
-                their_loc_str = self._formatShape(their_loc)
-
-                # Only process if at least one of the pair is a local router
-                if is_ghost and self._router_loc_to_rank(their_loc) != _params['my_rank']:
-                    continue
-
-                my_port_start = port_idx_starts_by_dim[dim]
-                their_port_start = port_idx_starts_by_dim[dim] + self.dimwidths[dim]
-                for num in range(self.dimwidths[dim]):
-                    my_port = my_port_start + num
-                    their_port = their_port_start + num
-                    log(0, f'Connecting {my_loc_str} port {my_port} to {their_loc_str} port {their_port}')
-                    getLink(my_loc_str, their_loc_str, num).connect((rtr, f'port{my_port}', _params["link_lat"]), (self.findRouterByLocation(their_loc), f'port{their_port}', _params["link_lat"]))
-        
-
-
-    def build_take2(self):
-        links=dict()
-        def get_link_name(leftName, rightName, num):
-            return "link_%s_%s_%d"%(leftName, rightName, num)
-        def getLink(leftName, rightName, num):
-            name = get_link_name(leftName, rightName, num)
-            if name not in links:
-                links[name] = sst.Link(name)
-            return links[name]
-        swap_keys = [("mesh.shape","shape"),("mesh.width","width"),("mesh.local_ports","local_ports")]
-        _topo_params = _params.subsetWithRename(swap_keys);
-    
-        # First, create all the router components, including ghost routers
-        for (rtr_loc, is_ghost) in self.local_router_indices(include_ghosts=True):
-            rtr_global_id = self._locToId(rtr_loc)
-            rtr_loc_str = self._formatShape(rtr_loc)
-            
-            log(0, "%s router %d at %s"%( "Ghost" if is_ghost else "Local", rtr_global_id, self._formatShape(rtr_loc)))
-            log(0, 'rtr_loc: %s, rtr_loc_str: %s'%(rtr_loc, rtr_loc_str))
-            
-            rtr = self._instanceRouter(rtr_global_id, "merlin.hr_router")
-            assert(rtr is not None)
-            log(0, 'name: ', rtr.getFullName())
-
-            # Verify we can search it
-            found_rtr_by_loc = self.findRouterByLocation(rtr_loc)
-            if found_rtr_by_loc is None:
-                log(0, f'ERROR: failed to find router by location {rtr_loc}')
-
-            found_rtr_by_id = self.findRouterById(rtr_global_id)
-            if found_rtr_by_id is None:
-                log(0, f'ERROR: failed to find router by id {rtr_global_id}')
-
             if found_rtr_by_loc.getFullName() != found_rtr_by_id.getFullName():
                 log(0, f'ERROR: found_rtr != found_rtr_by_id: {found_rtr_by_loc.getFullName()} != {found_rtr_by_id.getFullName()}')
 
             rtr.setRank(self._router_loc_to_rank(rtr_loc))
+
+            # We only need to add parameters and topology for local components
             if not is_ghost:
                 rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
                 rtr.addParam("id", rtr_global_id)
-
                 topology = rtr.setSubComponent("topology","merlin.mesh")
                 topology.addParams(_topo_params)
 
@@ -374,13 +227,12 @@ class topoMesh(Topo):
         for (rtr_loc,is_ghost) in self.local_router_indices(include_ghosts=True):
             rtr_global_id = self._locToId(rtr_loc)
             mylocstr = self._formatShape(rtr_loc)
-
-            log(0, f'Connecting router {rtr_global_id} at {mylocstr} ({"ghost" if is_ghost else "local"})')
-
             rtr = self.findRouterByLocation(rtr_loc)
+
             if rtr is None:
                 log(0, "Error: Could not find router at location %s (global ID %d)"%(mylocstr, rtr_global_id))
                 continue
+
             port = 0
             for dim in range(self.nd):
                 their_loc = rtr_loc[:]
@@ -390,8 +242,8 @@ class topoMesh(Topo):
                     their_loc[dim] = (rtr_loc[dim] +1 ) % self.dims[dim]
                     theirlocstr = self._formatShape(their_loc)
                     for num in range(self.dimwidths[dim]):
-                        rtr.addLink(getLink(mylocstr, theirlocstr, num), "port%d"%port, _params["link_lat"])
-                        log(0, "r2r %sp%d -> %s"%(mylocstr, port, theirlocstr))
+                        if at_least_one_local(rtr_loc, their_loc):
+                            rtr.addLink(getLink(mylocstr, theirlocstr, num), "port%d"%port, _params["link_lat"])
                         port = port+1
                 else:
                     port += self.dimwidths[dim]
@@ -401,93 +253,28 @@ class topoMesh(Topo):
                     their_loc[dim] = ((rtr_loc[dim] -1) +self.dims[dim]) % self.dims[dim]
                     theirlocstr = self._formatShape(their_loc)
                     for num in range(self.dimwidths[dim]):
-                        if not is_ghost or self._router_loc_to_rank(their_loc) == _params['my_rank']:
+                        if at_least_one_local(rtr_loc, their_loc):
                             rtr.addLink(getLink(theirlocstr, mylocstr, num), "port%d"%port, _params["link_lat"])
-                            log(0, "r2r %s -> %sp%d"%(theirlocstr, mylocstr, port))
                         port = port+1
                 else:
                     port += self.dimwidths[dim]
+
+            # We're done for ghost components    
+            if is_ghost:
                 continue
-                
-            if not is_ghost:
-                log(0, 'endpoints for router %s start at port %d'%(mylocstr, port))
-                for local_ep_number in range(_params["mesh.local_ports"]):
-                    global_ep_number = int(_params["mesh.local_ports"]) * rtr_global_id + local_ep_number
-                    ep = self._getEndPoint(global_ep_number).build(global_ep_number, {})
-                    if ep:
-                        nicLink = sst.Link("nic_%d_%d"%(rtr_global_id, local_ep_number))
-                        log(0, 'nic_%d_%d: ep%s -> %sp%d'%(rtr_global_id, local_ep_number, global_ep_number, mylocstr, port))
-                        if self.bundleEndpoints:
-                            log(0, 'setting no cut')
-                            nicLink.setNoCut()
-                        rtr.addLink(nicLink, "port%d"%port, _params["link_lat"])
-                        ep[0].addLink(nicLink, ep[1], ep[2])
-                        #nicLink.connect(ep, (rtr, "port%d"%port, _params["link_lat"]))
-                    port = port+1
-    
-    def build(self):
 
-        num_routers = _params["num_peers"] // _params["mesh.local_ports"]
-        links = dict()
-        def getLink(leftName, rightName, num):
-            name = "link_%s_%s_%d"%(leftName, rightName, num)
-            if name not in links:
-                links[name] = sst.Link(name)
-            return links[name]
-
-        swap_keys = [("mesh.shape","shape"),("mesh.width","width"),("mesh.local_ports","local_ports")]
-
-        _topo_params = _params.subsetWithRename(swap_keys);
-
-        for i in range(num_routers):
-            # set up 'mydims'
-            mydims = self._idToLoc(i)
-            mylocstr = self._formatShape(mydims)
-
-            rtr = self._instanceRouter(i,"merlin.hr_router")
-            #rtr = sst.Component("rtr.%s"%mylocstr, "merlin.hr_router")
-            rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
-            rtr.addParam("id", i)
-            rtr.setRank(0)
-            topology = rtr.setSubComponent("topology","merlin.mesh")
-            topology.addParams(_topo_params)
-
-            port = 0
-            for dim in range(self.nd):
-                theirdims = mydims[:]
-
-                # Positive direction
-                if mydims[dim]+1 < self.dims[dim]:
-                    theirdims[dim] = (mydims[dim] +1 ) % self.dims[dim]
-                    theirlocstr = self._formatShape(theirdims)
-                    for num in range(self.dimwidths[dim]):
-                        rtr.addLink(getLink(mylocstr, theirlocstr, num), "port%d"%port, _params["link_lat"])
-                        
-                        port = port+1
-
-                else:
-                    port += self.dimwidths[dim]
-
-                # Negative direction
-                if mydims[dim] > 0:
-                    theirdims[dim] = ((mydims[dim] -1) +self.dims[dim]) % self.dims[dim]
-                    theirlocstr = self._formatShape(theirdims)
-                    for num in range(self.dimwidths[dim]):
-                        rtr.addLink(getLink(theirlocstr, mylocstr, num), "port%d"%port, _params["link_lat"])
-                        
-                        port = port+1
-                else:
-                    port += self.dimwidths[dim]
-
-            for n in range(_params["mesh.local_ports"]):
-                nodeID = int(_params["mesh.local_ports"]) * i + n
-                ep = self._getEndPoint(nodeID).build(nodeID, {})
+            # For local components, create the endpoints and link them to the routers
+            for local_ep_number in range(_params["mesh.local_ports"]):
+                global_ep_number = int(_params["mesh.local_ports"]) * rtr_global_id + local_ep_number
+                ep = self._getEndPoint(global_ep_number).build(global_ep_number, {})
                 if ep:
-                    nicLink = sst.Link("nic_%d_%d"%(i, n))
+                    nic_link = sst.Link("nic_%d_%d"%(rtr_global_id, local_ep_number))
                     if self.bundleEndpoints:
-                       nicLink.setNoCut()
-                    nicLink.connect(ep, (rtr, "port%d"%port, _params["link_lat"]))
-                port = port+1
+                        nic_link.setNoCut()
+                    rtr.addLink(nic_link, "port%d"%port, _params["link_lat"])
+                    ep[0].addLink(nic_link, ep[1], ep[2])
+                port = port + 1
+    
 
 
 class EndPoint(object):
