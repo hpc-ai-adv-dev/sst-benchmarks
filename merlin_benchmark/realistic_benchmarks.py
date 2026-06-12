@@ -342,7 +342,7 @@ class topoDragonFly(Topo):
 
     def calculate_global_link_map(self):
         '''
-        The global link map is an array with as many elements as there are intergroup links exiting each group. The index of an element in the array corresponds to which intergroup link it is, counting from the first router's global ports up to the last router's global ports. The value at that index indicates which group that link connects to. Mapping can be either `absolute` or `relative`.
+        
         '''
         intergroup_per_router = _params["dragonfly.intergroup_per_router"]
         routers_per_group = _params["dragonfly.routers_per_group"]
@@ -364,7 +364,7 @@ class topoDragonFly(Topo):
                 self.global_link_map[rtr_idx*intergroup_per_router+j] = count;
                 count = count + 1
     
-    def global_router_idx(group_num, router_idx_in_group):
+    def global_router_idx(self, group_num, router_idx_in_group):
         return group_num * _params["dragonfly.routers_per_group"] + router_idx_in_group
 
     def rank_local_groups(self):
@@ -379,18 +379,20 @@ class topoDragonFly(Topo):
         for group_idx in range(my_group_start, my_group_end):
             yield group_idx
 
+    def group_idx_to_rank(self, group_idx):
+        groups_per_rank = max(1, _params["dragonfly.num_groups"] // _params['rank_count'])
+        return min(group_idx // groups_per_rank, _params['rank_count'] - 1)
 
-
-    def group_indices_to_intergroup_link_router_indices(self, group_src, group_dst):
+    def ig_router_indices(self, group_src, group_dst):
         '''
         Given two group indices, return the group-local router indices that connect those two groups. The returned `(rtr_idx1, rtr_idx2)` means that the intergroup link between `group_src` and `group_dst` connects router `rtr_idx1` in `group_src` to router `rtr_idx2` in `group_dst`.
         '''
         if group_src == group_dst:
-            log(0, 'Error: group_indices_to_intergroup_link_router_indices should not be called with the same group as source and destination')
+            log(0, 'Error: ig_router_indices should not be called with the same group as source and destination')
             return ()
         
         # Maximum amount of intergroup links that may be on a single router. For example, with ng=6, nr=2, within each group, one router will have 3 intergroup links and the other will have 2. 
-        intergroup_links_per_router = max(1, self._params['dragonfly.num_groups'] // self._params['dragonfly.routers_per_group'])
+        intergroup_links_per_router = max(1, _params['dragonfly.num_groups'] // _params['dragonfly.routers_per_group'])
 
         if self.global_routes == 'absolute':
             if group_src < group_dst:
@@ -414,21 +416,14 @@ class topoDragonFly(Topo):
     def rank_ghost_routers(self):
         global_link_map = self.get_global_link_map()
         for local_group_idx in self.rank_local_groups():
-            for global_link_idx in range(0, len(global_link_map)):
-                raw_dest = global_link_map[global_link_idx]
-                if raw_dest == -1:
+            for dst_grp_idx in range(0, self._params["dragonfly.num_groups"]):
+                if dst_grp_idx == local_group_idx:
                     continue
-                dest_group_idx = raw_dest % _params["dragonfly.num_groups"]
-                if self.global_routes == "absolute":
-                    dest_group_idx = dest_group_idx if dest_group_idx < local_group_idx else dest_group_idx + 1
-                elif self.global_routes == "relative":
-                    dest_group_idx = (dest_group_idx + local_group_idx + 1) % _params["dragonfly.num_groups"]
-                
-                if dest_group_idx == local_group_idx:
-                    log(0, "Warning: group %d has a global link to itself (global_link_idx %d, raw_dest %d)"%(local_group_idx, global_link_idx, raw_dest))
-                
+                (_, rtr_idx_dst) = self.ig_router_indices(local_group_idx, dst_grp_idx)
+                yield (dst_grp_idx, rtr_idx_dst)        
         
     def build_take2(self):
+        my_rank = _params['my_rank']
         links = dict()
         def get_link(name):
             if name not in links:
@@ -447,7 +442,9 @@ class topoDragonFly(Topo):
 
         # Given router `router_idx` in group `group_idx` and global port index `global_port_idx` (which ranges from 0 to intergroup_per_router-1), return the link that connects that port to a router in another group.
         def get_global_link(group_idx, router_idx, global_port_idx):
-            raw_dest = self.global_link_map[router_idx * intergroup_per_router + global_port_idx]
+            assert(global_port_idx < intergroup_per_router)
+            glm = self.get_global_link_map()
+            raw_dest = glm[router_idx * intergroup_per_router + global_port_idx]
             if raw_dest == -1:
                 return None
 
@@ -472,7 +469,87 @@ class topoDragonFly(Topo):
         swap_keys = [("dragonfly.hosts_per_router","hosts_per_router"),("dragonfly.routers_per_group","routers_per_group"),("dragonfly.intergroup_links","intergroup_links"),("dragonfly.num_groups","num_groups"),("dragonfly.intergroup_per_router","intergroup_per_router"),("dragonfly.algorithm","algorithm"),("dragonfly.global_route_mode","global_route_mode"),("dragonfly.adaptive_threshold","adaptive_threshold")]
         _topo_params = _params.subsetWithRename(swap_keys);
     
-    
+        # Create and connect local routers
+        for my_grp_idx in self.rank_local_groups():
+
+            for router_num in range(routers_per_group):
+                global_rtr_idx = self.global_router_idx(my_grp_idx, router_num)
+
+                log(0, f'creating router {router_num} for group {my_grp_idx} with global index {global_rtr_idx}')
+                rtr = self._instanceRouter(global_rtr_idx, "merlin.hr_router")
+                rtr.setRank(my_rank)
+                rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
+                rtr.addParam("id", global_rtr_idx)
+                topology = rtr.setSubComponent("topology","merlin.dragonfly")
+                topology.addParams(_topo_params)
+                # Not sure why this is only being added once in the original build method.
+                # Probably need to sort out how to add it to all ranks once, but will come to that later
+                if global_rtr_idx == 0:
+                    # Need to send in the global_port_map
+                    rtr.addParam("dragonfly.global_link_map",self.global_link_map)
+                    topology.addParam("global_link_map",self.global_link_map)
+
+                # Create and add endpoint components
+                port = 0
+                for p in range(_params["dragonfly.hosts_per_router"]):
+                    ep = self._getEndPoint(nic_num).build(nic_num, {})
+                    ep.setRank(my_rank)
+                    if ep:
+                        ep.setRank(my_rank)
+                        link = sst.Link("link_g%dr%dh%d"%(my_grp_idx, global_rtr_idx, p))
+                        if self.bundleEndpoints:
+                            link.setNoCut()
+                        link.connect(ep, (rtr, "port%d"%port, _params["link_lat"]) )
+                    nic_num = nic_num + 1
+                    port = port + 1
+                
+                # Create links within this group
+                for p in range(_params["dragonfly.routers_per_group"]):
+                    if p != router_num:
+                        src = min(p,router_num)
+                        dst = max(p,router_num)
+                        rtr.addLink(get_link("link_g%dr%dr%d"%(my_grp_idx, src, dst)), "port%d"%port, _params["link_lat"])
+                        port = port + 1
+                
+                # Create intergroup links
+                for p in range(_params["dragonfly.intergroup_per_router"]):
+                    link = get_global_link(my_grp_idx, router_num, p)
+                    if link is not None:
+                        rtr.addLink(link,"port%d"%port, _params["link_lat"])
+                    port = port + 1
+            
+            # Create the ghost routers this group connects to
+            for dst_grp_idx in range(0, num_groups):
+                if dst_grp_idx == my_grp_idx or self.group_idx_to_rank(dst_grp_idx) == my_rank:
+                    continue
+                (local_rtr_idx, dst_rtr_idx) = self.ig_router_indices(my_grp_idx, dst_grp_idx)
+                dst_rtr_global_idx = self.global_router_idx(dst_grp_idx, dst_rtr_idx)
+                log(0, 'creating ghost router for dst group %d, dst rtr idx %d'%(dst_grp_idx, dst_rtr_idx))
+                ghost_rtr = self._instanceRouter(dst_rtr_global_idx, "merlin.hr_router")
+                
+                ghost_rtr.addParam("id", dst_rtr_global_idx)
+                ghost_rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
+                ghost_rtr.setRank(self.group_idx_to_rank(dst_grp_idx))
+                topology = ghost_rtr.setSubComponent("topology","merlin.dragonfly")
+                topology.addParams(_topo_params)
+                # Skipping subcomponents as its a ghost router
+
+                # Add its connection to the local router
+                # Need: ghost router's port number for this connection
+                port_num = -1
+                for p in range(_params["dragonfly.intergroup_per_router"]):
+                    if self.get_global_link_map()[dst_rtr_idx * intergroup_per_router + p] == my_grp_idx:
+                        port_num = p
+                        break
+                assert(port_num != -1)
+                link = get_global_link(dst_grp_idx, dst_rtr_idx, port_num)
+                ghost_rtr.addLink(link, "port%d"%port_num, _params["link_lat"])
+
+
+
+
+                
+
 
     def build(self):
         links = dict()
@@ -516,7 +593,7 @@ class topoDragonFly(Topo):
 
         # g is group number
         # r is router number with group
-        # p is port number relative to start of global ports
+        # p is port number relative to start of global ports on this router
 
         def getGlobalLink(g, r, p):
             # Look into global link map to get the dest group and link
