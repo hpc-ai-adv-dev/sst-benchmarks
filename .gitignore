@@ -17,3 +17,5 @@ hpcstruct*
 *.so
 *~
 *.so.dSYM
+*.sstcpt
+*.bin
