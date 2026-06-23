@@ -678,6 +678,638 @@ class topoDragonFly(Topo):
 
 
 
+class topoFatTree(Topo):
+    def __init__(self):
+        Topo.__init__(self)
+        self.topoKeys = ["topology", "debug", "flit_size", "link_bw", "xbar_bw","input_latency","output_latency","input_buf_size","output_buf_size", "fattree.shape"]
+        self.topoOptKeys = ["xbar_arb", "fattree.routing_alg", "fattree.adaptive_threshold","num_vns","vn_remap","vn_remap_shm","portcontrol.output_arb","portcontrol.arbitration.qos_settings","portcontrol.arbitration.arb_vns","portcontrol.arbitration.arb_vcs"]
+        self.nicKeys = ["link_bw"]
+        self.ups = []
+        self.downs = []
+        self.routers_per_level = []
+        self.groups_per_level = []
+        self.start_ids = []
+
+
+    def getName(self):
+        return "Fat Tree"
+
+    def prepParams(self):
+#        if "xbar_arb" in _params:
+#            self.rtrKeys.append("xbar_arb")
+            #            _params["xbar_arb"] = "merlin.xbar_arb_lru"
+#        if "fattree.routing_alg" in _params:
+#            self.rtrKeys.append("fattree.routing_alg")
+#        if "fattree.adaptive_threshold" in _params:
+#            self.rtrKeys.append("fattree.adaptive_threshold")
+
+        self.shape = _params["fattree.shape"]
+
+        levels = self.shape.split(":")
+
+        for l in levels:
+            links = l.split(",")
+
+            self.downs.append(int(links[0]))
+            if len(links) > 1:
+                self.ups.append(int(links[1]))
+
+        self.total_hosts = 1
+        for i in self.downs:
+            self.total_hosts *= i
+
+#        print("Total hosts: " + str(self.total_hosts))
+
+        self.routers_per_level = [0] * len(self.downs)
+        self.routers_per_level[0] = self.total_hosts // self.downs[0]
+        for i in range(1,len(self.downs)):
+            self.routers_per_level[i] = self.routers_per_level[i-1] * self.ups[i-1] // self.downs[i]
+
+        self.start_ids = [0] * len(self.downs)
+        for i in range(1,len(self.downs)):
+            self.start_ids[i] = self.start_ids[i-1] + self.routers_per_level[i-1]
+
+        self.groups_per_level = [1] * len(self.downs);
+        if self.ups: # if ups is empty, then this is a single level and the following line will fail
+            self.groups_per_level[0] = self.total_hosts // self.downs[0]
+
+        for i in range(1,len(self.downs)-1):
+            self.groups_per_level[i] = self.groups_per_level[i-1] // self.downs[i]
+
+        _params["debug"] = debug
+        _params["topology"] = "merlin.fattree"
+        _params["num_peers"] = self.total_hosts
+
+
+    def router_id_to_position(self, rtr_id):
+        num_levels = len(self.start_ids)
+
+        # Check to make sure the index is in range
+        level = num_levels - 1
+        if rtr_id >= (self.start_ids[level] + self.routers_per_level[level]) or rtr_id < 0:
+            print("ERROR: topoFattree.getRouterNameForId: rtr_id not found: %d"%rtr_id)
+            sst.exit()
+
+        # Find the level
+        for x in range(num_levels-1,0,-1):
+            if rtr_id >= self.start_ids[x]:
+                break
+            level = level - 1
+
+        # Find the group
+        remainder = rtr_id - self.start_ids[level]
+        routers_per_group = self.routers_per_level[level] // self.groups_per_level[level]
+        group = remainder // routers_per_group
+        router = remainder % routers_per_group
+
+        return (level, group, router)
+
+    def getRouterNameForId(self,rtr_id):
+        level, group, router = self.router_id_to_position(rtr_id)
+        return self.getRouterNameForLocation((level,group,router))
+
+
+    def getRouterNameForLocation(self,location):
+        return "rtr_l%s_g%d_r%d"%(location[0],location[1],location[2])
+
+    def findRouterByLocation(self,location):
+        return sst.findComponentByName(self.getRouterNameForLocation(location));
+
+
+    def fattree_rb(self, level, group, links):
+        print("routers_per_level: %d, groups_per_level: %d, start_ids: %d"%(self.routers_per_level[level],self.groups_per_level[level],self.start_ids[level]))
+        id = self.start_ids[level] + group * (self.routers_per_level[level]//self.groups_per_level[level])
+        print("start id: " + str(id))
+
+
+        host_links = []
+        if level == 0:
+            # create all the nodes
+            for i in range(self.downs[0]):
+                node_id = id * self.downs[0] + i
+                #print("group: %d, id: %d, node_id: %d"%(group, id, node_id))
+                ep = self._getEndPoint(node_id).build(node_id, {})
+                if ep:
+                    hlink = sst.Link("hostlink_%d"%node_id)
+                    if self.bundleEndpoints:
+                       hlink.setNoCut()
+                    ep[0].addLink(hlink, ep[1], ep[2])
+                    host_links.append(hlink)
+
+            # Create the edge router
+            rtr_id = id
+
+            rtr = self._instanceRouter(rtr_id,"merlin.hr_router")
+            #rtr = sst.Component("rtr_l0_g%d_r0"%(group), "merlin.hr_router")
+
+            # Add parameters
+            rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
+            rtr.addParam("id",rtr_id)
+            rtr.addParam("num_ports",self.ups[0] + self.downs[0])
+            topology = rtr.setSubComponent("topology","merlin.fattree")
+            topology.addParams(self._topo_params)
+            # Add links
+            for l in range(len(host_links)):
+                rtr.addLink(host_links[l],"port%d"%l, _params["link_lat"])
+            for l in range(len(links)):
+                rtr.addLink(links[l],"port%d"%(l+self.downs[0]), _params["link_lat"])
+            return
+
+        rtrs_in_group = self.routers_per_level[level] // self.groups_per_level[level]
+        # Create the down links for the routers
+        rtr_links = [ [] for index in range(rtrs_in_group) ]
+        for i in range(rtrs_in_group):
+            for j in range(self.downs[level]):
+#                print("Creating link: link_l%d_g%d_r%d_p%d"%(level,group,i,j);)
+                rtr_links[i].append(sst.Link("link_l%d_g%d_r%d_p%d"%(level,group,i,j)));
+
+        # Now create group links to pass to lower level groups from router down links
+        group_links = [ [] for index in range(self.downs[level]) ]
+        for i in range(self.downs[level]):
+            for j in range(rtrs_in_group):
+                group_links[i].append(rtr_links[j][i])
+
+        for i in range(self.downs[level]):
+            self.fattree_rb(level-1,group*self.downs[level]+i,group_links[i])
+
+        # Create the routers in this level.
+        # Start by adding up links to rtr_links
+        for i in range(len(links)):
+            rtr_links[i % rtrs_in_group].append(links[i])
+
+        for i in range(rtrs_in_group):
+            rtr_id = id + i
+
+            rtr = self._instanceRouter(rtr_id,"merlin.hr_router")
+            #rtr = sst.Component("rtr_l%d_g%d_r%d"%(level,group,i), "merlin.hr_router")
+
+            # Add parameters
+            rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
+            rtr.addParam("id",rtr_id)
+            rtr.addParam("num_ports",self.ups[level] + self.downs[level])
+            topology = rtr.setSubComponent("topology","merlin.fattree")
+            topology.addParams(self._topo_params)
+            # Add links
+            for l in range(len(rtr_links[i])):
+                rtr.addLink(rtr_links[i][l],"port%d"%l, _params["link_lat"])
+
+    def build(self):
+#        print("build()")
+
+        swap_keys = [("fattree.shape","shape"),("fattree.algorithm","algorithm"),("fattree.adaptive_threshold","adaptive_threshold")]
+
+        self._topo_params = _params.subsetWithRename(swap_keys);
+
+
+        level = len(self.ups)
+        if self.ups: # True for all cases except for single level
+            #  Create the router links
+            rtrs_in_group = self.routers_per_level[level] // self.groups_per_level[level]
+
+            # Create the down links for the routers
+            rtr_links = [ [] for index in range(rtrs_in_group) ]
+            for i in range(rtrs_in_group):
+                for j in range(self.downs[level]):
+#                    print("Creating link: link_l%d_g0_r%d_p%d"%(level,i,j))
+                    rtr_links[i].append(sst.Link("link_l%d_g0_r%d_p%d"%(level,i,j)));
+
+            # Now create group links to pass to lower level groups from router down links
+            group_links = [ [] for index in range(self.downs[level]) ]
+            for i in range(self.downs[level]):
+                for j in range(rtrs_in_group):
+                    group_links[i].append(rtr_links[j][i])
+
+
+            for i in range(self.downs[len(self.ups)]):
+                self.fattree_rb(level-1,i,group_links[i])
+
+            # Create the routers in this level
+            radix = self.downs[level]
+            for i in range(self.routers_per_level[level]):
+
+                rtr_id = self.start_ids[len(self.ups)] + i
+
+                rtr = self._instanceRouter(rtr_id,"merlin.hr_router")
+                #rtr = sst.Component("rtr_l%d_g0_r%d"%(len(self.ups),i),"merlin.hr_router")
+
+                rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
+                rtr.addParam("id", rtr_id)
+                rtr.addParam("num_ports",radix)
+                topology = rtr.setSubComponent("topology","merlin.fattree")
+                topology.addParams(self._topo_params)
+
+                for l in range(len(rtr_links[i])):
+                    rtr.addLink(rtr_links[i][l], "port%d"%l, _params["link_lat"])
+
+        else: # Single level case
+            # create all the nodes
+            for i in range(self.downs[0]):
+                node_id = i
+#                print("Instancing node " + str(node_id))
+        rtr_id = 0
+#        print("Instancing router " + str(rtr_id))
+
+    def build_single_level_case(self):
+        rtr = self._instanceRouter(0,"merlin.hr_router")
+        rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
+        rtr.addParam("id", 0)
+        rtr.addParam("num_ports",self.downs[0])
+        topology = rtr.setSubComponent("topology","merlin.fattree")
+        topology.addParams(self._topo_params)
+        for i in range(self.downs[0]):
+            node_id = i
+            ep = self._getEndPoint(node_id).build(node_id, {})
+            if ep:
+                link = sst.Link("link_g0r0h%d"%(i))
+                if self.bundleEndpoints:
+                    link.setNoCut()
+                ep[0].addLink(link, ep[1], ep[2])
+                rtr.addLink(link, "port%d"%i, _params["link_lat"])
+
+    def build_recursive(self, level, group, links_from_above):
+        '''
+        level: current level of routers we are building, l0 is the level connected to endpoints
+        group: the group number within the current level we are building
+        links_from_above: the links that connect to the routers in this group from the level above
+        '''
+        pass
+        id = self.start_ids[level] + group * (self.routers_per_level[level]//self.groups_per_level[level])
+
+        # base case
+        
+        if level == 0:
+            host_links = []
+            # create the endpoints
+            for i in range(self.downs[0]):
+                ep_id = id * self.downs[0] + i
+                log(0, 'creating endpoint with id %d for group %d, level %d'%(ep_id, group, level))
+                endpoint = self._getEndPoint(ep_id).build(ep_id, {})
+                host_link = sst.Link("hostlink_%d"%ep_id)
+                if self.bundleEndpoints:
+                    host_link.setNoCut()
+                endpoint[0].addLink(host_link, endpoint[1], endpoint[2])
+                host_links.append(host_link)
+            
+            # Create the edge router
+            rtr_id = id
+            rtr = self._instanceRouter(rtr_id,"merlin.hr_router")
+
+
+            # Add parameters
+            rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
+            rtr.addParam("id",rtr_id)
+            rtr.addParam("num_ports",self.ups[0] + self.downs[0])
+            topology = rtr.setSubComponent("topology","merlin.fattree")
+            topology.addParams(self._topo_params)
+
+            # Add links
+            for l in range(len(host_links)):
+                rtr.addLink(host_links[l],"port%d"%l, _params["link_lat"])
+            for l in range(len(links_from_above)):
+                rtr.addLink(links_from_above[l],"port%d"%(l+self.downs[0]), _params["link_lat"])
+            return
+        
+        # Recursive Case
+
+        rtrs_in_group = self.routers_per_level[level] // self.groups_per_level[level]
+
+        # Create the down links for the routers
+        rtr_links = [ [] for index in range(rtrs_in_group) ]
+        for i in range(rtrs_in_group):
+            for j in range(self.downs[level]):
+                rtr_links[i].append(sst.Link("link_l%d_g%d_r%d_p%d"%(level,group,i,j)));
+
+        # Organize those down links by the group they'll connect to in the next level down
+        group_links = [ [] for index in range(self.downs[level]) ]
+        for i in range(self.downs[level]):
+            for j in range(rtrs_in_group):
+                group_links[i].append(rtr_links[j][i])
+
+        # Create the groups in the next level down
+        for i in range(self.downs[level]):
+            self.build_recursive(level-1,group*self.downs[level]+i,group_links[i])
+
+        # Create the routers in this level.
+        # Start by adding up links to rtr_links
+        for i in range(len(links_from_above)):
+            rtr_links[i % rtrs_in_group].append(links_from_above[i])
+
+        for i in range(rtrs_in_group):
+            rtr_id = id + i
+
+            rtr = self._instanceRouter(rtr_id,"merlin.hr_router")
+            #rtr = sst.Component("rtr_l%d_g%d_r%d"%(level,group,i), "merlin.hr_router")
+
+            # Add parameters
+            rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
+            rtr.addParam("id",rtr_id)
+            if len(self.ups) == level:
+                # This is the top level, so no up links
+                rtr.addParam('num_ports',self.downs[level])
+            else:
+                rtr.addParam("num_ports",self.ups[level] + self.downs[level])
+            topology = rtr.setSubComponent("topology","merlin.fattree")
+            topology.addParams(self._topo_params)
+            # Add links
+            for l in range(len(rtr_links[i])):
+                rtr.addLink(rtr_links[i][l],"port%d"%l, _params["link_lat"])
+
+
+    def build_recursive_distributed(self, level, group, links_from_above, boundary_only):
+        '''
+        level: current level of routers we are building, l0 is the level connected to endpoints
+        group: the group number within the current level we are building
+        links_from_above: the links that connect to the routers in this group from the level above
+
+        We assume that if this function is called, there's at least one component on this rank in this call or a lower level group.
+
+        '''
+        if not boundary_only and not self.subtree_has_local_owner(level, group):
+            return
+        
+        id = self.start_ids[level] + group * (self.routers_per_level[level]//self.groups_per_level[level])
+
+
+        if level == 0:
+            host_links_with_ids = []
+            router_is_local = self.router_id_to_rank(id) == _params["my_rank"]
+            # Create the endpoints if they or the router is local to this rank
+            for i in range(self.downs[0]):
+                ep_id = id * self.downs[0] + i
+                ep_is_local = self.endpoint_id_to_rank(ep_id) == _params["my_rank"]
+                if router_is_local or ep_is_local:
+                    log(0, 'Creating endpoint with id %d for group %d, level %d. ghost: %s'%(ep_id, group, level, not ep_is_local))
+                    endpoint = self._getEndPoint(ep_id).build(ep_id, {})
+                    endpoint[3].setRank(self.endpoint_id_to_rank(ep_id))
+                    host_link = sst.Link("hostlink_%d"%ep_id)
+                    endpoint[0].addLink(host_link, endpoint[1], endpoint[2])
+                    host_links_with_ids.append((ep_id, host_link))
+
+            # At least one of the endpoints or the router must be local to this rank, so we always create the router
+            rtr_id = id
+            log(0, 'Creating edge router with id %d for group %d, level %d. ghost: %s'%(rtr_id, group, level, not router_is_local))
+            rtr = self._instanceRouter(rtr_id,"merlin.hr_router")
+            rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
+            rtr.addParam("id",rtr_id)
+            rtr.addParam("num_ports",self.ups[0] + self.downs[0])
+            rtr.setRank(self.router_id_to_rank(rtr_id))
+
+            topology = rtr.setSubComponent("topology","merlin.fattree")
+            topology.addParams(self._topo_params)
+
+            # Add the links
+            for (ep_id, host_link) in host_links_with_ids:
+                rtr.addLink(host_link,"port%d"% (ep_id % self.downs[0]), _params["link_lat"])
+            for l in range(len(links_from_above)):
+                rtr.addLink(links_from_above[l],"port%d"%(l+self.downs[0]), _params["link_lat"])
+            return
+        
+        # Build current level routers
+        my_rank = _params["my_rank"]
+        rtrs_in_group = self.routers_per_level[level] // self.groups_per_level[level]
+
+        # Determine which children are relevant for recursion on this rank
+        child_groups = [group * self.downs[level] + i for i in range(self.downs[level])]
+        child_has_local_owner = [self.subtree_has_local_owner(level-1, child_group) for child_group in child_groups]
+
+        # Either this subtree has local owners or we're in boundary_only mode
+        # Routers in this group are needed when either this rank owns the router, 
+        #  this rank owns something in a child subtree, or there are links 
+        #  arriving from above
+        any_child_needed = any(child_has_local_owner)
+        has_links_from_above = len(links_from_above) > 0
+
+        # Create the down links for the routers
+        rtr_links = [ [] for index in range(rtrs_in_group) ]
+        for i in range(rtrs_in_group):
+            for j in range(self.downs[level]):
+                link = sst.Link("link_l%d_g%d_r%d_p%d"%(level,group,i,j))
+                rtr_links[i].append(link)
+
+        # Organize down links by child group to pass to recursive calls
+        group_links = [ [] for index in range(self.downs[level]) ]
+        for child_idx in range(self.downs[level]):
+            for rtr_idx in range(rtrs_in_group):
+                group_links[child_idx].append(rtr_links[rtr_idx][child_idx])
+
+        # Add incoming links from parent level, round-robin to the routers in this group
+        for i, uplink in enumerate(links_from_above):
+            rtr_links[i % rtrs_in_group].append(uplink)
+
+        # Instantiate the current-level routers
+        for i in range(rtrs_in_group):
+            rtr_id = id + i
+            owner_rank = self.router_id_to_rank(rtr_id)
+            log(0, f'router_id_to_rank({rtr_id}) = {owner_rank}')
+            log(0, f'router_id_to_component_num({rtr_id}) = {self.router_id_to_component_num(rtr_id)}')
+            is_local_router = owner_rank == my_rank
+
+            must_exist_here = is_local_router or any_child_needed or has_links_from_above
+            if not must_exist_here:
+                # No need to create this router on this rank, as it has no local components and no links from above
+                continue
+
+            log(0, 'Creating router with id %d for group %d, level %d. ghost: %s'%(rtr_id, group, level, not is_local_router))
+            rtr = self._instanceRouter(rtr_id,"merlin.hr_router")
+            rtr.setRank(owner_rank)
+            rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
+            rtr.addParam("id",rtr_id)
+            if len(self.ups) == level:
+                # This is the top level, so no up links
+                rtr.addParam('num_ports',self.downs[level])
+            else:
+                rtr.addParam("num_ports",self.ups[level] + self.downs[level])
+            topology = rtr.setSubComponent("topology", 'merlin.fattree')
+            topology.addParams(self._topo_params)
+
+            # Add the links
+            for p, link in enumerate(rtr_links[i]):
+                rtr.addLink(link, "port%d"%p, _params["link_lat"])
+
+
+        # Now do recursion as necessary
+        if boundary_only:
+            # No need to build lower level components.
+            return
+        
+        # Decide per-child recursion
+        parent_has_local_router = False
+        routers_per_group = self.routers_per_level[level] // self.groups_per_level[level]
+        for i in range(routers_per_group):
+            rtr_id = id + i
+            if self.router_id_to_rank(rtr_id) == _params["my_rank"]:
+                parent_has_local_router = True
+                break
+        
+        for i in range(self.downs[level]):
+            child_group = group * self.downs[level] + i
+            child_has_local_owner = self.subtree_has_local_owner(level-1, child_group)
+
+            if not child_has_local_owner and not parent_has_local_router:
+                # No need to recurse into this child, as it has no local components and the parent router is not local to this rank
+                continue
+
+            self.build_recursive_distributed(level-1, child_group, group_links[i], boundary_only=not child_has_local_owner)
+
+
+
+        
+        
+
+    def build_take2(self):
+        swap_keys = [("fattree.shape","shape"),("fattree.algorithm","algorithm"),("fattree.adaptive_threshold","adaptive_threshold")]
+        self._topo_params = _params.subsetWithRename(swap_keys);
+
+        if not self.ups:
+            # Single level case, just create the endpoints and connect to a single router
+            self.build_single_level_case()
+            return
+        
+        top_level = len(self.ups)
+        self.build_recursive(top_level, 0, [])
+
+    def build_distributed(self):
+        swap_keys = [("fattree.shape","shape"),("fattree.algorithm","algorithm"),("fattree.adaptive_threshold","adaptive_threshold")]
+        self._topo_params = _params.subsetWithRename(swap_keys);
+
+        log(0, f'Building distributed fatree topology. Total components: {self.total_components()}. My component range: {self.rank_to_component_range(_params["my_rank"])}')
+        if not self.ups:
+            # Single level case, just create the endpoints and connect to a single router
+            self.build_single_level_case()
+            return
+        
+        top_level = len(self.ups)
+        self.build_recursive_distributed(top_level, 0, [], boundary_only=False)
+
+    def total_components(self):
+        total_routers = sum(self.routers_per_level)
+        return self.total_hosts + total_routers
+    
+    # Our distribution strategy is to map components in their order of creation to ranks in a block manner.
+    # This means that the first total_components()/num_ranks components created will be on rank 0, 
+    # the next total_components()/num_ranks will be on rank 1, and so on. So to determine which component
+    # goes on which rank, we need to keep track of the order in which components are created and map that to ranks.
+
+    def rank_to_component_range(self, rank):
+        total_components = self.total_components()
+        _ranks = _params["rank_count"]
+
+        base = total_components // _ranks
+        remainder = total_components % _ranks
+
+        start = rank * base + min(rank, remainder)
+        count = base + (1 if rank < remainder else 0)
+        end = start + count - 1
+        return (start, end)
+        
+    def component_num_to_rank(self, component_num):
+        total_components = self.total_components()
+        _ranks = _params["rank_count"]
+
+        base = total_components // _ranks
+        remainder = total_components % _ranks
+
+        split = (base + 1) * remainder
+        if component_num < split:
+            return component_num // (base + 1)
+        else:
+            return (component_num - split) // base + remainder
+    
+    def router_id_to_rank(self, router_id):
+        component_num = self.router_id_to_component_num(router_id)
+        return self.component_num_to_rank(component_num)
+
+    def endpoint_id_to_rank(self, endpoint_id):
+        component_num = self.endpoint_id_to_component_num(endpoint_id)
+        return self.component_num_to_rank(component_num)
+
+    def router_id_to_component_num(self, router_id):
+        level,group,number = self.router_id_to_position(router_id)
+        return self.router_to_component_num(level, group, number)
+
+    def router_to_component_num(self, router_level, router_group, router_number):
+        if router_level == len(self.ups):
+            # This is the top level, so there is only one group and one router
+            return self.components_in_and_below_group(router_level) - self.routers_per_level[router_level] + router_number
+
+        # We need to sum the children of this group and the components processed in the depth first before this group
+
+        # Children of this group
+        routers_per_group_this_level = self.routers_per_level[router_level] // self.groups_per_level[router_level]
+        components_from_children = self.components_in_and_below_group(router_level) - routers_per_group_this_level
+
+        # Components processed in depth first before this group
+        components_from_previous_groups = router_group * self.components_in_and_below_group(router_level)
+
+        # We also may have processed some number of groups at higher levels before this group, so we need to find out how many and account for them too
+        # We'll process this by going up the tree, finding the parent group, and then finding out how many groups at that level have been processed already.
+        # We'll add those routers to the count, then continue up the tree until we're either at the top level or at a group that is the first group in its parent group,
+        # which, because its a depth first traversal, means that its routers haven't been processed yet.
+
+        tmp_group = router_group
+        tmp_level = router_level
+        while tmp_group > 0:
+            groups_at_tmp_level_per_parent_level = self.groups_per_level[tmp_level] // self.groups_per_level[tmp_level+1]
+            tmp_group = tmp_group // groups_at_tmp_level_per_parent_level
+            tmp_level = tmp_level + 1
+            routers_per_group_at_tmp_level = self.routers_per_level[tmp_level] // self.groups_per_level[tmp_level]
+            routers_already_processed_at_tmp_level = tmp_group * routers_per_group_at_tmp_level
+            components_from_previous_groups = components_from_previous_groups + routers_already_processed_at_tmp_level
+
+        return components_from_children + components_from_previous_groups + router_number
+
+    def endpoint_id_to_component_num(self, endpoint_id):
+        routers_at_bottom = self.routers_per_level[0]
+        endpoints_per_router = self.downs[0]
+        my_router_number = endpoint_id // endpoints_per_router
+        my_router_level = 0
+        my_router_group = my_router_number // (routers_at_bottom // self.groups_per_level[0])
+        my_place_in_router = endpoint_id % endpoints_per_router
+
+        my_router_number_in_group = my_router_number % (routers_at_bottom // self.groups_per_level[0])
+        
+        # I am created before my parent router, so my component number is less than my parents
+        parent_router_component_number = self.router_to_component_num(my_router_level, my_router_group, my_router_number_in_group)
+        component_number = parent_router_component_number - endpoints_per_router + my_place_in_router
+        return component_number
+
+    def components_in_and_below_group(self, level):
+        # Return the number of components in and below a group at this level, 
+        # including routers and endpoints in this group and all groups below it.
+
+        if level == 0:
+            return self.downs[0] + 1 # endpoints + the router itself
+        
+        lower_level_groups_per_this_level_group = self.groups_per_level[level-1] // self.groups_per_level[level]
+        
+        components_in_lower_level_groups = self.components_in_and_below_group(level-1) * lower_level_groups_per_this_level_group
+
+        routers_per_group_this_level = self.routers_per_level[level] // self.groups_per_level[level]
+
+        return components_in_lower_level_groups + routers_per_group_this_level
+    def group_component_range(self, level, group):
+        # Inclusive [start, end] component-number range for this subtree.
+        size = self.components_in_and_below_group(level)
+        routers_per_group = self.routers_per_level[level] // self.groups_per_level[level]
+        last_router_num = routers_per_group - 1
+
+        end = self.router_to_component_num(level, group, last_router_num)
+        start = end - size + 1
+        return (start, end)
+
+    def ranges_overlap(self, a_start, a_end, b_start, b_end):
+        return not (a_end < b_start or b_end < a_start)
+
+    def subtree_has_local_owner(self, level, group):
+        my_start, my_end = self.rank_to_component_range(_params["my_rank"])
+        g_start, g_end = self.group_component_range(level, group)
+        return self.ranges_overlap(my_start, my_end, g_start, g_end)
+
+
+
+
+        
+
 
 class EndPoint(object):
     def __init__(self):
@@ -692,6 +1324,10 @@ class EndPoint(object):
         pass
     def build(self, nID, extraKeys):
         return None
+
+
+
+
 
 class TestEndPoint(EndPoint):
     def __init__(self):
@@ -756,7 +1392,7 @@ class TestEndPoint(EndPoint):
                 offset = offset + self.group_array[i]
         if self.enableAllStats:
             nic.enableAllStatistics({"type":"sst.AccumulatorStatistic","rate":self.statInterval})
-        return (linkif, "rtr_port", _params["link_lat"])
+        return (linkif, "rtr_port", _params["link_lat"], nic)
     
     def enableAllStatistics(self,interval):
         self.enableAllStats = True;
