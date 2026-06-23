@@ -66,9 +66,7 @@ class Topo(object):
     def findRouterById(self,rtr_id):
         return sst.findComponentByName(self.getRouterNameForId(rtr_id))
     def _instanceRouter(self,rtr_id,rtr_type):
-        log(0, f'_instanceRouter({rtr_id}, {rtr_type})')
         name = self.getRouterNameForId(rtr_id)
-        log(0, f'returning sst.Component({name, rtr_type})')
         return sst.Component(self.getRouterNameForId(rtr_id),rtr_type)
 
 
@@ -777,9 +775,7 @@ class topoFatTree(Topo):
 
 
     def fattree_rb(self, level, group, links):
-        print("routers_per_level: %d, groups_per_level: %d, start_ids: %d"%(self.routers_per_level[level],self.groups_per_level[level],self.start_ids[level]))
         id = self.start_ids[level] + group * (self.routers_per_level[level]//self.groups_per_level[level])
-        print("start id: " + str(id))
 
 
         host_links = []
@@ -1015,6 +1011,7 @@ class topoFatTree(Topo):
                 rtr.addLink(rtr_links[i][l],"port%d"%l, _params["link_lat"])
 
 
+    link_map = {}
     def build_recursive_distributed(self, level, group, links_from_above, boundary_only):
         '''
         level: current level of routers we are building, l0 is the level connected to endpoints
@@ -1029,7 +1026,7 @@ class topoFatTree(Topo):
         
         id = self.start_ids[level] + group * (self.routers_per_level[level]//self.groups_per_level[level])
 
-
+        skip_links = []
         if level == 0:
             host_links_with_ids = []
             router_is_local = self.router_id_to_rank(id) == _params["my_rank"]
@@ -1038,16 +1035,18 @@ class topoFatTree(Topo):
                 ep_id = id * self.downs[0] + i
                 ep_is_local = self.endpoint_id_to_rank(ep_id) == _params["my_rank"]
                 if router_is_local or ep_is_local:
-                    log(0, 'Creating endpoint with id %d for group %d, level %d. ghost: %s'%(ep_id, group, level, not ep_is_local))
+                    log(0, f'endpoint  : {ep_id},{"local" if ep_is_local else "remote"}')
                     endpoint = self._getEndPoint(ep_id).build(ep_id, {})
                     endpoint[3].setRank(self.endpoint_id_to_rank(ep_id))
                     host_link = sst.Link("hostlink_%d"%ep_id)
+                    self.link_map[host_link] = (level, group, ep_id)
+                    log(0, f'link -> endpoint: {str(self.link_map[host_link])} -> ({ep_id})')
                     endpoint[0].addLink(host_link, endpoint[1], endpoint[2])
                     host_links_with_ids.append((ep_id, host_link))
 
             # At least one of the endpoints or the router must be local to this rank, so we always create the router
             rtr_id = id
-            log(0, 'Creating edge router with id %d for group %d, level %d. ghost: %s'%(rtr_id, group, level, not router_is_local))
+            log(0, f'router (l,g,r,local) : ({level},{group},{0},{router_is_local})')
             rtr = self._instanceRouter(rtr_id,"merlin.hr_router")
             rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
             rtr.addParam("id",rtr_id)
@@ -1059,9 +1058,17 @@ class topoFatTree(Topo):
 
             # Add the links
             for (ep_id, host_link) in host_links_with_ids:
+                ep_is_local = self.endpoint_id_to_rank(ep_id) == _params["my_rank"]
+                if not ep_is_local and not router_is_local:
+                    continue
+                log(0, f'link -> rtr: {str(self.link_map[host_link])} -> ({level},{group},{0})')
                 rtr.addLink(host_link,"port%d"% (ep_id % self.downs[0]), _params["link_lat"])
             for l in range(len(links_from_above)):
-                rtr.addLink(links_from_above[l],"port%d"%(l+self.downs[0]), _params["link_lat"])
+                link, link_local = links_from_above[l]
+                if not link_local and not router_is_local:
+                    continue
+                log(0, f'link -> rtr: {str(self.link_map[link])} -> ({level},{group},{0})')
+                rtr.addLink(link,"port%d"%(l+self.downs[0]), _params["link_lat"])
             return
         
         # Build current level routers
@@ -1083,25 +1090,47 @@ class topoFatTree(Topo):
         rtr_links = [ [] for index in range(rtrs_in_group) ]
         for i in range(rtrs_in_group):
             for j in range(self.downs[level]):
-                link = sst.Link("link_l%d_g%d_r%d_p%d"%(level,group,i,j))
-                rtr_links[i].append(link)
+                # This is the link that connects router i in this group to child group j in the next level down
+                # We can calculate which router in the child group it connects to by the fact that the child group has routers_per_level[level-1] // groups_per_level[level-1] routers, and the link from router i in this group connects to router (i % routers_in_child_group) in the child group j
+                dest_level = level - 1
+                dest_group = group * self.downs[level] + j
+                dest_id_within_child_group = i % (self.routers_per_level[level-1] // self.groups_per_level[level-1])
+                dest_comp_num = self.router_to_component_num(dest_level, dest_group, dest_id_within_child_group)
+
+                src_comp_num = self.router_to_component_num(level, group, i)
+                
+                src_local = self.component_num_to_rank(src_comp_num) == my_rank
+                dest_local = self.component_num_to_rank(dest_comp_num) == my_rank
+
+                if not src_local and not dest_local:
+                    rtr_links[i].append(None)
+                else:
+                    link = sst.Link("link_l%d_g%d_r%d_p%d"%(level,group,i,j))
+                    self.link_map[link] = (level, group, i, j)
+                    rtr_links[i].append(link)
 
         # Organize down links by child group to pass to recursive calls
         group_links = [ [] for index in range(self.downs[level]) ]
         for child_idx in range(self.downs[level]):
             for rtr_idx in range(rtrs_in_group):
-                group_links[child_idx].append(rtr_links[rtr_idx][child_idx])
+                src_router_component_num = self.router_to_component_num(level, group, rtr_idx)
+                src_router_local = self.component_num_to_rank(src_router_component_num) == my_rank
+                group_links[child_idx].append((rtr_links[rtr_idx][child_idx], src_router_local))
 
         # Add incoming links from parent level, round-robin to the routers in this group
-        for i, uplink in enumerate(links_from_above):
+        for i, (uplink, uplink_local) in enumerate(links_from_above):
+            
+            dst_rtr_idx_in_group = i % rtrs_in_group
+            dst_rtr_component_num = self.router_to_component_num(level, group, dst_rtr_idx_in_group)
+            dst_rtr_local = self.component_num_to_rank(dst_rtr_component_num) == my_rank
+            if not uplink_local and not dst_rtr_local:
+                continue
             rtr_links[i % rtrs_in_group].append(uplink)
 
         # Instantiate the current-level routers
         for i in range(rtrs_in_group):
             rtr_id = id + i
             owner_rank = self.router_id_to_rank(rtr_id)
-            log(0, f'router_id_to_rank({rtr_id}) = {owner_rank}')
-            log(0, f'router_id_to_component_num({rtr_id}) = {self.router_id_to_component_num(rtr_id)}')
             is_local_router = owner_rank == my_rank
 
             must_exist_here = is_local_router or any_child_needed or has_links_from_above
@@ -1109,7 +1138,7 @@ class topoFatTree(Topo):
                 # No need to create this router on this rank, as it has no local components and no links from above
                 continue
 
-            log(0, 'Creating router with id %d for group %d, level %d. ghost: %s'%(rtr_id, group, level, not is_local_router))
+            log(0, f'router (l,g,r,local) : ({level},{group},{i},{is_local_router})')
             rtr = self._instanceRouter(rtr_id,"merlin.hr_router")
             rtr.setRank(owner_rank)
             rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
@@ -1124,6 +1153,9 @@ class topoFatTree(Topo):
 
             # Add the links
             for p, link in enumerate(rtr_links[i]):
+                if link in skip_links or link is None:
+                    continue
+                log(0, f'link -> rtr: {str(self.link_map[link])} -> ({level},{group},{i})')
                 rtr.addLink(link, "port%d"%p, _params["link_lat"])
 
 
@@ -1365,8 +1397,6 @@ class TestEndPoint(EndPoint):
 
 
         nic = sst.Component("testNic_%d"%nID, "merlin.test_nic")
-        
-        log(0, 'testNic_%d on rank %d'%(nID, _params['my_rank']))
 
         linkif = nic.setSubComponent("networkIF","merlin.linkcontrol")
         nic.setRank(_params['my_rank'])
