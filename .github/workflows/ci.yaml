@@ -11,6 +11,7 @@ jobs:
       matrix: &test-matrix
         sst_version:
           - { tag: "15.1.2", image: "ghcr.io/hpc-ai-adv-dev/sst-core:15.1.2" }
+          - { tag: "16.0.0", image: "ghcr.io/hpc-ai-adv-dev/sst-core:16.0.0" }
           - { tag: "master", image: "ghcr.io/hpc-ai-adv-dev/sst-core:master-latest" }
         component: ["gameoflife", "pingpong", "phold"]
         architecture:
