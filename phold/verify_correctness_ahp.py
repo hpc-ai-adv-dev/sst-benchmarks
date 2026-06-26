@@ -5,13 +5,51 @@ Correctness tests comparing phold_dist_ahp.py to phold_dist.py.
 Verifies that recvCount values match for each (i,j) component.
 """
 
+import re
+import shutil
 import subprocess
 import sys
-import re
-from typing import Dict, Tuple, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 
 SUPPORTED_ARCHITECTURES = ["spmd", "global"]
+
+
+def build_launcher_command(
+    launcher: str,
+    num_nodes: int,
+    num_ranks_per_node: int,
+) -> List[str]:
+    """Build the launcher command for the current runtime environment.
+    """
+    
+    total_ranks = num_nodes * num_ranks_per_node
+
+    if launcher == "auto":
+        if shutil.which("srun"):
+            launcher = "srun"
+        elif shutil.which("mpirun"):
+            launcher = "mpirun"
+        else:
+            raise ValueError("Neither srun nor mpirun is available")
+
+    if launcher == "srun":
+        if not shutil.which("srun"):
+            raise ValueError("Requested launcher 'srun' is not available")
+        return [
+            "srun",
+            "-N",
+            str(num_nodes),
+            "--ntasks-per-node",
+            str(num_ranks_per_node),
+        ]
+
+    if launcher == "mpirun":
+        if not shutil.which("mpirun"):
+            raise ValueError("Requested launcher 'mpirun' is not available")
+        return ["mpirun", "-np", str(total_ranks)]
+
+    raise ValueError(f"Unsupported launcher: {launcher}")
 
 
 def parse_recv_counts(output: str) -> Dict[Tuple[int, int], int]:
@@ -34,16 +72,12 @@ def parse_recv_counts(output: str) -> Dict[Tuple[int, int], int]:
 def run_simulation(script: str, height: int, width: int, num_rings: int,
                    num_nodes: int, num_ranks_per_node: int,
                    time_to_run: str = "1000ns",
-                   extra_args: Optional[List[str]] = None) -> Tuple[str, int]:
+                   extra_args: Optional[List[str]] = None,
+                   launcher: str = "auto") -> Tuple[str, int]:
     """Run a PHOLD simulation and return (output, exit_code).
-    
-    Uses srun with SST parallel-load=SINGLE.
     """
-    total_ranks = num_nodes * num_ranks_per_node
-    
-    cmd = [
-        "srun", "-N", str(num_nodes),
-        "--ntasks-per-node", str(num_ranks_per_node),
+    try:
+        cmd = build_launcher_command(launcher, num_nodes, num_ranks_per_node) + [
         "sst", "--parallel-load=SINGLE",
         script,
         "--",
@@ -52,7 +86,9 @@ def run_simulation(script: str, height: int, width: int, num_rings: int,
         f"--numRings={num_rings}",
         f"--timeToRun={time_to_run}",
         "--verbose=1",  # Enable recvCount output
-    ]
+        ]
+    except ValueError as error:
+        return f"ERROR: {error}", -1
     
     if extra_args:
         cmd.extend(extra_args)
@@ -147,7 +183,8 @@ class TestCase:
 
 
 def run_test(test: TestCase, verbose: bool = True,
-             architecture: str = "spmd") -> Tuple[bool, str]:
+             architecture: str = "spmd",
+             launcher: str = "auto") -> Tuple[bool, str]:
     """Run a single test case."""
     
     if verbose:
@@ -167,7 +204,8 @@ def run_test(test: TestCase, verbose: bool = True,
         "phold_dist.py",
         test.height, test.width, test.num_rings,
         test.num_nodes, test.num_ranks_per_node,
-        test.time_to_run
+        test.time_to_run,
+        launcher=launcher,
     )
     
     if og_exit != 0:
@@ -188,7 +226,8 @@ def run_test(test: TestCase, verbose: bool = True,
         test.height, test.width, test.num_rings,
         test.num_nodes, test.num_ranks_per_node,
         test.time_to_run,
-        extra_args=[f"--architecture={architecture}"]
+        extra_args=[f"--architecture={architecture}"],
+        launcher=launcher,
     )
     
     if ahp_exit != 0:
@@ -223,7 +262,8 @@ def print_counts_grid(counts: Dict[Tuple[int, int], int], height: int, width: in
 
 def run_inspect_single(height: int, width: int, num_rings: int,
                        num_nodes: int, num_ranks: int, label: str,
-                       architecture: str = "spmd") -> int:
+                       architecture: str = "spmd",
+                       launcher: str = "auto") -> int:
     """Run inspection for a single configuration and return 0 if match, 1 if diff."""
     total_ranks = num_nodes * num_ranks
     
@@ -244,7 +284,7 @@ def run_inspect_single(height: int, width: int, num_rings: int,
     print("\nRunning phold_dist.py...")
     og_output, og_exit = run_simulation(
         "phold_dist.py", height, width, num_rings,
-        num_nodes, num_ranks, "1000ns"
+        num_nodes, num_ranks, "1000ns", launcher=launcher
     )
     if og_exit != 0:
         print(f"Original failed: {og_output[:500]}")
@@ -257,7 +297,8 @@ def run_inspect_single(height: int, width: int, num_rings: int,
     ahp_output, ahp_exit = run_simulation(
         "phold_dist_ahp.py", height, width, num_rings,
         num_nodes, num_ranks, "1000ns",
-        extra_args=[f"--architecture={architecture}"]
+        extra_args=[f"--architecture={architecture}"],
+        launcher=launcher
     )
     if ahp_exit != 0:
         print(f"AHP failed: {ahp_output[:500]}")
@@ -293,7 +334,8 @@ def run_inspect_single(height: int, width: int, num_rings: int,
 
 
 def run_inspect_mode(tests: List['TestCase'], test_name: Optional[str],
-                     architecture: str = "spmd") -> int:
+                     architecture: str = "spmd",
+                     launcher: str = "auto") -> int:
     """Run inspect mode - print detailed recvCount values for comparison.
     
     If no test specified, runs both base configurations (8x8 grid).
@@ -311,7 +353,8 @@ def run_inspect_mode(tests: List['TestCase'], test_name: Optional[str],
         return run_inspect_single(
             height, width, test.num_rings,
             test.num_nodes, test.num_ranks_per_node, test.name,
-            architecture=architecture
+            architecture=architecture,
+            launcher=launcher,
         )
     
     # Default: run both base configurations
@@ -321,14 +364,16 @@ def run_inspect_mode(tests: List['TestCase'], test_name: Optional[str],
         height=8, width=8, num_rings=2,
         num_nodes=1, num_ranks=2,
         label="base_8x8_1n_2r (1 node, 2 ranks)",
-        architecture=architecture
+        architecture=architecture,
+        launcher=launcher,
     )
     
     result2 = run_inspect_single(
         height=8, width=8, num_rings=2,
         num_nodes=2, num_ranks=2,
         label="base_8x8_2n_2r (2 nodes, 2 ranks each)",
-        architecture=architecture
+        architecture=architecture,
+        launcher=launcher,
     )
     
     # Summary
@@ -509,6 +554,10 @@ def main():
             "(spmd, global, or all; default: spmd)"
         )
     )
+    parser.add_argument(
+        "--launcher", choices=["auto", "mpirun", "srun"], default="auto",
+        help="Select the job launcher at runtime"
+    )
     args = parser.parse_args()
     
     tests = get_test_cases()
@@ -529,7 +578,12 @@ def main():
         inspect_rc = 0
         for arch in architectures:
             print(f"\nRunning inspect mode with architecture='{arch}'")
-            rc = run_inspect_mode(tests, args.test, architecture=arch)
+            rc = run_inspect_mode(
+                tests,
+                args.test,
+                architecture=arch,
+                launcher=args.launcher,
+            )
             if rc != 0:
                 inspect_rc = 1
         return inspect_rc
@@ -549,13 +603,17 @@ def main():
         SUPPORTED_ARCHITECTURES if args.architecture == "all"
         else [args.architecture]
     )
-    
+
     for arch in architectures:
         if not args.quiet:
             print(f"\nTesting architecture='{arch}'")
         for test in tests:
-            success, msg = run_test(test, verbose=not args.quiet,
-                                    architecture=arch)
+            success, msg = run_test(
+                test,
+                verbose=not args.quiet,
+                architecture=arch,
+                launcher=args.launcher,
+            )
 
             if "SKIP" in msg:
                 skipped += 1
