@@ -21,18 +21,8 @@ def build_launcher_command(
     num_ranks_per_node: int,
 ) -> List[str]:
     """Build the launcher command for the current runtime environment.
-
-    Args:
-        launcher: Requested launcher mode: auto, mpirun, or srun.
-        num_nodes: Number of nodes requested for the simulation.
-        num_ranks_per_node: Number of ranks per node.
-
-    Returns:
-        The launcher command prefix.
-
-    Raises:
-        ValueError: If the requested launcher is unsupported or unavailable.
     """
+    
     total_ranks = num_nodes * num_ranks_per_node
 
     if launcher == "auto":
