@@ -1,6 +1,14 @@
 import sys
 import os
 import argparse
+import time
+import resource
+
+
+def get_memory_gb() -> float:
+    """Return current memory usage (RSS) in GB."""
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 * 1024)
+
 
 # Allow importing local ahp_graph if not installed
 sys.path.append(os.environ.get('AHP_PATH', '.'))
@@ -116,6 +124,10 @@ parser.add_argument(
 parser.add_argument(
     '--trial', type=int, default=-1,
     help='Trial number for output filename. When >= 0, output files become ahp_phold_*_part_trialY_TYPEX.json'
+)
+parser.add_argument(
+    '--architecture', type=str, default='spmd',
+    help='Which architecture function to use: spmd or global (default: spmd)'
 )
 args = parser.parse_args()
 
@@ -424,7 +436,80 @@ class SubGrid(Device):
                             graph.link(getattr(node, f"port{src_idx}"), sb, args.linkDelay)
 
 
-def architecture(num_boards: int) -> DeviceGraph:
+def architecture_spmd(num_boards: int) -> DeviceGraph:
+    """Build a row-partitioned device graph and connect adjacent borders.
+    
+    Optimized to only create SubGrids for [my_rank-1, my_rank, my_rank+1]
+    since cross-partition connections only span immediate neighbors.
+    """
+    graph = DeviceGraph()
+    subgrids = {}
+
+    # Divide rows evenly among boards; last gets remainder.
+    rows_per = args.height // num_boards if num_boards > 0 else args.height
+    
+    # Only create SubGrids for [my_rank-1, my_rank, my_rank+1]
+    # This is sufficient because cross-border links only span adjacent partitions
+    start_idx = max(0, my_rank - 1)
+    end_idx = min(num_boards, my_rank + 2)  # exclusive upper bound
+    
+    for i in range(start_idx, end_idx):
+        row_start = i * rows_per
+        row_end = (i + 1) * rows_per if i != num_boards - 1 else args.height
+        sub = SubGrid(f"SubGrid{i}", row_start, row_end)
+        sub.set_partition(i)
+        graph.add(sub)
+        subgrids[i] = sub
+
+    # Connect borders between adjacent SubGrids.
+    # Only connect borders relevant to my_rank:
+    # - my_rank with my_rank-1 (if my_rank > 0)
+    # - my_rank with my_rank+1 (if my_rank < num_boards-1)
+    # For 1 rank: no border connections needed
+    # For 2 ranks: rank 0 connects to rank 1, rank 1 connects to rank 0
+    border_start = max(1, my_rank)
+    border_end = min(num_boards, my_rank + 2)
+    
+    for i in range(border_start, border_end):
+        # Only process if both SubGrids exist in our local map
+        if (i - 1) not in subgrids or i not in subgrids:
+            continue
+        upper = subgrids[i - 1]
+        lower = subgrids[i]
+        # For each source row in upper's bottom region that can reach into lower
+        for src_row_offset in range(NUM_RINGS):
+            # src_row is (upper.row_end - 1) - src_row_offset
+            # For each target row in lower's top region
+            for tgt_row_offset in range(NUM_RINGS):
+                # tgt_row is lower.row_start + tgt_row_offset
+                # Total vertical distance = src_row_offset + 1 + tgt_row_offset
+                total_di = src_row_offset + 1 + tgt_row_offset
+                if total_di > NUM_RINGS:
+                    continue  # Beyond ring neighborhood
+                for j in range(args.width):
+                    for dj in range(-NUM_RINGS, NUM_RINGS + 1):
+                        if max(total_di, abs(dj)) > NUM_RINGS:
+                            continue
+                        jj = j + dj
+                        if not (0 <= jj < args.width):
+                            continue
+                        bidx = border_index(j, dj, src_row_offset, tgt_row_offset)
+                        if args.verbose >= 2:
+                            msg = (
+                                f"Inter-subgrid link: {upper.name}.southBorder[{bidx}] "
+                                f"<-> {lower.name}.northBorder[{bidx}] (delay {args.linkDelay})"
+                            )
+                            log_link(msg, level=2)
+                        graph.link(
+                            upper.southBorder(bidx),
+                            lower.northBorder(bidx), 
+                            args.linkDelay
+                        )
+
+    return graph
+
+
+def architecture_global(num_boards: int) -> DeviceGraph:
     """Build a row-partitioned device graph and connect adjacent borders."""
     graph = DeviceGraph()
     subgrids = {}
@@ -476,6 +561,15 @@ def architecture(num_boards: int) -> DeviceGraph:
 
     return graph
 
+
+def architecture(num_boards: int) -> DeviceGraph:
+    """Dispatch to the selected architecture function."""
+    if args.architecture.lower() == 'global':
+        return architecture_global(num_boards)
+    else:
+        return architecture_spmd(num_boards)
+
+
 if not (args.write or args.build or args.draw):
     args.build = True
 
@@ -485,23 +579,37 @@ if sum([args.write, args.build, args.draw]) > 1:
 if args.draw:
     raise SystemExit("Error: --draw is not implemented.")
 
+ahp_graph_start = time.time()
 if SST:
     ahp_graph = architecture(num_ranks)
 else:
     ahp_graph = architecture(num_nodes*num_ranks)
+ahp_graph_end = time.time()
+print(f"ahp_graph construction on rank {my_rank} takes {ahp_graph_end - ahp_graph_start:.3f} seconds, memory: {get_memory_gb():.2f} GB")
+print(f"ahp_graph on rank {my_rank} has {len(ahp_graph.links)} links")
+
+sst_graph_start = time.time()
 sst_graph = SSTGraph(ahp_graph)
+sst_graph_end = time.time()
+print(f"sst_graph construction on rank {my_rank} takes {sst_graph_end - sst_graph_start:.3f} seconds, memory: {get_memory_gb():.2f} GB")
 
 
 if SST:
     if args.partitioner.lower() == 'sst' and args.build:
+        build_start = time.time()
         sst_graph.build()
+        build_end = time.time()
+        print(f"sst_graph build call on rank {my_rank} takes {build_end - build_start:.3f} seconds, memory: {get_memory_gb():.2f} GB")
     elif args.partitioner.lower() == 'sst' and args.write:
         if args.trial >= 0:
             sst_graph.write_json(f'ahp_phold_sst_part_trial{args.trial}_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
         else:
             sst_graph.write_json('ahp_phold_sst_part_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)
     elif args.partitioner.lower() == 'ahp_graph' and args.build:
+        build_start = time.time()
         sst_graph.build(num_ranks)
+        build_end = time.time()
+        print(f"sst_graph build call on rank {my_rank} takes {build_end - build_start:.3f} seconds, memory: {get_memory_gb():.2f} GB")
     elif args.partitioner.lower() == 'ahp_graph' and args.write:
         if args.trial >= 0:
             sst_graph.write_json(f'ahp_phold_ahp_part_trial{args.trial}_mpi.json', output=output_dir, nranks=num_ranks, rank=my_rank)

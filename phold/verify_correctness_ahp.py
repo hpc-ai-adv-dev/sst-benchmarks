@@ -11,6 +11,9 @@ import re
 from typing import Dict, Tuple, List, Optional
 
 
+SUPPORTED_ARCHITECTURES = ["spmd", "global"]
+
+
 def parse_recv_counts(output: str) -> Dict[Tuple[int, int], int]:
     """Parse recvCount values from simulation output.
     
@@ -143,7 +146,8 @@ class TestCase:
         )
 
 
-def run_test(test: TestCase, verbose: bool = True) -> Tuple[bool, str]:
+def run_test(test: TestCase, verbose: bool = True,
+             architecture: str = "spmd") -> Tuple[bool, str]:
     """Run a single test case."""
     
     if verbose:
@@ -183,7 +187,8 @@ def run_test(test: TestCase, verbose: bool = True) -> Tuple[bool, str]:
         "phold_dist_ahp.py",
         test.height, test.width, test.num_rings,
         test.num_nodes, test.num_ranks_per_node,
-        test.time_to_run
+        test.time_to_run,
+        extra_args=[f"--architecture={architecture}"]
     )
     
     if ahp_exit != 0:
@@ -217,7 +222,8 @@ def print_counts_grid(counts: Dict[Tuple[int, int], int], height: int, width: in
 
 
 def run_inspect_single(height: int, width: int, num_rings: int,
-                       num_nodes: int, num_ranks: int, label: str) -> int:
+                       num_nodes: int, num_ranks: int, label: str,
+                       architecture: str = "spmd") -> int:
     """Run inspection for a single configuration and return 0 if match, 1 if diff."""
     total_ranks = num_nodes * num_ranks
     
@@ -250,7 +256,8 @@ def run_inspect_single(height: int, width: int, num_rings: int,
     print("Running phold_dist_ahp.py...")
     ahp_output, ahp_exit = run_simulation(
         "phold_dist_ahp.py", height, width, num_rings,
-        num_nodes, num_ranks, "1000ns"
+        num_nodes, num_ranks, "1000ns",
+        extra_args=[f"--architecture={architecture}"]
     )
     if ahp_exit != 0:
         print(f"AHP failed: {ahp_output[:500]}")
@@ -285,7 +292,8 @@ def run_inspect_single(height: int, width: int, num_rings: int,
     return 0 if not diffs else 1
 
 
-def run_inspect_mode(tests: List['TestCase'], test_name: Optional[str]) -> int:
+def run_inspect_mode(tests: List['TestCase'], test_name: Optional[str],
+                     architecture: str = "spmd") -> int:
     """Run inspect mode - print detailed recvCount values for comparison.
     
     If no test specified, runs both base configurations (8x8 grid).
@@ -302,7 +310,8 @@ def run_inspect_mode(tests: List['TestCase'], test_name: Optional[str]) -> int:
         width = min(test.width, 16)
         return run_inspect_single(
             height, width, test.num_rings,
-            test.num_nodes, test.num_ranks_per_node, test.name
+            test.num_nodes, test.num_ranks_per_node, test.name,
+            architecture=architecture
         )
     
     # Default: run both base configurations
@@ -311,13 +320,15 @@ def run_inspect_mode(tests: List['TestCase'], test_name: Optional[str]) -> int:
     result1 = run_inspect_single(
         height=8, width=8, num_rings=2,
         num_nodes=1, num_ranks=2,
-        label="base_8x8_1n_2r (1 node, 2 ranks)"
+        label="base_8x8_1n_2r (1 node, 2 ranks)",
+        architecture=architecture
     )
     
     result2 = run_inspect_single(
         height=8, width=8, num_rings=2,
         num_nodes=2, num_ranks=2,
-        label="base_8x8_2n_2r (2 nodes, 2 ranks each)"
+        label="base_8x8_2n_2r (2 nodes, 2 ranks each)",
+        architecture=architecture
     )
     
     # Summary
@@ -490,6 +501,14 @@ def main():
         "--inspect", action="store_true",
         help="Print detailed recvCount values for eyeball comparison (uses smallest config)"
     )
+    parser.add_argument(
+        "--architecture", type=str, default="spmd",
+        choices=SUPPORTED_ARCHITECTURES + ["all"],
+        help=(
+            "Which architecture function to use in phold_dist_ahp.py "
+            "(spmd, global, or all; default: spmd)"
+        )
+    )
     args = parser.parse_args()
     
     tests = get_test_cases()
@@ -503,7 +522,17 @@ def main():
         return 0
     
     if args.inspect:
-        return run_inspect_mode(tests, args.test)
+        architectures = (
+            SUPPORTED_ARCHITECTURES if args.architecture == "all"
+            else [args.architecture]
+        )
+        inspect_rc = 0
+        for arch in architectures:
+            print(f"\nRunning inspect mode with architecture='{arch}'")
+            rc = run_inspect_mode(tests, args.test, architecture=arch)
+            if rc != 0:
+                inspect_rc = 1
+        return inspect_rc
     
     if args.test:
         tests = [t for t in tests if t.name == args.test]
@@ -515,24 +544,33 @@ def main():
     failed = 0
     skipped = 0
     results = []
+
+    architectures = (
+        SUPPORTED_ARCHITECTURES if args.architecture == "all"
+        else [args.architecture]
+    )
     
-    for test in tests:
-        success, msg = run_test(test, verbose=not args.quiet)
-        
-        if "SKIP" in msg:
-            skipped += 1
-            status = "SKIP"
-        elif success:
-            passed += 1
-            status = "PASS"
-        else:
-            failed += 1
-            status = "FAIL"
-        
-        results.append((test.name, status, msg))
-        
+    for arch in architectures:
         if not args.quiet:
-            print(f"\n{status}: {msg}")
+            print(f"\nTesting architecture='{arch}'")
+        for test in tests:
+            success, msg = run_test(test, verbose=not args.quiet,
+                                    architecture=arch)
+
+            if "SKIP" in msg:
+                skipped += 1
+                status = "SKIP"
+            elif success:
+                passed += 1
+                status = "PASS"
+            else:
+                failed += 1
+                status = "FAIL"
+
+            results.append((f"{test.name} [{arch}]", status, msg))
+
+            if not args.quiet:
+                print(f"\n{status}: {msg}")
     
     # Summary
     print(f"\n{'='*60}")
