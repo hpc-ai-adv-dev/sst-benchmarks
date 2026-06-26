@@ -60,6 +60,43 @@ jobs:
       run: |
         ./.github/ci/experiments/${{ matrix.experiment.id }}/test.sh "${{ matrix.experiment.path }}" "${{ matrix.sst_version.tag }}"
 
+  # PHOLD AHP testing jobs - install Python dependency and compare AHP output to baseline
+  phold-ahp:
+    runs-on: ${{ matrix.architecture.runner }}
+    needs: build
+    strategy:
+      matrix:
+        sst_version:
+          - { tag: "15.1.2", image: "ghcr.io/hpc-ai-adv-dev/sst-core:15.1.2" }
+          - { tag: "16.0.0", image: "ghcr.io/hpc-ai-adv-dev/sst-core:16.0.0" }
+          - { tag: "master", image: "ghcr.io/hpc-ai-adv-dev/sst-core:master-latest" }
+        architecture:
+          - { name: "x86_64", runner: "ubuntu-latest" }
+          - { name: "arm64", runner: "ubuntu-24.04-arm" }
+    container:
+      image: ${{ matrix.sst_version.image }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download phold library
+      uses: actions/download-artifact@v4
+      with:
+        name: phold-lib-${{ matrix.sst_version.tag }}-${{ matrix.architecture.name }}
+        path: phold/
+
+    - name: Install AHP Python dependency
+      run: |
+        apt-get install -y libtool \
+        libtool-bin \
+        graphviz \
+        libgraphviz-dev
+        python3 -m pip install --no-cache-dir git+https://github.com/lpsmodsimteam/ahp_graph.git
+
+    - name: Run phold AHP test
+      run: |
+        ./.github/ci/experiments/phold/ahp-test.sh phold "${{ matrix.sst_version.tag }}"
+
   # Checkpoint testing jobs - run with checkpoint enabled
   checkpoint:
     runs-on: ${{ matrix.architecture.runner }}
