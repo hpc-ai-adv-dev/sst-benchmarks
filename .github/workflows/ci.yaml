@@ -85,12 +85,10 @@ jobs:
         name: phold-lib-${{ matrix.sst_version.tag }}-${{ matrix.architecture.name }}
         path: phold/
 
-    - name: Install AHP Python dependency
+    - name: Install AHP dependencies
       run: |
-        apt-get install -y libtool \
-        libtool-bin \
-        graphviz \
-        libgraphviz-dev
+        apt-get update 
+        apt-get install -y libtool libtool-bin graphviz libgraphviz-dev 
         python3 -m pip install --no-cache-dir git+https://github.com/lpsmodsimteam/ahp_graph.git
 
     - name: Run phold AHP test
