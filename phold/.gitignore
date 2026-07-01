@@ -4,3 +4,5 @@ rank*
 *.csv
 *.png
 **/output/
+**/.clangd
+**/*.swp

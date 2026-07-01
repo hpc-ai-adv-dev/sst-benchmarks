@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=70.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phold-param-sweep"
+requires-python = ">=3.10,<=3.14"
+dynamic = ["version"]
+dependencies = [
+    "numpy",
+]
+
+[project.optional-dependencies]
+dragon = [
+    "dragonhpc>=0.13.2",
+]
+smartsim = [
+    "smartsim>=0.8.0",
+]
+
+[project.scripts]
+sweep = "phold_param_sweep._core.entrypoints.sweep:main"
+
+[dependency-groups]
+dev = [
+    "black",
+    "isort",
+    "mypy",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["phold_param_sweep*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+mock_moria_utils = ["py.typed"]
+
+[tool.mypy]
+python_version = "3.11"
+namespace_packages = true
+files = [
+  "src/mock_moria_utils",
+]
+strict = true
+
+[[tool.mypy.overrides]]
+module = [
+    "dragon.*",  # Gross but don't have time to type all of dragon
+]
+ignore_missing_imports = true
+
+[tool.isort]
+profile = "black"
+src_paths = [
+  "src/mock_moria_utils",
+  "tests",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'

@@ -32,3 +32,8 @@ stories) that demonstrate situations where a debugger may be desirable. We use
 these stories to examine the capabilities of SST's debugger and use them to
 motivate "wishlist" features that could be added to future versions. See the
 [README](debugCases/README.md) for details.
+
+### Parameter Sweeps
+The `param-sweep-frameworks` directory includes a python package with different
+implementations of performing a parameter sweep over the
+[phold\_dist.py](phold/phold_dist.py) script using various workflow tools.
