@@ -191,7 +191,7 @@ class topoMesh(Topo):
         
         def at_least_one_local(loc1, loc2):
             return self._router_loc_to_rank(loc1) == _params['my_rank'] or \
-                   self._router_loc_to_rank(loc2) == _params['']
+                   self._router_loc_to_rank(loc2) == _params['my_rank']
         
         swap_keys = [("mesh.shape","shape"),("mesh.width","width"),("mesh.local_ports","local_ports")]
         _topo_params = _params.subsetWithRename(swap_keys);
@@ -1409,6 +1409,115 @@ class TestEndPoint(EndPoint):
         nic.addParams(_params.subset(self.epKeys, self.epOptKeys))
         nic.addParams(_params.subset(extraKeys))
         nic.addParam("id", nID)
+        if self.split != 1:
+            # Need to figure out what group I'm in
+            limit = 0
+            offset = 0
+            for i in range(self.split):
+                limit = limit + self.group_array[i]
+                if nID < limit:
+                    nic.addParam("group_peers",self.group_array[i])
+                    nic.addParam("group_offset",offset)
+                    break
+                offset = offset + self.group_array[i]
+        if self.enableAllStats:
+            nic.enableAllStatistics({"type":"sst.AccumulatorStatistic","rate":self.statInterval})
+        return (linkif, "rtr_port", _params["link_lat"], nic)
+    
+    def enableAllStatistics(self,interval):
+        self.enableAllStats = True;
+        self.statInterval = interval;
+
+class TrafficGenerator(EndPoint):
+    def __init__(self):
+        EndPoint.__init__(self)
+        self.epKeys.extend(["num_peers", "link_bw"])
+        self.epOptKeys.extend(["checkerboard", "num_messages", "message_size", "message_rate", "message_pattern"])
+        self.epOptKeys.extend([
+            "verbose",
+            "logger_id",
+            "output_file_name",
+            "num_vns",
+            "buffer_length",
+            "packets_to_send",
+            "packet_size",
+            "delay_between_packets",
+            "PacketDest.pattern",
+            "PacketDest.Seed",
+            "PacketDest.RangeMin",
+            "PacketDest.RangeMax",
+            "PacketDest.NearestNeighbor.Size",
+            "PacketDest.HotSpot.target",
+            "PacketDest.HotSpot.targetProbability",
+            "PacketDest.Normal.Mean",
+            "PacketDest.Normal.Sigma",
+            "PacketDest.Binomial.Mean",
+            "PacketDest.Binomial.Sigma",
+            "PacketDest.Exponential.Lambda",
+            "PacketSize.pattern",
+            "PacketSize.Seed",
+            "PacketSize.RangeMin",
+            "PacketSize.RangeMax",
+            "PacketSize.HotSpot.target",
+            "PacketSize.HotSpot.targetProbability",
+            "PacketSize.Normal.Mean",
+            "PacketSize.Normal.Sigma",
+            "PacketSize.Binomial.Mean",
+            "PacketSize.Binomial.Sigma",
+            "PacketSize.Exponential.Lambda",
+            "PacketDelay.pattern",
+            "PacketDelay.Seed",
+            "PacketDelay.RangeMin",
+            "PacketDelay.RangeMax",
+            "PacketDelay.HotSpot.target",
+            "PacketDelay.HotSpot.targetProbability",
+            "PacketDelay.Normal.Mean",
+            "PacketDelay.Normal.Sigma",
+            "PacketDelay.Binomial.Mean",
+            "PacketDelay.Binomial.Sigma",
+            "PacketDelay.Exponential.Lambda",
+        ])
+        self.split = 1
+        self.group_array = None
+
+    def divide(self,split):
+        self.split = split
+
+    def getName(self):
+        return "Traffic Generator End Point"
+
+    def prepParams(self):
+        pass
+
+    def build(self, nID, extraKeys):
+        # Copmute group size and offset
+        if self.group_array is None:
+            num_ep = _params["num_peers"]
+            min_per_group = num_ep // self.split
+            self.group_array = [min_per_group] * self.split
+            num_ep = num_ep - ( min_per_group * self.split )
+            for i in range(num_ep):
+                self.group_array[i] = self.group_array[i] + 1
+
+
+        component_type = _params.get("trafficgen.component", "merlin_benchmark.trafficgen")
+        nic = sst.Component("trafficGenerator_%d"%nID, component_type)
+
+        linkif = nic.setSubComponent("networkIF","merlin.linkcontrol")
+        nic.setRank(_params['my_rank'])
+        if ( "link_bw" in _params):
+            linkif.addParam("link_bw",_params["link_bw"])
+        #if ( "input_buf_size" in _params):
+        #    linkif.addParam("input_buf_size",_params["input_buf_size"])
+        #if ( "output_buf_size" in _params):
+        #    linkif.addParam("output_buf_size",_params["output_buf_size"])
+        nic.addParams(_params.subset(self.epKeys, self.epOptKeys))
+        nic.addParams(_params.subset(extraKeys))
+        nic.addParam("id", nID)
+        nic.addParam('PacketDest.pattern', _params.get('PacketDest.pattern', 'Uniform'))
+        nic.addParam('packets_to_send', _params.get('packets_to_send', 10))
+        nic.addParam('PacketDest.RangeMin', _params.get('PacketDest.RangeMin', 0))
+        nic.addParam('PacketDest.RangeMax', _params.get('PacketDest.RangeMax', _params['num_peers']))
         if self.split != 1:
             # Need to figure out what group I'm in
             limit = 0
