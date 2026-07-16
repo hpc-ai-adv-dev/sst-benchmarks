@@ -82,4 +82,4 @@ if __name__ == "__main__":
     topo.prepParams()
     endPoint.prepParams()
     topo.setEndPoint(endPoint)
-    topo.build_take2()
+    topo.build_distributed()

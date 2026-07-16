@@ -190,15 +190,34 @@ if __name__ == "__main__":
     if args.verbose is not None:
         sst.setProgramOption("verbose", str(args.verbose))
 
-    mesh_topo = realistic_benchmarks.topoMesh()
+    if args.topology == "mesh":
+        topo = realistic_benchmarks.topoMesh()
+        realistic_benchmarks._params['mesh.shape'] = args.mesh_shape
+        realistic_benchmarks._params['mesh.width'] = args.mesh_width
+        realistic_benchmarks._params['mesh.local_ports'] = args.mesh_local_ports
+        realistic_benchmarks._params['num_dims'] = args.mesh_shape.count('x') + 1
+
+    elif args.topology == "dragonfly":
+        topo = realistic_benchmarks.topoDragonFly()
+        realistic_benchmarks._params['dragonfly.hosts_per_router'] = str(args.dragonfly_hosts_per_router)
+        realistic_benchmarks._params['dragonfly.routers_per_group'] = str(args.dragonfly_routers_per_group)
+        realistic_benchmarks._params['dragonfly.intergroup_links'] = str(args.dragonfly_intergroup_links)
+        realistic_benchmarks._params['dragonfly.num_groups'] = str(args.dragonfly_num_groups)
+        realistic_benchmarks._params['dragonfly.algorithm'] = args.dragonfly_algorithm
+        if args.dragonfly_algorithm == 'adaptive-local':
+            realistic_benchmarks._params['dragonfly.adaptive_threshold'] = str(args.dragonfly_adaptive_threshold)
+        if args.dragonfly_global_routing_mode == 'relative':
+            topo.setRoutingModeRelative()
+    elif args.topology == "fattree":
+        topo = realistic_benchmarks.topoFatTree()
+        realistic_benchmarks._params["fattree.shape"] = args.fattree_shape
+    else:
+        print(f"Error: Unknown topology '{args.topology}'")
+        sys.exit(1)
     endPoint = realistic_benchmarks.TrafficGenerator()
 
 
-    realistic_benchmarks._params['mesh.shape'] = args.mesh_shape
-    realistic_benchmarks._params['mesh.width'] = args.mesh_width
-    realistic_benchmarks._params['mesh.local_ports'] = args.mesh_local_ports
-    realistic_benchmarks._params['num_dims'] = args.mesh_shape.count('x') + 1
-
+    
     realistic_benchmarks._params["flit_size"] = f"{args.flit_size_bytes}B"
     realistic_benchmarks._params["link_bw"] = f"{args.link_bw_gbps}GB/s"
     realistic_benchmarks._params["link_lat"] = f"{args.link_lat_ns}ns"
@@ -258,10 +277,10 @@ if __name__ == "__main__":
 
     realistic_benchmarks._params.setdefault('PacketDest.RangeMin', 0)
     realistic_benchmarks._params.setdefault('PacketDest.RangeMax', 32)
-    mesh_topo.prepParams()
+    topo.prepParams()
     endPoint.prepParams()
-    mesh_topo.setEndPoint(endPoint)
-    mesh_topo.build()
+    topo.setEndPoint(endPoint)
+    topo.build_distributed()
 
 
 

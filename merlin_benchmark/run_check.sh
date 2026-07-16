@@ -4,8 +4,13 @@
 for NODECOUNT in 1 2 4; 
 do
     # Run the benchmark
-    mpirun -N=$NODECOUNT sst --parallel-load=SINGLE merlin_benchmark.py -- --topology=mesh --tg-output-file-name="simulation_${NODECOUNT}nodes.out" --verbose=5 $@
+    echo mpirun -N=$NODECOUNT sst --parallel-load=SINGLE merlin_benchmark.py -- --tg-output-file-name="simulation_${NODECOUNT}nodes.out" --verbose=5 $@
+    mpirun -N=$NODECOUNT sst --parallel-load=SINGLE merlin_benchmark.py -- --tg-output-file-name="simulation_${NODECOUNT}nodes.out" --verbose=5 $@
 
+    if [ $? -ne 0 ]; then
+        echo "Error: Benchmark failed for ${NODECOUNT} nodes."
+        exit 1
+    fi
     # Grab the output lines to check
     rm -f simulation_${NODECOUNT}nodes.check
     touch simulation_${NODECOUNT}nodes.check

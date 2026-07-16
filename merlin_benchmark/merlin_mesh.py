@@ -42,6 +42,103 @@ Examples:
                         help='Input buffer size in kilobytes (default: 4kB). Buffering capacity for incoming traffic.')
     parser.add_argument('--output_buf_size_kb', '--output_buf_size', type=int, default=4,
                         help='Output buffer size in kilobytes (default: 4kB). Buffering capacity for outgoing traffic.')
+    
+    # Global simulation parameters
+    parser.add_argument('--stop_at', '--stop-at', type=str, default='10us',
+                        help='Simulation stop time (default: 10us). Determines how long the simulation runs before stopping.')
+    parser.add_argument('--verbose', type=int, default=None,
+                        help='Optional SST program verbose level. If omitted, keep the existing SST verbose setting.')
+
+    # Traffic generator parameters
+    parser.add_argument('--tg-num-vns', '--tg_num_vns', type=int, default=None,
+                        help='Number of virtual networks requested by the traffic generator.')
+    parser.add_argument('--tg-buffer-length', '--tg_buffer_length', type=str, default=None,
+                        help='Traffic generator network interface buffer length (e.g. 1kB).')
+    parser.add_argument('--tg-packets-to-send', '--tg_packets_to_send', type=int, default=None,
+                        help='Number of packets each traffic generator endpoint should send.')
+    parser.add_argument('--tg-packet-size', '--tg_packet_size', type=str, default=None,
+                        help='Packet size with units (e.g. 64B, 512b).')
+    parser.add_argument('--tg-delay-between-packets', '--tg_delay_between_packets', type=str, default=None,
+                        help='Delay between packets with time units (e.g. 5ns).')
+    parser.add_argument('--tg-message-rate', '--tg_message_rate', type=str, default=None,
+                        help='Clock/message rate for traffic generation (e.g. 1GHz).')
+
+    # Packet destination generator parameters
+    parser.add_argument('--tg-packet-dest-pattern', '--tg_packet_dest_pattern', type=str, default=None,
+                        choices=['NearestNeighbor', 'Uniform', 'HotSpot', 'Normal', 'Exponential', 'Binomial'],
+                        help='Packet destination generation pattern.')
+    parser.add_argument('--tg-packet-dest-seed', '--tg_packet_dest_seed', type=int, default=None,
+                        help='RNG seed for PacketDest generator.')
+    parser.add_argument('--tg-packet-dest-range-min', '--tg_packet_dest_range_min', type=int, default=None,
+                        help='Minimum destination id for PacketDest generator.')
+    parser.add_argument('--tg-packet-dest-range-max', '--tg_packet_dest_range_max', type=int, default=None,
+                        help='Maximum destination id for PacketDest generator.')
+    parser.add_argument('--tg-packet-dest-nearest-neighbor-size', '--tg_packet_dest_nearest_neighbor_size', type=str, default=None,
+                        help='NearestNeighbor mesh shape for PacketDest in "x y z" format.')
+    parser.add_argument('--tg-packet-dest-hotspot-target', '--tg_packet_dest_hotspot_target', type=int, default=None,
+                        help='HotSpot target for PacketDest.')
+    parser.add_argument('--tg-packet-dest-hotspot-target-probability', '--tg_packet_dest_hotspot_target_probability', type=float, default=None,
+                        help='HotSpot target probability for PacketDest.')
+    parser.add_argument('--tg-packet-dest-normal-mean', '--tg_packet_dest_normal_mean', type=float, default=None,
+                        help='Normal distribution mean for PacketDest.')
+    parser.add_argument('--tg-packet-dest-normal-sigma', '--tg_packet_dest_normal_sigma', type=float, default=None,
+                        help='Normal distribution sigma for PacketDest.')
+    parser.add_argument('--tg-packet-dest-binomial-mean', '--tg_packet_dest_binomial_mean', type=int, default=None,
+                        help='Binomial mean/trials value for PacketDest.')
+    parser.add_argument('--tg-packet-dest-binomial-sigma', '--tg_packet_dest_binomial_sigma', type=float, default=None,
+                        help='Binomial sigma/probability value for PacketDest.')
+    parser.add_argument('--tg-packet-dest-exponential-lambda', '--tg_packet_dest_exponential_lambda', type=float, default=None,
+                        help='Exponential lambda for PacketDest.')
+
+    # Packet size generator parameters
+    parser.add_argument('--tg-packet-size-pattern', '--tg_packet_size_pattern', type=str, default=None,
+                        choices=['Uniform', 'HotSpot', 'Normal', 'Exponential', 'Binomial'],
+                        help='Packet size generation pattern.')
+    parser.add_argument('--tg-packet-size-seed', '--tg_packet_size_seed', type=int, default=None,
+                        help='RNG seed for PacketSize generator.')
+    parser.add_argument('--tg-packet-size-range-min', '--tg_packet_size_range_min', type=int, default=None,
+                        help='Minimum packet size for PacketSize generator.')
+    parser.add_argument('--tg-packet-size-range-max', '--tg_packet_size_range_max', type=int, default=None,
+                        help='Maximum packet size for PacketSize generator.')
+    parser.add_argument('--tg-packet-size-hotspot-target', '--tg_packet_size_hotspot_target', type=int, default=None,
+                        help='HotSpot target for PacketSize.')
+    parser.add_argument('--tg-packet-size-hotspot-target-probability', '--tg_packet_size_hotspot_target_probability', type=float, default=None,
+                        help='HotSpot target probability for PacketSize.')
+    parser.add_argument('--tg-packet-size-normal-mean', '--tg_packet_size_normal_mean', type=float, default=None,
+                        help='Normal distribution mean for PacketSize.')
+    parser.add_argument('--tg-packet-size-normal-sigma', '--tg_packet_size_normal_sigma', type=float, default=None,
+                        help='Normal distribution sigma for PacketSize.')
+    parser.add_argument('--tg-packet-size-binomial-mean', '--tg_packet_size_binomial_mean', type=int, default=None,
+                        help='Binomial mean/trials value for PacketSize.')
+    parser.add_argument('--tg-packet-size-binomial-sigma', '--tg_packet_size_binomial_sigma', type=float, default=None,
+                        help='Binomial sigma/probability value for PacketSize.')
+    parser.add_argument('--tg-packet-size-exponential-lambda', '--tg_packet_size_exponential_lambda', type=float, default=None,
+                        help='Exponential lambda for PacketSize.')
+
+    # Packet delay generator parameters
+    parser.add_argument('--tg-packet-delay-pattern', '--tg_packet_delay_pattern', type=str, default=None,
+                        choices=['Uniform', 'HotSpot', 'Normal', 'Exponential', 'Binomial'],
+                        help='Packet delay generation pattern.')
+    parser.add_argument('--tg-packet-delay-seed', '--tg_packet_delay_seed', type=int, default=None,
+                        help='RNG seed for PacketDelay generator.')
+    parser.add_argument('--tg-packet-delay-range-min', '--tg_packet_delay_range_min', type=int, default=None,
+                        help='Minimum delay for PacketDelay generator.')
+    parser.add_argument('--tg-packet-delay-range-max', '--tg_packet_delay_range_max', type=int, default=None,
+                        help='Maximum delay for PacketDelay generator.')
+    parser.add_argument('--tg-packet-delay-hotspot-target', '--tg_packet_delay_hotspot_target', type=int, default=None,
+                        help='HotSpot target for PacketDelay.')
+    parser.add_argument('--tg-packet-delay-hotspot-target-probability', '--tg_packet_delay_hotspot_target_probability', type=float, default=None,
+                        help='HotSpot target probability for PacketDelay.')
+    parser.add_argument('--tg-packet-delay-normal-mean', '--tg_packet_delay_normal_mean', type=float, default=None,
+                        help='Normal distribution mean for PacketDelay.')
+    parser.add_argument('--tg-packet-delay-normal-sigma', '--tg_packet_delay_normal_sigma', type=float, default=None,
+                        help='Normal distribution sigma for PacketDelay.')
+    parser.add_argument('--tg-packet-delay-binomial-mean', '--tg_packet_delay_binomial_mean', type=int, default=None,
+                        help='Binomial mean/trials value for PacketDelay.')
+    parser.add_argument('--tg-packet-delay-binomial-sigma', '--tg_packet_delay_binomial_sigma', type=float, default=None,
+                        help='Binomial sigma/probability value for PacketDelay.')
+    parser.add_argument('--tg-packet-delay-exponential-lambda', '--tg_packet_delay_exponential_lambda', type=float, default=None,
+                        help='Exponential lambda for PacketDelay.')
 
     return parser.parse_args()
 
@@ -49,9 +146,12 @@ Examples:
 if __name__ == "__main__":
 
     args = parse_args()
-    
+
+    sst.setProgramOption("stop-at", args.stop_at)
+    if args.verbose is not None:
+        sst.setProgramOption("verbose", str(args.verbose))
     mesh_topo = realistic_benchmarks.topoMesh()
-    endPoint = realistic_benchmarks.TestEndPoint()
+    endPoint = realistic_benchmarks.TrafficGenerator()
 
 
     realistic_benchmarks._params['mesh.shape'] = args.mesh_shape
@@ -67,6 +167,56 @@ if __name__ == "__main__":
     realistic_benchmarks._params["input_buf_size"] = f"{args.input_buf_size_kb}kB"
     realistic_benchmarks._params["output_buf_size"] = f"{args.output_buf_size_kb}kB"
 
+    tg_arg_map = {
+        "verbose": args.tg_verbose,
+        "num_vns": args.tg_num_vns,
+        "buffer_length": args.tg_buffer_length,
+        "packets_to_send": args.tg_packets_to_send,
+        "packet_size": args.tg_packet_size,
+        "delay_between_packets": args.tg_delay_between_packets,
+        "message_rate": args.tg_message_rate,
+        "PacketDest.pattern": args.tg_packet_dest_pattern,
+        "PacketDest.Seed": args.tg_packet_dest_seed,
+        "PacketDest.RangeMin": args.tg_packet_dest_range_min,
+        "PacketDest.RangeMax": args.tg_packet_dest_range_max,
+        "PacketDest.NearestNeighbor.Size": args.tg_packet_dest_nearest_neighbor_size,
+        "PacketDest.HotSpot.target": args.tg_packet_dest_hotspot_target,
+        "PacketDest.HotSpot.targetProbability": args.tg_packet_dest_hotspot_target_probability,
+        "PacketDest.Normal.Mean": args.tg_packet_dest_normal_mean,
+        "PacketDest.Normal.Sigma": args.tg_packet_dest_normal_sigma,
+        "PacketDest.Binomial.Mean": args.tg_packet_dest_binomial_mean,
+        "PacketDest.Binomial.Sigma": args.tg_packet_dest_binomial_sigma,
+        "PacketDest.Exponential.Lambda": args.tg_packet_dest_exponential_lambda,
+        "PacketSize.pattern": args.tg_packet_size_pattern,
+        "PacketSize.Seed": args.tg_packet_size_seed,
+        "PacketSize.RangeMin": args.tg_packet_size_range_min,
+        "PacketSize.RangeMax": args.tg_packet_size_range_max,
+        "PacketSize.HotSpot.target": args.tg_packet_size_hotspot_target,
+        "PacketSize.HotSpot.targetProbability": args.tg_packet_size_hotspot_target_probability,
+        "PacketSize.Normal.Mean": args.tg_packet_size_normal_mean,
+        "PacketSize.Normal.Sigma": args.tg_packet_size_normal_sigma,
+        "PacketSize.Binomial.Mean": args.tg_packet_size_binomial_mean,
+        "PacketSize.Binomial.Sigma": args.tg_packet_size_binomial_sigma,
+        "PacketSize.Exponential.Lambda": args.tg_packet_size_exponential_lambda,
+        "PacketDelay.pattern": args.tg_packet_delay_pattern,
+        "PacketDelay.Seed": args.tg_packet_delay_seed,
+        "PacketDelay.RangeMin": args.tg_packet_delay_range_min,
+        "PacketDelay.RangeMax": args.tg_packet_delay_range_max,
+        "PacketDelay.HotSpot.target": args.tg_packet_delay_hotspot_target,
+        "PacketDelay.HotSpot.targetProbability": args.tg_packet_delay_hotspot_target_probability,
+        "PacketDelay.Normal.Mean": args.tg_packet_delay_normal_mean,
+        "PacketDelay.Normal.Sigma": args.tg_packet_delay_normal_sigma,
+        "PacketDelay.Binomial.Mean": args.tg_packet_delay_binomial_mean,
+        "PacketDelay.Binomial.Sigma": args.tg_packet_delay_binomial_sigma,
+        "PacketDelay.Exponential.Lambda": args.tg_packet_delay_exponential_lambda,
+    }
+
+    for key, value in tg_arg_map.items():
+        if value is not None:
+            realistic_benchmarks._params[key] = value
+
+    realistic_benchmarks._params.setdefault('PacketDest.RangeMin', 0)
+    realistic_benchmarks._params.setdefault('PacketDest.RangeMax', 32)
     mesh_topo.prepParams()
     endPoint.prepParams()
     mesh_topo.setEndPoint(endPoint)
