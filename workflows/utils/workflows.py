@@ -409,6 +409,30 @@ def convert_to_csv(data):
 
 
 def _load_user_workflows():
+    user_workflows_shell_path = os.path.expanduser("~/.workflows.sh")
+    if os.path.isfile(user_workflows_shell_path):
+        try:
+            result = subprocess.run(
+                [
+                    "bash",
+                    "-lc",
+                    f"source {shlex.quote(user_workflows_shell_path)} >/dev/null 2>&1 && env -0",
+                ],
+                check=True,
+                capture_output=True,
+                text=False,
+            )
+        except Exception as exc:
+            print(f"Warning: failed to source user workflows from {user_workflows_shell_path}: {exc}")
+        else:
+            for entry in result.stdout.split(b"\0"):
+                if not entry or b"=" not in entry:
+                    continue
+                name, value = entry.split(b"=", 1)
+                os.environ[name.decode("utf-8", errors="ignore")] = value.decode("utf-8", errors="ignore")
+    else:
+        print("No user workflows shell file found at ~/.workflows.sh, skipping.")
+
     user_workflows_path = os.path.expanduser("~/.workflows.py")
     if not os.path.isfile(user_workflows_path):
         print("No user workflows file found at ~/.workflows.py, skipping.")
