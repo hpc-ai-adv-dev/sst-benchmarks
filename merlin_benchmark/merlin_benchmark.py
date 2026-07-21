@@ -214,10 +214,9 @@ if __name__ == "__main__":
     else:
         print(f"Error: Unknown topology '{args.topology}'")
         sys.exit(1)
+
     endPoint = realistic_benchmarks.TrafficGenerator()
 
-
-    
     realistic_benchmarks._params["flit_size"] = f"{args.flit_size_bytes}B"
     realistic_benchmarks._params["link_bw"] = f"{args.link_bw_gbps}GB/s"
     realistic_benchmarks._params["link_lat"] = f"{args.link_lat_ns}ns"
@@ -275,8 +274,6 @@ if __name__ == "__main__":
         if value is not None:
             realistic_benchmarks._params[key] = value
 
-    realistic_benchmarks._params.setdefault('PacketDest.RangeMin', 0)
-    realistic_benchmarks._params.setdefault('PacketDest.RangeMax', 32)
     topo.prepParams()
     endPoint.prepParams()
     topo.setEndPoint(endPoint)
