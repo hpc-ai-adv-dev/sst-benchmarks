@@ -278,8 +278,3 @@ if __name__ == "__main__":
     endPoint.prepParams()
     topo.setEndPoint(endPoint)
     topo.build_distributed()
-
-
-
-
-
