@@ -1,7 +1,7 @@
 import sys
 import sst
 import argparse
-import realistic_benchmarks
+import merlin_topologies
 
 
 def parse_args():
@@ -191,36 +191,36 @@ if __name__ == "__main__":
         sst.setProgramOption("verbose", str(args.verbose))
 
     if args.topology == "mesh":
-        topo = realistic_benchmarks.topoMesh()
-        realistic_benchmarks._params['mesh.shape'] = args.mesh_shape
-        realistic_benchmarks._params['mesh.width'] = args.mesh_width
-        realistic_benchmarks._params['mesh.local_ports'] = args.mesh_local_ports
-        realistic_benchmarks._params['num_dims'] = args.mesh_shape.count('x') + 1
+        topo = merlin_topologies.topoMesh()
+        merlin_topologies._params['mesh.shape'] = args.mesh_shape
+        merlin_topologies._params['mesh.width'] = args.mesh_width
+        merlin_topologies._params['mesh.local_ports'] = args.mesh_local_ports
+        merlin_topologies._params['num_dims'] = args.mesh_shape.count('x') + 1
 
     elif args.topology == "dragonfly":
-        topo = realistic_benchmarks.topoDragonFly()
-        realistic_benchmarks._params['dragonfly.hosts_per_router'] = str(args.dragonfly_hosts_per_router)
-        realistic_benchmarks._params['dragonfly.routers_per_group'] = str(args.dragonfly_routers_per_group)
-        realistic_benchmarks._params['dragonfly.intergroup_links'] = str(args.dragonfly_intergroup_links)
-        realistic_benchmarks._params['dragonfly.num_groups'] = str(args.dragonfly_num_groups)
-        realistic_benchmarks._params['dragonfly.algorithm'] = args.dragonfly_algorithm
+        topo = merlin_topologies.topoDragonFly()
+        merlin_topologies._params['dragonfly.hosts_per_router'] = str(args.dragonfly_hosts_per_router)
+        merlin_topologies._params['dragonfly.routers_per_group'] = str(args.dragonfly_routers_per_group)
+        merlin_topologies._params['dragonfly.intergroup_links'] = str(args.dragonfly_intergroup_links)
+        merlin_topologies._params['dragonfly.num_groups'] = str(args.dragonfly_num_groups)
+        merlin_topologies._params['dragonfly.algorithm'] = args.dragonfly_algorithm
         if args.dragonfly_algorithm == 'adaptive-local':
-            realistic_benchmarks._params['dragonfly.adaptive_threshold'] = str(args.dragonfly_adaptive_threshold)
+            merlin_topologies._params['dragonfly.adaptive_threshold'] = str(args.dragonfly_adaptive_threshold)
         if args.dragonfly_global_routing_mode == 'relative':
             topo.setRoutingModeRelative()
     elif args.topology == "fattree":
-        topo = realistic_benchmarks.topoFatTree()
-        realistic_benchmarks._params["fattree.shape"] = args.fattree_shape
+        topo = merlin_topologies.topoFatTree()
+        merlin_topologies._params["fattree.shape"] = args.fattree_shape
     else:
         print(f"Error: Unknown topology '{args.topology}'")
         sys.exit(1)
 
-    endPoint = realistic_benchmarks.TrafficGenerator()
+    endPoint = merlin_topologies.TrafficGenerator()
 
-    realistic_benchmarks._params["flit_size"] = f"{args.flit_size_bytes}B"
-    realistic_benchmarks._params["link_bw"] = f"{args.link_bw_gbps}GB/s"
-    realistic_benchmarks._params["link_lat"] = f"{args.link_lat_ns}ns"
-    realistic_benchmarks._params["xbar_bw"] = f"{args.xbar_bw_gbps}GB/s"
+    merlin_topologies._params["flit_size"] = f"{args.flit_size_bytes}B"
+    merlin_topologies._params["link_bw"] = f"{args.link_bw_gbps}GB/s"
+    merlin_topologies._params["link_lat"] = f"{args.link_lat_ns}ns"
+    merlin_topologies._params["xbar_bw"] = f"{args.xbar_bw_gbps}GB/s"
 
     tg_arg_map = {
         "output_file_name": args.tg_output_file_name,
@@ -272,7 +272,7 @@ if __name__ == "__main__":
 
     for key, value in tg_arg_map.items():
         if value is not None:
-            realistic_benchmarks._params[key] = value
+            merlin_topologies._params[key] = value
 
     topo.prepParams()
     endPoint.prepParams()
