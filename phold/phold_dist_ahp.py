@@ -119,7 +119,20 @@ parser.add_argument(
 )
 parser.add_argument(
     '--draw', action='store_true', default=False,
-    help='Write the topology to DOT.'
+    help='Draw the topology to an image.'
+)
+parser.add_argument(
+    '--draw-backend', type=str, default='networkx',
+    help='Which backend to draw with: networkx or dot (default: networkx)'
+)
+parser.add_argument(
+    '--dot-to-networkx', type=str, default=None,
+    help='Directory (or .dot file) of DOT files to read and render as '
+         'NetworkX images, then exit.'
+)
+parser.add_argument(
+    '--combine', action='store_true', default=False,
+    help='When using --dot-to-networkx, merge all DOT files into one image.'
 )
 parser.add_argument(
     '--trial', type=int, default=-1,
@@ -130,6 +143,11 @@ parser.add_argument(
     help='Which architecture function to use: spmd or global (default: spmd)'
 )
 args = parser.parse_args()
+
+
+if args.dot_to_networkx is not None:
+    DeviceGraph.dot_to_networkx(args.dot_to_networkx, combine=args.combine)
+    raise SystemExit(0)
 
 
 if SST:
@@ -576,9 +594,6 @@ if not (args.write or args.build or args.draw):
 if sum([args.write, args.build, args.draw]) > 1:
     raise SystemExit("Error: Only one of --write, --build, or --draw can be specified.") 
 
-if args.draw:
-    raise SystemExit("Error: --draw is not implemented.")
-
 ahp_graph_start = time.time()
 if SST:
     ahp_graph = architecture(num_ranks)
@@ -594,7 +609,26 @@ sst_graph_end = time.time()
 print(f"sst_graph construction on rank {my_rank} takes {sst_graph_end - sst_graph_start:.3f} seconds, memory: {get_memory_gb():.2f} GB")
 
 
-if SST:
+if args.draw:
+    draw_start = time.time()
+    if SST:
+        total_ranks = num_ranks
+    else:
+        total_ranks = num_nodes * num_ranks
+    # Flatten so that assembly comp nodes are visible, then render this
+    # rank's portion of the topology with the selected backend.
+    sst_graph._flatten(my_rank, total_ranks)
+    if args.draw_backend.lower() == 'dot':
+        sst_graph.write_dot(f'ahp_phold_rank{my_rank}', output=output_dir,
+                            draw=True, hierarchy=False)
+        draw_end = time.time()
+        print(f"dot draw on rank {my_rank} takes {draw_end - draw_start:.3f} seconds, image written to {output_dir}/ahp_phold_rank{my_rank}.svg")
+    else:
+        sst_graph.write_networkx(f'ahp_phold_rank{my_rank}', output=output_dir,
+                                 hierarchy=False)
+        draw_end = time.time()
+        print(f"networkx draw on rank {my_rank} takes {draw_end - draw_start:.3f} seconds, image written to {output_dir}/ahp_phold_rank{my_rank}.png")
+elif SST:
     if args.partitioner.lower() == 'sst' and args.build:
         build_start = time.time()
         sst_graph.build()
