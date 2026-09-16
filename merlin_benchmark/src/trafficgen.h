@@ -36,7 +36,6 @@
 
 #include <sst/core/serialization/serializable.h>
 
-#include "sst/elements/merlin/merlin.h"
 
 #define ENABLE_FINISH_HACK 0
 
@@ -357,7 +356,7 @@ private:
         BinomialDist() = default;
         BinomialDist(int min, int max, int trials, float probability) : minValue(min)
         {
-            SST::Merlin::merlin_abort.fatal(CALL_INFO, -1, "BinomialDist is not currently supported\n");
+            //SST::Merlin::merlin_abort.fatal(CALL_INFO, -1, "BinomialDist is not currently supported\n");
         }
         virtual int getNextValue(void) override
         {

@@ -32,7 +32,7 @@ int TrafficGen::max_lat = 0;
 int TrafficGen::mean_sum = 0;
 #endif
 
-Output TrafficGen::out;
+SST::Output TrafficGen::out;
 bool TrafficGen::out_initialized = false;
 
 TrafficGen::TrafficGen(ComponentId_t cid, Params& params) :
@@ -242,54 +242,54 @@ TrafficGen::init(unsigned int phase) {
 bool
 TrafficGen::clock_handler(Cycle_t cycle)
 {
-    // Receive then send
-    for ( int vn = 0 ; vn < num_vns ; vn++ ) {
-        handle_receives(vn);
+    if ( done ) return true;
+    else if (packets_sent >= packets_to_send) {
+        // out.output("Node %d done sending.\n", id);
+        primaryComponentOKToEndSim();
+        done = true;
     }
 
-    if (packets_sent >= packets_to_send) {
-        return false;
-    }
-
-    // We have a packet to send. Count down the delay if necessary, otherwise send.
-    if (packet_delay) {
+    if ( packet_delay ) {
         --packet_delay;
-        return false;
-    }
+    } else {
+        // Send packets
+        if ( packets_sent < packets_to_send ) {
+            int packet_size = getPacketSize();
+            if ( link_control->spaceToSend(0,packet_size) ) {
+                int target = getPacketDest();
 
-    // We have a packet to send, and the delay is 0, so send the packet.
-    int packet_size = getPacketSize();
-    if ( link_control->spaceToSend(0,packet_size) ) {
-        int target = getPacketDest();
 
-        SimpleNetwork::Request* req = new SimpleNetwork::Request();
-        // req->givePayload(NULL);
-        req->head = true;
-        req->tail = true;
+                SimpleNetwork::Request* req = new SimpleNetwork::Request();
+                // req->givePayload(NULL);
+                req->head = true;
+                req->tail = true;
 
-        switch ( addressMode ) {
-        case SEQUENTIAL:
-            req->dest = target;
-            req->src = id;
-            break;
-        case FATTREE_IP:
-            req->dest = fattree_ID_to_IP(target);
-            req->src = fattree_ID_to_IP(id);
-            break;
+                switch ( addressMode ) {
+                case SEQUENTIAL:
+                    req->dest = target;
+                    req->src = id;
+                    break;
+                case FATTREE_IP:
+                    req->dest = fattree_ID_to_IP(target);
+                    req->src = fattree_ID_to_IP(id);
+                    break;
+                }
+                req->vn = 0;
+                // ev->size_in_flits = packet_size;
+                req->size_in_bits = packet_size;
+                out.verbose(CALL_INFO, 5, 0, "Node %d sending packet to %ld of size %zu bits.\n", id, req->dest, req->size_in_bits);
+                out.flush();
+                bool sent = link_control->send(req,0);
+                assert( sent );
+
+                ++packets_sent;
+            }
+            else {
+                link_control->setNotifyOnSend(send_notify_functor);
+                return true;
+            }
         }
-        req->vn = 0;
-        // ev->size_in_flits = packet_size;
-        req->size_in_bits = packet_size;
-        out.verbose(CALL_INFO, 5, 0, "Node %d sending packet to %lld of size %zu bits.\n", id, req->dest, req->size_in_bits);
-        out.flush();
-        bool sent = link_control->send(req,0);
-        assert( sent );
-
-        ++packets_sent;
-    }
-    else {
-        link_control->setNotifyOnSend(send_notify_functor);
-        return true;
+        packet_delay = getDelayNextPacket();
     }
 
     return false;
@@ -345,7 +345,7 @@ TrafficGen::handle_receives(int vn)
 {
     SimpleNetwork::Request* req = link_control->recv(vn);
     if ( req != NULL ) {
-        out.verbose(CALL_INFO, 5, 0, "Node %d received packet from %lld of size %zu bits.\n", id, req->src, req->size_in_bits);
+        out.verbose(CALL_INFO, 5, 0, "Node %d received packet from %ld of size %zu bits.\n", id, req->src, req->size_in_bits);
         out.flush();
         packets_recd++;
         packets_to_send++;

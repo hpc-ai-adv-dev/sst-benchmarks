@@ -2,6 +2,10 @@
 
 This module mirrors the PHOLD workflow pattern but returns structured token lists
 instead of pre-joined command strings.
+
+Time-valued workflow parameters are interpreted as nanoseconds when provided as
+numeric values or numeric strings without units. Those values are normalized to
+strings ending with "ns" in generated MerlinRunSpec objects.
 """
 
 from __future__ import annotations
@@ -16,6 +20,12 @@ from typing import Any, Sequence
 
 
 TOPOLOGY_VALUES = ("mesh", "dragonfly", "fattree")
+
+TIME_PARAM_KEYS = frozenset(
+    {
+       "stop_at"
+    }
+)
 
 DEFAULT_GLOBAL_PARAMS: dict[str, Any] = {
     "stop_at": "10us",
@@ -134,6 +144,30 @@ class MerlinRunSpec:
     config_args: list[str]
     metadata: dict[str, Any]
 
+   
+
+    def to_dict(self, *, config_script: str = "merlin_benchmark.py") -> dict[str, Any]:
+        """Return a compact dict with command previews and top-level parameters.
+
+        The command previews are stored as full shell strings, and the resolved
+        run parameters are lifted out of metadata.parameters so callers can work
+        with keys like ``dragonfly_adaptive_threshold`` directly.
+        """
+
+        preview = format_command_preview(self, config_script=config_script)
+        summary = {
+            "run_id": self.run_id,
+            "run_name": self.run_name,
+            "experiment_name": self.metadata["experiment_name"],
+            "topology": self.metadata["topology"],
+            "node_count": self.metadata["execution"]["node_count"],
+            "rank_count": self.metadata["execution"]["rank_count"],
+            "srun_command": preview["srun"],
+            "mpirun_command": preview["mpirun"],
+        }
+        summary.update(self.metadata.get("parameters", {}))
+        return summary
+
 
 def generate_merlin_run_specs(
     *,
@@ -174,7 +208,8 @@ def generate_merlin_run_specs(
         fattree_params:
             Optional overrides for keys in DEFAULT_FATTREE_PARAMS only.
         sst_extra_args:
-            Extra tokens appended to sst_args.
+                Extra tokens appended to sst_args. Any provided --timing-info
+                options are ignored because --timing-info=3 is always enforced.
         experiment_name:
             Prefix used in generated run_name values.
         stochastic_samples:
@@ -185,6 +220,12 @@ def generate_merlin_run_specs(
 
     Deterministic mode:
         Each parameter value may be a scalar or a sequence of options.
+
+    Time parameter normalization:
+        Time-valued keys listed in TIME_PARAM_KEYS assume input values are in
+        nanoseconds. Numeric values (or numeric strings without a unit suffix)
+        are normalized to strings ending in "ns" in the returned
+        MerlinRunSpec config_args and metadata parameters.
 
     Stochastic mode:
         Sampling is repeated stochastic_samples times.
@@ -414,6 +455,7 @@ def _build_run_spec(
         **_extract_scope_values(run_parameters, DEFAULT_ENDPOINT_PARAMS.keys()),
         **run_parameters["topology_params"],
     }
+    config_values = _normalize_time_fields(config_values)
 
     run_id = _short_hash(config_values, node_count, rank_count)
     run_name = (
@@ -434,10 +476,7 @@ def _build_run_spec(
         ],
     }
 
-    sst_args = [
-        "--parallel-load=SINGLE",
-        *sst_extra_args,
-    ]
+    sst_args = _build_sst_args(sst_extra_args)
 
     config_args = _config_tokens_from_values(config_values)
 
@@ -467,11 +506,78 @@ def _config_tokens_from_values(config_values: dict[str, Any]) -> list[str]:
     tokens: list[str] = []
     for key in sorted(config_values.keys()):
         value = config_values[key]
-        if value is None:
+        if value is None or value == "":
             continue
         flag = f"--{key.replace('_', '-')}"
         tokens.extend([flag, str(value)])
     return tokens
+
+
+def _build_sst_args(sst_extra_args: Sequence[str]) -> list[str]:
+    filtered_extra_args = [
+        arg
+        for arg in sst_extra_args
+        if not arg.startswith("--timing-info")
+    ]
+
+    return [
+        "--timing-info=3",
+        "--parallel-load=SINGLE",
+        *filtered_extra_args,
+    ]
+
+
+def _normalize_time_fields(config_values: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: _normalize_nanoseconds(value)
+        if key in TIME_PARAM_KEYS
+        else value
+        for key, value in config_values.items()
+    }
+
+
+def _normalize_nanoseconds(value: Any) -> Any:
+    if value is None or value == "":
+        return value
+
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped == "":
+            return stripped
+        if stripped.lower().endswith("ns"):
+            return stripped
+        if any(char.isalpha() for char in stripped):
+            return stripped
+        return f"{stripped}ns"
+
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, Integral):
+        return f"{int(value)}ns"
+
+    if isinstance(value, Real):
+        return f"{value}ns"
+
+    return value
+
+
+def _flatten_dict(
+    data: dict[str, Any],
+    *,
+    separator: str,
+    prefix: str = "",
+) -> dict[str, Any]:
+    flattened: dict[str, Any] = {}
+    for key, value in data.items():
+        flat_key = f"{prefix}{separator}{key}" if prefix else key
+        if isinstance(value, dict):
+            flattened.update(
+                _flatten_dict(value, separator=separator, prefix=flat_key)
+            )
+        else:
+            flattened[flat_key] = value
+    return flattened
 
 
 def _extract_scope_values(

@@ -35,7 +35,7 @@ _params['thread_count'] = sst.getThreadCount()
 debug=0
 
 def log(lvl, *args):
-    if debug >= lvl:
+    if lvl >= debug:
         print('Rank %d: '%(_params['my_rank']), *args)
 
 
@@ -197,6 +197,8 @@ class topoMesh(Topo):
         _topo_params = _params.subsetWithRename(swap_keys);
     
         # First, create all the router components, including ghost routers
+        local_router_count = 0
+        ghost_router_count = 0
         for (rtr_loc, is_ghost) in self.local_router_indices(include_ghosts=True):
             rtr_global_id = self._locToId(rtr_loc)
             rtr = self._instanceRouter(rtr_global_id, "merlin.hr_router")
@@ -216,12 +218,18 @@ class topoMesh(Topo):
 
             # We only need to add parameters and topology for local components
             if not is_ghost:
+                local_router_count += 1
                 rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
                 rtr.addParam("id", rtr_global_id)
                 topology = rtr.setSubComponent("topology","merlin.mesh")
                 topology.addParams(_topo_params)
+            else:
+                ghost_router_count += 1
+
+        log(0, f'Phase 1 complete: created {local_router_count} local routers and {ghost_router_count} ghost routers')
 
         # Second, connect routers to their neighbors
+        endpoint_count = 0
         for (rtr_loc,is_ghost) in self.local_router_indices(include_ghosts=True):
             rtr_global_id = self._locToId(rtr_loc)
             mylocstr = self._formatShape(rtr_loc)
@@ -271,7 +279,10 @@ class topoMesh(Topo):
                         nic_link.setNoCut()
                     rtr.addLink(nic_link, "port%d"%port, _params["link_lat"])
                     ep[0].addLink(nic_link, ep[1], ep[2])
+                    endpoint_count += 1
                 port = port + 1
+
+        log(0, f'Phase 2 complete: connected {local_router_count} local routers, {ghost_router_count} ghost routers, and {endpoint_count} endpoints')
     
 
 

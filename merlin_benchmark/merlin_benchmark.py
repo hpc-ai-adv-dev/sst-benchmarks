@@ -1,6 +1,8 @@
 import sys
 import sst
+import os
 import argparse
+sys.path.append(os.path.dirname(__file__))
 import merlin_topologies
 
 
@@ -10,8 +12,8 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
-  python merlin_mesh.py --mesh_shape 8x8 --mesh_local_ports 4
-  python merlin_mesh.py --flit_size 16 --link_bw 8 --link_lat 2
+  sst merlin_mesh.py --mesh_shape 8x8 --mesh_local_ports 4
+  sst merlin_mesh.py --flit_size 16 --link_bw 8 --link_lat 2
         '''
     )
 
@@ -33,42 +35,42 @@ Examples:
     mesh_args = parser.add_argument_group("Mesh Topology Arguments")
     mesh_args.add_argument('--mesh_shape', '--shape', '--mesh-shape', dest='mesh_shape', default='4x4', 
                         help='Shape of the mesh topology in XxY format (default: 4x4). Example: 8x8 for 8x8 mesh.')
-    mesh_args.add_argument('--mesh_width', type=str, default='2x2',
+    mesh_args.add_argument('--mesh_width', '--mesh-width', type=str, default='2x2',
                         help='Width configuration for mesh routing. Specifies router connectivity in each direction (default: 2x2).')
-    mesh_args.add_argument('--mesh_local_ports', type=int, default=2,
+    mesh_args.add_argument('--mesh_local_ports', '--mesh-local-ports', type=int, default=2,
                         help='Number of local endpoints connected to each router in the mesh (default: 2).')
 
     # Dragonfly topology arguments
     dragonfly_args = parser.add_argument_group("DragonFly Topology Arguments")
-    dragonfly_args.add_argument('--dragonfly_hosts_per_router', '--dragonfly_hosts-per-router', type=int, default=2,
+    dragonfly_args.add_argument('--dragonfly_hosts_per_router', '--dragonfly-hosts-per-router', type=int, default=2,
                         help='Number of hosts (endpoints) connected to each router (default: 2).')
-    dragonfly_args.add_argument('--dragonfly_routers_per_group', '--dragonfly_routers-per-group', type=int, default=4,
+    dragonfly_args.add_argument('--dragonfly_routers_per_group', '--dragonfly-routers-per-group', type=int, default=4,
                         help='Number of routers in each group (default: 4).')
-    dragonfly_args.add_argument('--dragonfly_intergroup_links', '--dragonfly_intergroup-links', type=int, default=1,
+    dragonfly_args.add_argument('--dragonfly_intergroup_links', '--dragonfly-intergroup-links', type=int, default=1,
                         help='Number of links connecting each group to other groups (default: 1).')
-    dragonfly_args.add_argument('--dragonfly_num_groups', '--dragonfly_num-groups', type=int, default=9,
+    dragonfly_args.add_argument('--dragonfly_num_groups', '--dragonfly-num-groups', type=int, default=9,
                         help='Number of groups in the DragonFly topology (default: 9).') 
     dragonfly_args.add_argument('--dragonfly_algorithm', '--dragonfly-algorithm', type=str, default='minimal',
                         help='Routing algorithm to use (default: minimal). Options: minimal, adaptive-local')
-    dragonfly_args.add_argument('--dragonfly_adaptive_threshold', '--dragonfly_adaptive-threshold', type=float, default=2.0,
+    dragonfly_args.add_argument('--dragonfly_adaptive_threshold', '--dragonfly-adaptive-threshold', type=float, default=2.0,
                         help='Threshold for adaptive routing decisions (default: 2.0). Only used if algorithm is adaptive-local.')
-    dragonfly_args.add_argument('--dragonfly_global_routing_mode', '--dragonfly_global-routing-mode', type=str, default='absolute',
+    dragonfly_args.add_argument('--dragonfly_global_routing_mode', '--dragonfly-global-routing-mode', type=str, default='absolute',
                         help='Global routing mode for intergroup links (default: absolute). Options: absolute, relative')
   
     # FatTree topology arguments
     fattree_args = parser.add_argument_group("FatTree Topology Arguments")
-    fattree_args.add_argument('--fattree_shape', type=str, default="4,4:4,4:8")
+    fattree_args.add_argument('--fattree_shape', '--fattree-shape', type=str, default="4,4:4,4:8")
 
 
     # Network parameters - Link and buffer configuration
     network_args = parser.add_argument_group("Network Parameters")
-    network_args.add_argument('--flit_size_bytes', '--flit_size', type=int, default=8,
+    network_args.add_argument('--flit_size_bytes', '--flit-size-bytes', '--flit_size', '--flit-size', type=int, default=8,
                         help='Flit (flow control unit) size in bytes (default: 8B). Smaller values reduce latency but increase overhead.')
-    network_args.add_argument('--link_bw_gbps', '--link_bw', type=int, default=4,
+    network_args.add_argument('--link_bw_gbps', '--link-bw-gbps', '--link_bw', '--link-bw', type=int, default=4,
                         help='Link bandwidth in GB/s (default: 4GB/s). Affects network throughput.')
-    network_args.add_argument('--link_lat_ns', '--link_lat', type=int, default=1,
+    network_args.add_argument('--link_lat_ns', '--link-lat-ns', '--link_lat', '--link-lat', type=int, default=1,
                         help='Link latency in nanoseconds (default: 1ns). Delay for each hop through a link.')
-    network_args.add_argument('--xbar_bw_gbps', '--xbar_bw', type=int, default=4,
+    network_args.add_argument('--xbar_bw_gbps', '--xbar-bw-gbps', '--xbar_bw', '--xbar-bw', type=int, default=4,
                         help='Crossbar bandwidth in GB/s (default: 4GB/s). Bandwidth within each router.')
     
 
@@ -95,7 +97,7 @@ Examples:
                         help='Traffic generator network interface buffer length (e.g. 1kB).')
     endpoint_args.add_argument('--tg-packets-to-send', '--tg_packets_to_send', type=int, default=None,
                         help='Number of packets each traffic generator endpoint should send.')
-    endpoint_args.add_argument('--tg-packet-size', '--tg_packet_size', type=str, default=None,
+    endpoint_args.add_argument('--tg-packet-size', '--tg_packet_size', type=str, default='8B',
                         help='Packet size with units (e.g. 64B, 512b).')
     endpoint_args.add_argument('--tg-delay-between-packets', '--tg_delay_between_packets', type=str, default=None,
                         help='Delay between packets with time units (e.g. 5ns).')
@@ -182,6 +184,22 @@ Examples:
     return parser.parse_args()
 
 
+def calculate_num_endpoints(args):
+    if args.topology == "mesh":
+        dims = args.mesh_shape.count('x') + 1
+        width = args.mesh_width
+        local_ports = args.mesh_local_ports
+        return (width ** dims) * local_ports
+    elif args.topology == "dragonfly":
+        return args.dragonfly_hosts_per_router * args.dragonfly_routers_per_group * args.dragonfly_num_groups
+    elif args.topology == "fattree":
+        # Assuming fattree shape is like "k=4"
+        k = int(args.fattree_shape.split('=')[1])
+        return (k ** 3) // 4
+    else:
+        return 0
+
+
 if __name__ == "__main__":
 
     args = parse_args()
@@ -222,7 +240,11 @@ if __name__ == "__main__":
     merlin_topologies._params["link_lat"] = f"{args.link_lat_ns}ns"
     merlin_topologies._params["xbar_bw"] = f"{args.xbar_bw_gbps}GB/s"
 
+
+    if args.tg_packet_dest_range_max is None:
+        args.tg_packet_dest_range_max = calculate_num_endpoints(args)
     tg_arg_map = {
+        "num_endpoints": calculate_num_endpoints(args),
         "output_file_name": args.tg_output_file_name,
         "input_latency": args.tg_input_latency,
         "output_latency": args.tg_output_latency,
