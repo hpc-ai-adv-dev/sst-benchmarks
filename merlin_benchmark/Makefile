@@ -39,10 +39,22 @@ libmerlin_benchmark.so: $(SRCS)
 install: libmerlin_benchmark.so
 	$(SST_REGISTER) merlin_benchmark merlin_benchmark_LIBDIR=$(CURDIR)
 
+# Statistical unit tests for the Generator subclasses in src/generators.h.
+# Packaged as its own SST element/component (see tests/test_trafficgen_distributions.cpp)
+# since the generators depend on SST core RNG symbols only available inside a
+# running SST simulation.
+libmerlin_benchmark_test.so: tests/test_trafficgen_distributions.cpp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -I$(SRCDIR) -o $@ $^
+
+test: libmerlin_benchmark_test.so
+	$(SST_REGISTER) merlin_benchmark_test merlin_benchmark_test_LIBDIR=$(CURDIR)
+	sst tests/test_trafficgen_distributions.py
+
 clean:
-	rm -rf libmerlin_benchmark.so
+	rm -rf libmerlin_benchmark.so libmerlin_benchmark_test.so
 	rm -f $(SST_ELEMENT_LIBDIR)/libmerlin_benchmark.so
 	@if [ -x "$(SST_REGISTER)" ]; then \
 		$(SST_REGISTER) -u merlin_benchmark; \
+		$(SST_REGISTER) -u merlin_benchmark_test; \
 	fi
 	rm -f *.json *.tmp *.time *.out *.csv

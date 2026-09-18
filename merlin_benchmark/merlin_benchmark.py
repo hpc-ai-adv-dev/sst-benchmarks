@@ -23,7 +23,7 @@ Examples:
     global_args = parser.add_argument_group("Global Simulation Parameters")
     global_args.add_argument('--stop_at', '--stop-at', type=str, default='10us',
                             help='Simulation stop time (default: 10us). Determines how long the simulation runs before stopping.')
-    global_args.add_argument('--verbose', type=int, default=None,
+    global_args.add_argument('--verbose', type=int, default=0,
                         help='Optional SST program verbose level. If omitted, keep the existing SST verbose setting.')
 
     # Topology selection
@@ -105,7 +105,7 @@ Examples:
                         help='Clock/message rate for traffic generation (e.g. 1GHz).')
 
     # Packet destination generator parameters
-    endpoint_args.add_argument('--tg-packet-dest-pattern', '--tg_packet_dest_pattern', type=str, default=None,
+    endpoint_args.add_argument('--tg-packet-dest-pattern', '--tg_packet_dest_pattern', type=str, default='Uniform',
                         choices=['NearestNeighbor', 'Uniform', 'HotSpot', 'Normal', 'Exponential', 'Binomial'],
                         help='Packet destination generation pattern.')
     endpoint_args.add_argument('--tg-packet-dest-seed', '--tg_packet_dest_seed', type=int, default=None,
@@ -239,7 +239,7 @@ if __name__ == "__main__":
     merlin_topologies._params["link_bw"] = f"{args.link_bw_gbps}GB/s"
     merlin_topologies._params["link_lat"] = f"{args.link_lat_ns}ns"
     merlin_topologies._params["xbar_bw"] = f"{args.xbar_bw_gbps}GB/s"
-
+    merlin_topologies.debug = args.verbose
 
     if args.tg_packet_dest_range_max is None:
         args.tg_packet_dest_range_max = calculate_num_endpoints(args)

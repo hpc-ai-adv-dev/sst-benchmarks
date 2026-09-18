@@ -98,7 +98,7 @@ TrafficGen::TrafficGen(ComponentId_t cid, Params& params) :
 
 
 
-    packets_to_send = params.find<uint64_t>("packets_to_send", 1000);
+    packets_to_send = params.find<uint64_t>("packets_to_send", 10);
 
     /* Distribution selection */
     packetDestGen = buildGenerator("PacketDest", params);
@@ -179,7 +179,7 @@ TrafficGen::serialize_order(SST::Core::Serialization::serializer& ser)
 }
 
 
-TrafficGen::Generator* TrafficGen::buildGenerator(const std::string &prefix, Params &params)
+Generator* TrafficGen::buildGenerator(const std::string &prefix, Params &params)
 {
     Generator* gen = NULL;
     std::string pattern = params.find<std::string>(prefix + ".pattern");
@@ -199,18 +199,29 @@ TrafficGen::Generator* TrafficGen::buildGenerator(const std::string &prefix, Par
     } else if ( !pattern.compare("HotSpot") ) {
         int target = params.find<int>(prefix + ".HotSpot.target");
         float targetProb = params.find<float>(prefix + ".HotSpot.targetProbability");
-        gen = new DiscreteDist(range.first, range.second, target, targetProb);
+        if (target < range.first || target >= range.second) {
+            out.fatal(CALL_INFO, -1,
+                      "%s.HotSpot.target=%d is outside the destination range [%d, %d)\n",
+                      prefix.c_str(), target, range.first, range.second);
+        }
+        if (targetProb < 0.0f || targetProb > 1.0f) {
+            out.fatal(CALL_INFO, -1,
+                      "%s.HotSpot.targetProbability=%g must be in [0, 1]\n",
+                      prefix.c_str(), targetProb);
+        }
+        out.verbose(CALL_INFO, 2, 0, "Creating HotSpot generator with target %d and probability %g. Min and Max: %d %d\n", target, targetProb, range.first, range.second);
+        gen = new DiscreteDist(range.first, range.second-1, target, targetProb);
     } else if ( !pattern.compare("Normal") ) {
         float mean = params.find<float>(prefix + ".Normal.Mean", range.second/2.0f);
         float sigma = params.find<float>(prefix + ".Normal.Sigma", 1.0f);
-        gen = new NormalDist(range.first, range.second, mean, sigma);
+        gen = new NormalDist(range.first, range.second-1, mean, sigma);
     } else if ( !pattern.compare("Exponential") ) {
         float lambda = params.find<float>(prefix + ".Exponential.Lambda", range.first);
         gen = new ExponentialDist(lambda);
     } else if ( !pattern.compare("Binomial") ) {
         int trials = params.find<int>(prefix + ".Binomial.Mean", range.second);
         float probability = params.find<float>(prefix + ".Binomial.Sigma", 0.5f);
-        gen = new BinomialDist(range.first, range.second, trials, probability);
+        gen = new BinomialDist(range.first, range.second-1, trials, probability);
     } else if ( pattern.compare("") ) { // Allow none - non-pattern
         out.fatal(CALL_INFO, -1, "Unknown pattern '%s'\n", pattern.c_str());
     }
@@ -222,6 +233,18 @@ TrafficGen::Generator* TrafficGen::buildGenerator(const std::string &prefix, Par
 
 void TrafficGen::finish()
 {
+    int remainingMessageCount = 0;
+    for(int i = 0; i < num_vns; i++) {
+        while (true) {
+            auto msg = link_control->recv(i);
+            if (msg) {
+                ++remainingMessageCount;
+            } else {
+                break;
+            }
+        }
+    }
+    out.verbose(CALL_INFO, 5, 0, "Node %d remaining message count: %d\n", id, remainingMessageCount);
     link_control->finish();
 }
 
@@ -242,12 +265,6 @@ TrafficGen::init(unsigned int phase) {
 bool
 TrafficGen::clock_handler(Cycle_t cycle)
 {
-    if ( done ) return true;
-    else if (packets_sent >= packets_to_send) {
-        // out.output("Node %d done sending.\n", id);
-        primaryComponentOKToEndSim();
-        done = true;
-    }
 
     if ( packet_delay ) {
         --packet_delay;
@@ -257,7 +274,6 @@ TrafficGen::clock_handler(Cycle_t cycle)
             int packet_size = getPacketSize();
             if ( link_control->spaceToSend(0,packet_size) ) {
                 int target = getPacketDest();
-
 
                 SimpleNetwork::Request* req = new SimpleNetwork::Request();
                 // req->givePayload(NULL);
@@ -343,6 +359,7 @@ int TrafficGen::IP_to_fattree_ID(int ip)
 bool
 TrafficGen::handle_receives(int vn)
 {
+    out.verbose(CALL_INFO, 5, 0, "Node %d hanlding receive on vn %d\n", id, vn);
     SimpleNetwork::Request* req = link_control->recv(vn);
     if ( req != NULL ) {
         out.verbose(CALL_INFO, 5, 0, "Node %d received packet from %ld of size %zu bits.\n", id, req->src, req->size_in_bits);

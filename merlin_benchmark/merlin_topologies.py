@@ -35,7 +35,7 @@ _params['thread_count'] = sst.getThreadCount()
 debug=0
 
 def log(lvl, *args):
-    if lvl >= debug:
+    if lvl < debug:
         print('Rank %d: '%(_params['my_rank']), *args)
 
 
@@ -588,7 +588,7 @@ class topoDragonFly(Topo):
             for router_num in range(routers_per_group):
                 global_rtr_idx = self.global_router_idx(my_grp_idx, router_num)
 
-                log(0, f'creating router {router_num} for group {my_grp_idx} with global index {global_rtr_idx}')
+                log(0, f'CREATING ROUTER LOCAL {router_num} for group {my_grp_idx} with global index {global_rtr_idx}')
                 rtr = self._instanceRouter(global_rtr_idx, "merlin.hr_router")
                 rtr.setRank(my_rank)
                 rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
@@ -606,11 +606,13 @@ class topoDragonFly(Topo):
                 port = 0
                 for p in range(_params["dragonfly.hosts_per_router"]):
                     nic_num = global_rtr_idx * _params["dragonfly.hosts_per_router"] + p
-                    log(0, f'Creating endpoint with nic_num={nic_num}')
+                    log(0, f'CREATING ENDPOINT LOCAL with nic_num={nic_num}')
                     ep = self._getEndPoint(nic_num).build(nic_num, {})
                     if ep:
                         ep[3].setRank(my_rank)
-                        link = sst.Link("link_g%dr%dh%d"%(my_grp_idx, global_rtr_idx, p))
+                        link_name = "link_g%dr%dh%d"%(my_grp_idx, global_rtr_idx, p)
+                        log(0, f'CREATING LINK LOCAL {link_name}')
+                        link = sst.Link(link_name)
                         if self.bundleEndpoints:
                             link.setNoCut()
                         link.connect(ep[0:3], (rtr, "port%d"%port, _params["link_lat"]) )
@@ -621,6 +623,7 @@ class topoDragonFly(Topo):
                     if p != router_num:
                         src = min(p,router_num)
                         dst = max(p,router_num)
+                        log(0, "CONNECTING LINK LOCAL Intragroup")
                         rtr.addLink(get_link("link_g%dr%dr%d"%(my_grp_idx, src, dst)), "port%d"%port, _params["link_lat"])
                         port = port + 1
                 
@@ -628,6 +631,7 @@ class topoDragonFly(Topo):
                 for p in range(_params["dragonfly.intergroup_per_router"]):
                     link = get_global_link(my_grp_idx, router_num, p)
                     if link is not None:
+                        log(0, 'CONNECTING LINK LOCAL Intergroup')
                         rtr.addLink(link,"port%d"%port, _params["link_lat"])
                     port = port + 1
             
@@ -648,7 +652,8 @@ class topoDragonFly(Topo):
 
                 
                     if self.findRouterByLocation(dst_grp_idx, dst_rtr_idx) is None:
-                        log(0, 'creating ghost router for dst group %d, dst rtr idx %d'%(dst_grp_idx, dst_rtr_idx))
+                        log(0, 'CREATING ROUTER GHOST for dst group %d, dst rtr idx %d'%(dst_grp_idx, dst_rtr_idx))
+
                         ghost_rtr = self._instanceRouter(dst_rtr_global_idx, "merlin.hr_router")
                         ghost_rtr.addParam("id", dst_rtr_global_idx)
                         ghost_rtr.addParams(_params.subset(self.topoKeys, self.topoOptKeys))
@@ -669,6 +674,7 @@ class topoDragonFly(Topo):
 
                     dst_rtr_global_port = dst_rtr_port - (_params["dragonfly.hosts_per_router"] + _params["dragonfly.routers_per_group"] - 1)
                     link = get_global_link(dst_grp_idx, dst_rtr_idx, dst_rtr_global_port)
+                    log(0, f'CONNECTING LINK GHOST')
                     ghost_rtr.addLink(link, "port%d"%dst_rtr_port, _params["link_lat"])
 
 
@@ -1641,10 +1647,6 @@ class TrafficGenerator(EndPoint):
         nic.addParams(_params.subset(self.epKeys, self.epOptKeys))
         nic.addParams(_params.subset(extraKeys))
         nic.addParam("id", nID)
-        nic.addParam('PacketDest.pattern', _params.get('PacketDest.pattern', 'Uniform'))
-        nic.addParam('packets_to_send', _params.get('packets_to_send', 10))
-        nic.addParam('PacketDest.RangeMin', _params.get('PacketDest.RangeMin', 0))
-        nic.addParam('PacketDest.RangeMax', _params.get('PacketDest.RangeMax', _params['num_peers']))
         if self.split != 1:
             # Need to figure out what group I'm in
             limit = 0

@@ -135,6 +135,9 @@ class MerlinRunSpec:
         metadata:
             Provenance payload with experiment info, execution shape, and
             fully-resolved parameter values.
+        trial:
+            1-indexed trial number identifying repeated runs of the same
+            parameter point.
     """
 
     run_id: str
@@ -143,6 +146,7 @@ class MerlinRunSpec:
     sst_args: list[str]
     config_args: list[str]
     metadata: dict[str, Any]
+    trial: int = 1
 
    
 
@@ -160,6 +164,7 @@ class MerlinRunSpec:
             "run_name": self.run_name,
             "experiment_name": self.metadata["experiment_name"],
             "topology": self.metadata["topology"],
+            "trial": self.trial,
             "node_count": self.metadata["execution"]["node_count"],
             "rank_count": self.metadata["execution"]["rank_count"],
             "srun_command": preview["srun"],
@@ -184,6 +189,7 @@ def generate_merlin_run_specs(
     experiment_name: str = "merlin",
     stochastic_samples: int | None = None,
     stochastic_seed: int | None = None,
+    trials: int = 1,
 ) -> list[MerlinRunSpec]:
     """Generate run specifications for notebook-driven Merlin workflows.
 
@@ -217,6 +223,10 @@ def generate_merlin_run_specs(
             If set, must be > 0.
         stochastic_seed:
             Required when stochastic_samples is set.
+        trials:
+            Number of repeated copies to generate per parameter point.
+            Must be >= 1. Each copy shares identical parameters and only
+            differs by its trial number.
 
     Deterministic mode:
         Each parameter value may be a scalar or a sequence of options.
@@ -239,6 +249,7 @@ def generate_merlin_run_specs(
         - Unknown override keys in any *_params dictionary.
         - stochastic_samples <= 0.
         - Providing stochastic_samples without stochastic_seed.
+        - trials < 1.
         - Passing thread_counts (this API intentionally does not support thread
           count control).
 
@@ -253,6 +264,8 @@ def generate_merlin_run_specs(
     _validate_topologies(topologies)
     _validate_positive_int_list("node_counts", node_counts)
     _validate_positive_int_list("rank_counts", rank_counts)
+    if trials < 1:
+        raise ValueError("trials must be >= 1")
 
     global_space = _with_defaults(DEFAULT_GLOBAL_PARAMS, global_params)
     network_space = _with_defaults(DEFAULT_NETWORK_PARAMS, network_params)
@@ -297,8 +310,10 @@ def generate_merlin_run_specs(
             run_parameters=run_parameters,
             experiment_name=experiment_name,
             sst_extra_args=list(sst_extra_args),
+            trial=trial,
         )
         for run_parameters in params
+        for trial in range(1, trials + 1)
     ]
 
 
@@ -443,6 +458,7 @@ def _build_run_spec(
     run_parameters: dict[str, Any],
     experiment_name: str,
     sst_extra_args: list[str],
+    trial: int = 1,
 ) -> MerlinRunSpec:
     topology = run_parameters["topology"]
     node_count = int(run_parameters["node_count"])
@@ -460,7 +476,7 @@ def _build_run_spec(
     run_id = _short_hash(config_values, node_count, rank_count)
     run_name = (
         f"{experiment_name}_{topology}_"
-        f"n{node_count}_r{rank_count}_{run_id}"
+        f"n{node_count}_r{rank_count}_{run_id}_t{trial}"
     )
 
     launcher = {
@@ -485,6 +501,7 @@ def _build_run_spec(
         "run_name": run_name,
         "run_id": run_id,
         "topology": topology,
+        "trial": trial,
         "execution": {
             "node_count": node_count,
             "rank_count": rank_count,
@@ -499,6 +516,7 @@ def _build_run_spec(
         sst_args=sst_args,
         config_args=config_args,
         metadata=metadata,
+        trial=trial,
     )
 
 

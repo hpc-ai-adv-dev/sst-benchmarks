@@ -196,3 +196,91 @@ def wait_for_jobs(job_name=None):
             print(f"Waiting for jobs to complete... Queue length: {queue_length - 1}")
             time.sleep(5)
 
+
+def launch_jobs(run_specs, workflow_dir, output_dir, sst_input_config, experiment_name, FORCED):
+    os.makedirs(output_dir, exist_ok=True)
+
+    for run_spec in run_specs:
+        run_output_dir = os.path.join(output_dir, run_spec.run_name)
+        os.makedirs(run_output_dir, exist_ok=True)
+        cd(run_output_dir)
+
+        status_file_path = os.path.join(run_output_dir, 'status.txt')
+
+        if os.path.exists(status_file_path):
+            with open(status_file_path, 'r') as f:
+                status = f.read().strip()
+            if not FORCED and status in ['COMPLETED', 'SUBMITTED']:
+                print(f'Skipping {run_spec.run_name} as it is already {status}')
+                continue
+
+        log_file = os.path.join(run_output_dir, 'run.log')
+        error_file = os.path.join(run_output_dir, 'run.err')
+        profiling_output_file = os.path.join(run_output_dir, 'profiling.json')
+
+        param_file = os.path.join(run_output_dir, 'params.json')
+        with open(param_file, 'w') as f:
+            json.dump(run_spec.to_dict(), f, indent=2)
+
+
+        srun_part = " ".join(run_spec.launcher["srun"])
+        sst_part = " ".join(run_spec.sst_args)
+        config_part = " ".join(run_spec.config_args)
+
+        launch_cmd = (
+            f"e4s-cl launch srun --output={log_file} --error={error_file} "
+            f"{srun_part} \\\n\t -- sst --profiling-output={profiling_output_file} --timing-info=3 {sst_input_config} "
+            f"{sst_part} \\\n\t -- {config_part}"
+        )
+
+        
+        sbatch_script_path = os.path.join(run_output_dir, 'run.sbatch')
+
+        with open(sbatch_script_path, 'w') as f:
+            f.write(f"#!/bin/bash\n")
+            f.write(f"echo 'LAUNCHED' > {status_file_path}\n")
+            f.write(f"{launch_cmd}\n")
+            f.write(f"if [ $? -eq 0 ]; then\n")
+            f.write(f"    echo 'COMPLETED' > {status_file_path}\n")
+            f.write(f"else\n")
+            f.write(f"    echo 'FAILED' > {status_file_path}\n")
+            f.write(f"fi\n")
+
+        os.chmod(sbatch_script_path, 0o755)
+
+        sbatch_log = os.path.join(run_output_dir, 'sbatch.log')
+        sbatch_err = os.path.join(run_output_dir, 'sbatch.err')
+        sbatch_cmd = f"sbatch --job-name={experiment_name} --output={sbatch_log} --error={sbatch_err} {srun_part} {sbatch_script_path}"
+        sbatch_submit_file = os.path.join(run_output_dir, 'sbatch_submit_cmd.txt')
+        with open(sbatch_submit_file, 'w') as f:
+            f.write(f"{sbatch_cmd}\n")
+
+        with open(status_file_path, 'w') as f:
+            f.write('SUBMITTED\n')
+        run_cmd(sbatch_cmd)
+
+        cd(workflow_dir)
+
+def aggregate_over_trials(df):
+    import pandas as pd
+    # Metrics that were measured per-trial and should be summarized across trials
+    metric_cols = [
+        'total_duration_s', 'build_duration_s', 'execute_duration_s',
+        'total_memory_gib', 'build_memory_gib', 'execute_memory_gib',
+        'global_max_rss_gib', 'local_max_rss_gib',
+    ]
+
+    # Everything else (params, run identifiers, etc.) identifies a unique run configuration
+    group_cols = [c for c in df.columns if c not in metric_cols + ['trial', 'srun_command', 'mpi_command', 'run_name',]]
+
+    agg_kwargs = {'num_trials': pd.NamedAgg(column='trial', aggfunc='nunique')}
+    for col in metric_cols:
+        agg_kwargs[f'{col}_min'] = pd.NamedAgg(column=col, aggfunc='min')
+        agg_kwargs[f'{col}_max'] = pd.NamedAgg(column=col, aggfunc='max')
+        agg_kwargs[f'{col}_mean'] = pd.NamedAgg(column=col, aggfunc='mean')
+
+    # dropna=False: groupby drops rows with NaN in any key column by default,
+    # and optional per-topology params are NaN for topologies that don't use them
+    df_agg = df.groupby(group_cols, as_index=False, dropna=False).agg(**agg_kwargs)
+
+    return df_agg
