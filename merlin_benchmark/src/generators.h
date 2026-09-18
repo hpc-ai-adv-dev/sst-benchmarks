@@ -205,7 +205,7 @@ public:
 
     int getNextValue(void) override
     {
-        return ((int) dist->getNextDouble()) + minValue;
+        return ((int) dist->getNextDouble()) + minValue - 1;
     }
 
     void seed(uint32_t val) override
