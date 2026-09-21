@@ -193,9 +193,13 @@ def calculate_num_endpoints(args):
     elif args.topology == "dragonfly":
         return args.dragonfly_hosts_per_router * args.dragonfly_routers_per_group * args.dragonfly_num_groups
     elif args.topology == "fattree":
-        # Assuming fattree shape is like "k=4"
-        k = int(args.fattree_shape.split('=')[1])
-        return (k ** 3) // 4
+        shape = args.fattree_shape
+        levels = shape.split(":")
+        num_endpoints = 1
+        for l in levels:
+            links = l.split(",")
+            num_endpoints *= int(links[0])
+        return num_endpoints
     else:
         return 0
 

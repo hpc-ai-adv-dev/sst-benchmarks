@@ -4,6 +4,8 @@ import shlex
 import stat
 import time
 import json
+import glob
+import re
 
 def run_cmd(cmd):
     if isinstance(cmd, str):
@@ -261,6 +263,26 @@ def launch_jobs(run_specs, workflow_dir, output_dir, sst_input_config, experimen
 
         cd(workflow_dir)
 
+def get_run_status(run_output_dir):
+    status_file = os.path.join(run_output_dir, 'status.txt')
+    with open(status_file, 'r') as f:
+        content = f.read()
+    return content.strip()
+
+def merge_rank_log_files(log_file_name):
+    dir_name = os.path.dirname(log_file_name)
+    per_rank_log_file_paths = [
+        path for path in glob.glob(os.path.join(dir_name, f'{log_file_name}*'))
+        if re.fullmatch(f'{log_file_name}\\d+', os.path.basename(path))
+    ]
+    if len(per_rank_log_file_paths) == 0:
+        return len(per_rank_log_file_paths)
+    with open(log_file_name, 'w') as log_file:
+        for per_rank_log_file_path in per_rank_log_file_paths:
+            with open(per_rank_log_file_path, 'r') as per_rank_log_file:
+                log_file.write(per_rank_log_file.read())
+    return len(per_rank_log_file_paths)
+    
 def aggregate_over_trials(df):
     import pandas as pd
     # Metrics that were measured per-trial and should be summarized across trials

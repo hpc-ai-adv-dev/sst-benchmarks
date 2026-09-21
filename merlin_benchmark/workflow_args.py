@@ -166,7 +166,7 @@ class MerlinRunSpec:
             "topology": self.metadata["topology"],
             "trial": self.trial,
             "node_count": self.metadata["execution"]["node_count"],
-            "rank_count": self.metadata["execution"]["rank_count"],
+            "ranks_per_node": self.metadata["execution"]["ranks_per_node"],
             "srun_command": preview["srun"],
             "mpirun_command": preview["mpirun"],
         }
@@ -177,7 +177,7 @@ class MerlinRunSpec:
 def generate_merlin_run_specs(
     *,
     node_counts: Sequence[int] = (1,),
-    rank_counts: Sequence[int] = (1,),
+    ranks_per_node: Sequence[int] = (1,),
     topologies: Sequence[str] = ("mesh",),
     global_params: dict[str, Any] | None = None,
     network_params: dict[str, Any] | None = None,
@@ -196,7 +196,7 @@ def generate_merlin_run_specs(
     Allowed arguments:
         node_counts:
             Non-empty sequence of positive integers.
-        rank_counts:
+        ranks_per_node:
             Non-empty sequence of positive integers.
         topologies:
             Non-empty sequence containing only "mesh", "dragonfly", and/or
@@ -244,7 +244,7 @@ def generate_merlin_run_specs(
         - Other sequences are treated as categorical choices.
 
     Not allowed:
-        - Empty node_counts, rank_counts, or topologies.
+        - Empty node_counts, ranks_per_node, or topologies.
         - Unknown topology names.
         - Unknown override keys in any *_params dictionary.
         - stochastic_samples <= 0.
@@ -263,7 +263,7 @@ def generate_merlin_run_specs(
 
     _validate_topologies(topologies)
     _validate_positive_int_list("node_counts", node_counts)
-    _validate_positive_int_list("rank_counts", rank_counts)
+    _validate_positive_int_list("ranks_per_node", ranks_per_node)
     if trials < 1:
         raise ValueError("trials must be >= 1")
 
@@ -280,7 +280,7 @@ def generate_merlin_run_specs(
     if stochastic_samples is None:
         params = _deterministic_parameter_points(
             node_counts=node_counts,
-            rank_counts=rank_counts,
+            ranks_per_node=ranks_per_node,
             topologies=topologies,
             global_space=global_space,
             network_space=network_space,
@@ -297,7 +297,7 @@ def generate_merlin_run_specs(
             stochastic_samples=stochastic_samples,
             rng=rng,
             node_counts=node_counts,
-            rank_counts=rank_counts,
+            ranks_per_node=ranks_per_node,
             topologies=topologies,
             global_space=global_space,
             network_space=network_space,
@@ -372,7 +372,7 @@ def format_command_preview(
 def _deterministic_parameter_points(
     *,
     node_counts: Sequence[int],
-    rank_counts: Sequence[int],
+    ranks_per_node: Sequence[int],
     topologies: Sequence[str],
     global_space: dict[str, Any],
     network_space: dict[str, Any],
@@ -383,7 +383,7 @@ def _deterministic_parameter_points(
 
     shared_space = {
         "node_count": node_counts,
-        "rank_count": rank_counts,
+        "ranks_per_node": ranks_per_node,
         **global_space,
         **network_space,
         **endpoint_space,
@@ -411,7 +411,7 @@ def _stochastic_parameter_points(
     stochastic_samples: int,
     rng: random.Random,
     node_counts: Sequence[int],
-    rank_counts: Sequence[int],
+    ranks_per_node: Sequence[int],
     topologies: Sequence[str],
     global_space: dict[str, Any],
     network_space: dict[str, Any],
@@ -420,7 +420,7 @@ def _stochastic_parameter_points(
 ) -> list[dict[str, Any]]:
     shared_space = {
         "node_count": node_counts,
-        "rank_count": rank_counts,
+        "ranks_per_node": ranks_per_node,
         **global_space,
         **network_space,
         **endpoint_space,
@@ -462,7 +462,7 @@ def _build_run_spec(
 ) -> MerlinRunSpec:
     topology = run_parameters["topology"]
     node_count = int(run_parameters["node_count"])
-    rank_count = int(run_parameters["rank_count"])
+    ranks_per_node_value = int(run_parameters["ranks_per_node"])
 
     config_values: dict[str, Any] = {
         "topology": topology,
@@ -473,22 +473,22 @@ def _build_run_spec(
     }
     config_values = _normalize_time_fields(config_values)
 
-    run_id = _short_hash(config_values, node_count, rank_count)
+    run_id = _short_hash(config_values, node_count, ranks_per_node_value)
     run_name = (
         f"{experiment_name}_{topology}_"
-        f"n{node_count}_r{rank_count}_{run_id}_t{trial}"
+        f"n{node_count}_r{ranks_per_node_value}_{run_id}_t{trial}"
     )
 
     launcher = {
         "srun": [
             f"--nodes={node_count}",
-            f"--ntasks-per-node={rank_count}",
+            f"--ntasks-per-node={ranks_per_node_value}",
         ],
         "mpirun": [
             "-n",
-            str(node_count * rank_count),
+            str(node_count * ranks_per_node_value),
             "-N",
-            str(rank_count),
+            str(ranks_per_node_value),
         ],
     }
 
@@ -504,7 +504,7 @@ def _build_run_spec(
         "trial": trial,
         "execution": {
             "node_count": node_count,
-            "rank_count": rank_count,
+            "ranks_per_node": ranks_per_node_value,
         },
         "parameters": config_values,
     }

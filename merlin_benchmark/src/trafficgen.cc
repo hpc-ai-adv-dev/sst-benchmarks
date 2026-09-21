@@ -209,7 +209,6 @@ Generator* TrafficGen::buildGenerator(const std::string &prefix, Params &params)
                       "%s.HotSpot.targetProbability=%g must be in [0, 1]\n",
                       prefix.c_str(), targetProb);
         }
-        out.verbose(CALL_INFO, 2, 0, "Creating HotSpot generator with target %d and probability %g. Min and Max: %d %d\n", target, targetProb, range.first, range.second);
         gen = new DiscreteDist(range.first, range.second-1, target, targetProb);
     } else if ( !pattern.compare("Normal") ) {
         float mean = params.find<float>(prefix + ".Normal.Mean", range.second/2.0f);
@@ -265,7 +264,9 @@ TrafficGen::init(unsigned int phase) {
 bool
 TrafficGen::clock_handler(Cycle_t cycle)
 {
-
+    for(int i = 0; i < num_vns; i++) {
+        handle_receives(i);
+    }
     if ( packet_delay ) {
         --packet_delay;
     } else {
@@ -359,7 +360,6 @@ int TrafficGen::IP_to_fattree_ID(int ip)
 bool
 TrafficGen::handle_receives(int vn)
 {
-    out.verbose(CALL_INFO, 5, 0, "Node %d hanlding receive on vn %d\n", id, vn);
     SimpleNetwork::Request* req = link_control->recv(vn);
     if ( req != NULL ) {
         out.verbose(CALL_INFO, 5, 0, "Node %d received packet from %ld of size %zu bits.\n", id, req->src, req->size_in_bits);
